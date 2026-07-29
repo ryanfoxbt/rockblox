@@ -78,40 +78,44 @@ export function renderNotation(
   const voices: InstanceType<VF["Voice"]>[] = [];
   const beams: InstanceType<VF["Beam"]>[] = [];
   const tuplets: InstanceType<VF["Tuplet"]>[] = [];
-  const beatStartNotes: (InstanceType<VF["StaveNote"]> | undefined)[] = new Array(measureLength).fill(
-    undefined
-  );
+  const beatStartNotes: (InstanceType<VF["StemmableNote"]> | undefined)[] = new Array(
+    measureLength
+  ).fill(undefined);
 
   for (const line of lines) {
     const pos = INSTRUMENT_POSITION[line.instrument];
     const voice = new VF.Voice({ numBeats: measureLength, beatValue: 4 });
     voice.setStrict(false);
-    const notes: InstanceType<VF["StaveNote"]>[] = [];
+    const notes: InstanceType<VF["StemmableNote"]>[] = [];
 
     for (let beat = 0; beat < measureLength; beat++) {
       const tile = line.blocks[beat];
-      const beatNotes: InstanceType<VF["StaveNote"]>[] = [];
+      const beatNotes: InstanceType<VF["StemmableNote"]>[] = [];
 
       const hits: RhythmHit[] = tile ? tile.hits : [{ type: "rest", note: "quarter" }];
 
       for (const hit of hits) {
         const dots = isDotted(hit.note) ? 1 : 0;
+
+        if (hit.type === "rest") {
+          const ghost = new VF.GhostNote({ duration: DURATION_CODE[hit.note], dots });
+          notes.push(ghost);
+          beatNotes.push(ghost);
+          continue;
+        }
+
         const staveNote = new VF.StaveNote({
           keys: [pos.key],
           duration: DURATION_CODE[hit.note],
           dots,
-          type: hit.type === "rest" ? "r" : pos.notehead,
+          type: pos.notehead,
         });
         if (dots > 0) VF.Dot.buildAndAttach([staveNote], { all: true });
-        if (hit.type === "note") {
-          staveNote.setStemDirection(pos.stemUp ? VF.Stem.UP : VF.Stem.DOWN);
-          if (pos.annotation) {
-            staveNote.addModifier(
-              new VF.Annotation(pos.annotation).setVerticalJustification(
-                VF.AnnotationVerticalJustify.TOP
-              )
-            );
-          }
+        staveNote.setStemDirection(pos.stemUp ? VF.Stem.UP : VF.Stem.DOWN);
+        if (pos.annotation) {
+          staveNote.addModifier(
+            new VF.Annotation(pos.annotation).setVerticalJustification(VF.AnnotationVerticalJustify.TOP)
+          );
         }
         notes.push(staveNote);
         beatNotes.push(staveNote);
@@ -123,7 +127,7 @@ export function renderNotation(
         tuplets.push(new VF.Tuplet(beatNotes, { numNotes: 3, notesOccupied: 2 }));
         if (beatNotes.length >= 2) beams.push(new VF.Beam(beatNotes));
       } else {
-        let run: InstanceType<VF["StaveNote"]>[] = [];
+        let run: InstanceType<VF["StemmableNote"]>[] = [];
         const flush = () => {
           if (run.length >= 2) beams.push(new VF.Beam(run));
           run = [];
