@@ -13,12 +13,11 @@ export function SaveShare({
   initialSlug?: string;
 }) {
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
-  const [shareUrl, setShareUrl] = useState<string | null>(
-    initialSlug && typeof window !== "undefined" ? `${window.location.origin}/p/${initialSlug}` : null
-  );
+  const [slug, setSlug] = useState<string | null>(initialSlug ?? null);
   const [copied, setCopied] = useState(false);
 
   const measureLength = computeMeasureLength(lines);
+  const sharePath = slug ? `/p/${slug}` : null;
 
   async function handleSave() {
     setStatus("saving");
@@ -31,9 +30,8 @@ export function SaveShare({
       });
       if (!res.ok) throw new Error("Save failed");
       const data = (await res.json()) as { slug: string };
-      const url = `${window.location.origin}/p/${data.slug}`;
       window.history.replaceState(null, "", `/p/${data.slug}`);
-      setShareUrl(url);
+      setSlug(data.slug);
       setStatus("idle");
     } catch {
       setStatus("error");
@@ -41,8 +39,8 @@ export function SaveShare({
   }
 
   async function handleCopy() {
-    if (!shareUrl) return;
-    await navigator.clipboard.writeText(shareUrl);
+    if (!sharePath) return;
+    await navigator.clipboard.writeText(`${window.location.origin}${sharePath}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -58,14 +56,14 @@ export function SaveShare({
         {status === "saving" ? "Saving…" : "Save & Share"}
       </button>
       {status === "error" && <span className="text-xs text-red-400">Couldn&apos;t save, try again</span>}
-      {shareUrl && (
+      {sharePath && (
         <button
           type="button"
           onClick={handleCopy}
-          title={shareUrl}
+          title={sharePath}
           className="max-w-[16rem] truncate rounded-md px-1 text-xs text-white/50 underline decoration-dotted hover:text-yellow-400"
         >
-          {copied ? "Copied!" : shareUrl.replace(/^https?:\/\//, "")}
+          {copied ? "Copied!" : sharePath}
         </button>
       )}
     </div>
