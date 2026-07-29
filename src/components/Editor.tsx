@@ -14,6 +14,7 @@ import { TilePalette } from "@/components/TilePalette";
 import { LineRow } from "@/components/LineRow";
 import { Transport } from "@/components/Transport";
 import { SaveShare } from "@/components/SaveShare";
+import { SheetMusicView } from "@/components/SheetMusicView";
 import { TileVisual } from "@/components/TileVisual";
 import { RhythmTile } from "@/lib/rhythm";
 import { InstrumentId } from "@/lib/instruments";
@@ -43,6 +44,7 @@ export function Editor({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playheadBeat, setPlayheadBeat] = useState<number | null>(null);
   const [activeTile, setActiveTile] = useState<RhythmTile | null>(null);
+  const [showSheet, setShowSheet] = useState(false);
 
   const playerRef = useRef<RockBloxPlayer | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -99,7 +101,7 @@ export function Editor({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "rockblox-beat.mp3";
+    a.download = "rockblocks-beat.mp3";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -163,14 +165,43 @@ export function Editor({
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 px-6 py-4">
         <div>
           <h1 className="text-2xl font-black tracking-tight">
-            Rock<span className="text-yellow-400">Blox</span>
+            Rock<span className="text-yellow-400">Blocks</span>
           </h1>
           <p className="text-sm text-white/50">
             Drag rhythmic values into up to {MAX_BEATS} beat blocks per line to build a drum groove.
           </p>
         </div>
-        <SaveShare bpm={bpm} lines={lines} initialSlug={initialSlug} />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowSheet(true)}
+            disabled={measureLength < 1}
+            title="View sheet music"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <line x1="3" y1="7" x2="21" y2="7" />
+              <line x1="3" y1="11" x2="21" y2="11" />
+              <line x1="3" y1="15" x2="21" y2="15" />
+              <circle cx="9" cy="17.5" r="2" fill="currentColor" stroke="none" />
+              <line x1="11" y1="17.5" x2="11" y2="9" />
+            </svg>
+          </button>
+          <SaveShare bpm={bpm} lines={lines} initialSlug={initialSlug} />
+        </div>
       </header>
+
+      {showSheet && (
+        <SheetMusicView
+          lines={lines}
+          bpm={bpm}
+          measureLength={measureLength}
+          isPlaying={isPlaying}
+          playheadBeat={isPlaying ? playheadBeat : null}
+          onTogglePlay={togglePlay}
+          onClose={() => setShowSheet(false)}
+        />
+      )}
 
       <DndContext
         id="rockblox-dnd"

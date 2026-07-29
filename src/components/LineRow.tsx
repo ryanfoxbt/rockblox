@@ -57,7 +57,7 @@ export function LineRow({
         type="button"
         onClick={onRemoveLine}
         disabled={!canRemove}
-        title="Remove this RockBlox line"
+        title="Remove this RockBlocks line"
         className="ml-auto shrink-0 rounded-md border border-white/10 px-2 py-1 text-xs text-white/60 transition hover:border-red-400 hover:text-red-400 disabled:opacity-20"
       >
         Remove

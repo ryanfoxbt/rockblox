@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RockBlox — Drum Beat Builder",
-  description: "Drag rhythmic values into RockBlox lines to build and play back drum beats.",
+  title: "RockBlocks — Drum Beat Builder",
+  description: "Drag rhythmic values into RockBlocks lines to build and play back drum beats.",
 };
 
 export default function RootLayout({
