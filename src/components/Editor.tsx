@@ -25,7 +25,7 @@ import {
   createLine,
   deserializeLines,
 } from "@/lib/song";
-import { LineState, RockBloxPlayer } from "@/lib/audioEngine";
+import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine";
 
 export function Editor({
   initialBpm,
@@ -86,6 +86,24 @@ export function Editor({
     }
   }
 
+  async function handleDownload() {
+    if (measureLength < 1) return;
+    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks }));
+    const loopSeconds = (60 / bpm) * measureLength;
+    const loops = Math.max(4, Math.ceil(12 / loopSeconds));
+
+    const buffer = await renderSongToBuffer(lineStates, bpm, measureLength, loops);
+    const { encodeAudioBufferToMp3 } = await import("@/lib/mp3Encoder");
+    const blob = encodeAudioBufferToMp3(buffer);
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "rockblox-beat.mp3";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function handleDragStart(event: DragStartEvent) {
     setActiveTile((event.active.data.current?.tile as RhythmTile) ?? null);
   }
@@ -96,15 +114,28 @@ export function Editor({
     if (!over) return;
     const tile = active.data.current?.tile as RhythmTile | undefined;
     if (!tile) return;
+    const source = active.data.current?.source as string | undefined;
     const [lineId, indexStr] = String(over.id).split(":");
     const index = Number(indexStr);
-    setLines((prev) =>
-      prev.map((line) =>
+    if (source === `${lineId}:${index}`) return;
+
+    setLines((prev) => {
+      let next = prev;
+      if (source) {
+        const [srcLineId, srcIndexStr] = source.split(":");
+        const srcIndex = Number(srcIndexStr);
+        next = next.map((line) =>
+          line.id === srcLineId
+            ? { ...line, blocks: line.blocks.map((b, i) => (i === srcIndex ? null : b)) }
+            : line
+        );
+      }
+      return next.map((line) =>
         line.id === lineId
           ? { ...line, blocks: line.blocks.map((b, i) => (i === index ? tile : b)) }
           : line
-      )
-    );
+      );
+    });
   }
 
   function addLine() {
@@ -160,6 +191,7 @@ export function Editor({
               onTogglePlay={togglePlay}
               disabled={measureLength < 1}
               measureLength={measureLength}
+              onDownload={handleDownload}
             />
 
             <div className="flex flex-col gap-3">

@@ -1,15 +1,21 @@
-// Rhythm data model: every tile fills exactly one beat (4 sixteenth-note units).
-// Durations are expressed in sixteenth-note units: 16th=1, 8th=2, dotted-8th=3, quarter=4.
+// Rhythm data model: every tile fills exactly one beat.
+// Durations are expressed as a fraction of one beat (quarter note = 1).
 
-export type NoteName = "sixteenth" | "eighth" | "dottedEighth" | "quarter";
+export type NoteName =
+  | "sixteenth"
+  | "eighth"
+  | "dottedEighth"
+  | "quarter"
+  | "eighthTriplet"
+  | "sixteenthTriplet";
 
-export const UNITS_PER_BEAT = 4;
-
-export const NOTE_UNITS: Record<NoteName, number> = {
-  sixteenth: 1,
-  eighth: 2,
-  dottedEighth: 3,
-  quarter: 4,
+export const NOTE_FRACTION: Record<NoteName, number> = {
+  sixteenth: 1 / 4,
+  eighth: 1 / 2,
+  dottedEighth: 3 / 4,
+  quarter: 1,
+  eighthTriplet: 1 / 3,
+  sixteenthTriplet: 1 / 6,
 };
 
 export const NOTE_SHORT_LABEL: Record<NoteName, string> = {
@@ -17,6 +23,8 @@ export const NOTE_SHORT_LABEL: Record<NoteName, string> = {
   eighth: "8th",
   dottedEighth: "Dot 8th",
   quarter: "Quarter",
+  eighthTriplet: "8th Trip",
+  sixteenthTriplet: "16th Trip",
 };
 
 export interface RhythmHit {
@@ -143,12 +151,101 @@ export const REST_TILES: RhythmTile[] = [
   ]),
 ];
 
-export const ALL_TILES: RhythmTile[] = [...NOTE_TILES, ...REST_TILES];
+// --- 13 pure triplet-note combinations (every composition of 6 sixteenth-triplet
+// units, using eighth-triplet=2 units and sixteenth-triplet=1 unit) ---
+export const TRIPLET_TILES: RhythmTile[] = [
+  tile("t-e3", "note", [
+    hit("note", "eighthTriplet"),
+    hit("note", "eighthTriplet"),
+    hit("note", "eighthTriplet"),
+  ]),
+  tile("t-e2-s2", "note", [
+    hit("note", "eighthTriplet"),
+    hit("note", "eighthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+  ]),
+  tile("t-e-s2-e", "note", [
+    hit("note", "eighthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "eighthTriplet"),
+  ]),
+  tile("t-s2-e2", "note", [
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "eighthTriplet"),
+    hit("note", "eighthTriplet"),
+  ]),
+  tile("t-e-s-e-s", "note", [
+    hit("note", "eighthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "eighthTriplet"),
+    hit("note", "sixteenthTriplet"),
+  ]),
+  tile("t-s-e-s-e", "note", [
+    hit("note", "sixteenthTriplet"),
+    hit("note", "eighthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "eighthTriplet"),
+  ]),
+  tile("t-e-s4", "note", [
+    hit("note", "eighthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+  ]),
+  tile("t-s-e-s3", "note", [
+    hit("note", "sixteenthTriplet"),
+    hit("note", "eighthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+  ]),
+  tile("t-s2-e-s2", "note", [
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "eighthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+  ]),
+  tile("t-s3-e-s", "note", [
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "eighthTriplet"),
+    hit("note", "sixteenthTriplet"),
+  ]),
+  tile("t-s4-e", "note", [
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "eighthTriplet"),
+  ]),
+  tile("t-s6", "note", [
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+    hit("note", "sixteenthTriplet"),
+  ]),
+  tile("t-s-e2-s", "note", [
+    hit("note", "sixteenthTriplet"),
+    hit("note", "eighthTriplet"),
+    hit("note", "eighthTriplet"),
+    hit("note", "sixteenthTriplet"),
+  ]),
+];
+
+export const ALL_TILES: RhythmTile[] = [...NOTE_TILES, ...REST_TILES, ...TRIPLET_TILES];
 
 export function getTileById(id: string): RhythmTile | undefined {
   return ALL_TILES.find((t) => t.id === id);
 }
 
-export function tileUnits(t: RhythmTile): number {
-  return t.hits.reduce((sum, h) => sum + NOTE_UNITS[h.note], 0);
+export function tileBeatFraction(t: RhythmTile): number {
+  return t.hits.reduce((sum, h) => sum + NOTE_FRACTION[h.note], 0);
 }

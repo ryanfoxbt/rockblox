@@ -1,4 +1,4 @@
-import { NOTE_UNITS, RhythmTile } from "@/lib/rhythm";
+import { NOTE_FRACTION, RhythmTile } from "@/lib/rhythm";
 
 export function TileVisual({ tile, height = 32 }: { tile: RhythmTile; height?: number }) {
   return (
@@ -7,7 +7,7 @@ export function TileVisual({ tile, height = 32 }: { tile: RhythmTile; height?: n
       style={{ height }}
     >
       {tile.hits.map((h, i) => {
-        const widthPct = (NOTE_UNITS[h.note] / 4) * 100;
+        const widthPct = NOTE_FRACTION[h.note] * 100;
         const isRest = h.type === "rest";
         return (
           <div

@@ -1,5 +1,5 @@
 import { InstrumentId } from "./instruments";
-import { NOTE_UNITS, RhythmTile } from "./rhythm";
+import { NOTE_FRACTION, RhythmTile } from "./rhythm";
 
 export interface LineState {
   instrument: InstrumentId;
@@ -8,7 +8,7 @@ export interface LineState {
 
 let sharedNoiseBuffer: AudioBuffer | null = null;
 
-function getNoiseBuffer(ctx: AudioContext): AudioBuffer {
+function getNoiseBuffer(ctx: BaseAudioContext): AudioBuffer {
   if (!sharedNoiseBuffer || sharedNoiseBuffer.sampleRate !== ctx.sampleRate) {
     const length = ctx.sampleRate * 2;
     sharedNoiseBuffer = ctx.createBuffer(1, length, ctx.sampleRate);
@@ -19,7 +19,7 @@ function getNoiseBuffer(ctx: AudioContext): AudioBuffer {
 }
 
 function noiseBurst(
-  ctx: AudioContext,
+  ctx: BaseAudioContext,
   dest: AudioNode,
   time: number,
   opts: {
@@ -45,7 +45,7 @@ function noiseBurst(
 }
 
 function tonePulse(
-  ctx: AudioContext,
+  ctx: BaseAudioContext,
   dest: AudioNode,
   time: number,
   opts: {
@@ -70,17 +70,17 @@ function tonePulse(
   osc.stop(time + opts.duration + 0.05);
 }
 
-function playKick(ctx: AudioContext, dest: AudioNode, time: number) {
+function playKick(ctx: BaseAudioContext, dest: AudioNode, time: number) {
   tonePulse(ctx, dest, time, { type: "sine", freqStart: 150, freqEnd: 40, duration: 0.22, gain: 1 });
   noiseBurst(ctx, dest, time, { filterType: "lowpass", freq: 400, duration: 0.03, gain: 0.6 });
 }
 
-function playSnare(ctx: AudioContext, dest: AudioNode, time: number) {
+function playSnare(ctx: BaseAudioContext, dest: AudioNode, time: number) {
   noiseBurst(ctx, dest, time, { filterType: "highpass", freq: 900, Q: 0.7, duration: 0.18, gain: 0.9 });
   tonePulse(ctx, dest, time, { type: "triangle", freqStart: 190, freqEnd: 140, duration: 0.12, gain: 0.5 });
 }
 
-function playHiHat(ctx: AudioContext, dest: AudioNode, time: number, open: boolean) {
+function playHiHat(ctx: BaseAudioContext, dest: AudioNode, time: number, open: boolean) {
   noiseBurst(ctx, dest, time, {
     filterType: "highpass",
     freq: 7500,
@@ -90,17 +90,17 @@ function playHiHat(ctx: AudioContext, dest: AudioNode, time: number, open: boole
   });
 }
 
-function playCrash(ctx: AudioContext, dest: AudioNode, time: number) {
+function playCrash(ctx: BaseAudioContext, dest: AudioNode, time: number) {
   noiseBurst(ctx, dest, time, { filterType: "highpass", freq: 5000, Q: 0.5, duration: 1.8, gain: 0.55 });
   noiseBurst(ctx, dest, time, { filterType: "bandpass", freq: 6500, Q: 0.4, duration: 1.4, gain: 0.35 });
 }
 
-function playRide(ctx: AudioContext, dest: AudioNode, time: number) {
+function playRide(ctx: BaseAudioContext, dest: AudioNode, time: number) {
   noiseBurst(ctx, dest, time, { filterType: "bandpass", freq: 4500, Q: 1.2, duration: 0.6, gain: 0.35 });
   tonePulse(ctx, dest, time, { type: "sine", freqStart: 850, duration: 0.3, gain: 0.15 });
 }
 
-function playTom(ctx: AudioContext, dest: AudioNode, time: number, baseFreq: number) {
+function playTom(ctx: BaseAudioContext, dest: AudioNode, time: number, baseFreq: number) {
   tonePulse(ctx, dest, time, {
     type: "sine",
     freqStart: baseFreq * 1.6,
@@ -110,13 +110,13 @@ function playTom(ctx: AudioContext, dest: AudioNode, time: number, baseFreq: num
   });
 }
 
-function playRimshot(ctx: AudioContext, dest: AudioNode, time: number) {
+function playRimshot(ctx: BaseAudioContext, dest: AudioNode, time: number) {
   noiseBurst(ctx, dest, time, { filterType: "bandpass", freq: 1800, Q: 2, duration: 0.08, gain: 0.7 });
   tonePulse(ctx, dest, time, { type: "square", freqStart: 400, duration: 0.04, gain: 0.3 });
 }
 
 export function triggerInstrument(
-  ctx: AudioContext,
+  ctx: BaseAudioContext,
   dest: AudioNode,
   instrument: InstrumentId,
   time: number
@@ -143,6 +143,55 @@ export function triggerInstrument(
     case "rimshot":
       return playRimshot(ctx, dest, time);
   }
+}
+
+function scheduleLoopEvents(
+  ctx: BaseAudioContext,
+  dest: AudioNode,
+  lines: LineState[],
+  measureBeats: number,
+  beatSeconds: number,
+  loopStart: number
+) {
+  for (let beatIndex = 0; beatIndex < measureBeats; beatIndex++) {
+    for (const line of lines) {
+      const t = line.blocks[beatIndex];
+      if (!t) continue;
+      let beatOffset = 0;
+      for (const h of t.hits) {
+        if (h.type === "note") {
+          const time = loopStart + beatIndex * beatSeconds + beatOffset * beatSeconds;
+          triggerInstrument(ctx, dest, line.instrument, time);
+        }
+        beatOffset += NOTE_FRACTION[h.note];
+      }
+    }
+  }
+}
+
+const RENDER_TAIL_SECONDS = 2;
+
+export async function renderSongToBuffer(
+  lines: LineState[],
+  bpm: number,
+  measureBeats: number,
+  loops: number
+): Promise<AudioBuffer> {
+  const sampleRate = 44100;
+  const beatSeconds = 60 / bpm;
+  const loopDuration = beatSeconds * measureBeats;
+  const totalSeconds = loopDuration * loops + RENDER_TAIL_SECONDS;
+  const offlineCtx = new OfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
+
+  const master = offlineCtx.createGain();
+  master.gain.value = 0.85;
+  master.connect(offlineCtx.destination);
+
+  for (let loop = 0; loop < loops; loop++) {
+    scheduleLoopEvents(offlineCtx, master, lines, measureBeats, beatSeconds, loop * loopDuration);
+  }
+
+  return offlineCtx.startRendering();
 }
 
 export interface PlayheadInfo {
@@ -199,21 +248,7 @@ export class RockBloxPlayer {
   }
 
   private scheduleEvents(loopStart: number, beatSeconds: number) {
-    const unitSeconds = beatSeconds / 4;
-    for (let beatIndex = 0; beatIndex < this.measureBeats; beatIndex++) {
-      for (const line of this.lines) {
-        const t = line.blocks[beatIndex];
-        if (!t) continue;
-        let unitOffset = 0;
-        for (const h of t.hits) {
-          if (h.type === "note") {
-            const time = loopStart + beatIndex * beatSeconds + unitOffset * unitSeconds;
-            triggerInstrument(this.ctx, this.master, line.instrument, time);
-          }
-          unitOffset += NOTE_UNITS[h.note];
-        }
-      }
-    }
+    scheduleLoopEvents(this.ctx, this.master, this.lines, this.measureBeats, beatSeconds, loopStart);
   }
 
   private scheduleLoopAndNext = () => {

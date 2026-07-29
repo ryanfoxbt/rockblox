@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 export function Transport({
   bpm,
   onBpmChange,
@@ -7,6 +9,7 @@ export function Transport({
   onTogglePlay,
   disabled,
   measureLength,
+  onDownload,
 }: {
   bpm: number;
   onBpmChange: (bpm: number) => void;
@@ -14,7 +17,19 @@ export function Transport({
   onTogglePlay: () => void;
   disabled: boolean;
   measureLength: number;
+  onDownload: () => Promise<void>;
 }) {
+  const [rendering, setRendering] = useState(false);
+
+  async function handleDownload() {
+    setRendering(true);
+    try {
+      await onDownload();
+    } finally {
+      setRendering(false);
+    }
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-4 rounded-xl bg-white/5 p-4">
       <button
@@ -40,6 +55,14 @@ export function Transport({
         />
         <span className="w-16 text-sm text-white/80">{bpm} BPM</span>
       </div>
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={disabled || rendering}
+        className="rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+      >
+        {rendering ? "Rendering…" : "Download MP3"}
+      </button>
       <span className="text-sm text-white/50">
         {measureLength > 0 ? `${measureLength}/4 measure · loops` : "Drag a block in to begin"}
       </span>
