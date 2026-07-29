@@ -1,65 +1,181 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { TilePalette } from "@/components/TilePalette";
+import { LineRow } from "@/components/LineRow";
+import { Transport } from "@/components/Transport";
+import { TileVisual } from "@/components/TileVisual";
+import { RhythmTile } from "@/lib/rhythm";
+import { InstrumentId } from "@/lib/instruments";
+import { LineData, MAX_BEATS, computeMeasureLength, createLine } from "@/lib/song";
+import { LineState, RockBloxPlayer } from "@/lib/audioEngine";
 
 export default function Home() {
+  const [lines, setLines] = useState<LineData[]>(() => [createLine(0)]);
+  const [bpm, setBpm] = useState(100);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playheadBeat, setPlayheadBeat] = useState<number | null>(null);
+  const [activeTile, setActiveTile] = useState<RhythmTile | null>(null);
+
+  const playerRef = useRef<RockBloxPlayer | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  const measureLength = computeMeasureLength(lines);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
+  );
+
+  useEffect(() => {
+    if (!playerRef.current) return;
+    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks }));
+    playerRef.current.updateSong(lineStates, bpm, measureLength);
+  }, [lines, bpm, measureLength]);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const tick = () => {
+      const info = playerRef.current?.getPlayheadInfo();
+      setPlayheadBeat(info ? info.beat : null);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, [isPlaying]);
+
+  async function togglePlay() {
+    if (!playerRef.current) playerRef.current = new RockBloxPlayer();
+    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks }));
+    playerRef.current.updateSong(lineStates, bpm, measureLength);
+
+    if (playerRef.current.isPlaying()) {
+      playerRef.current.stop();
+      setIsPlaying(false);
+    } else {
+      await playerRef.current.play();
+      setIsPlaying(true);
+    }
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveTile((event.active.data.current?.tile as RhythmTile) ?? null);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveTile(null);
+    const { active, over } = event;
+    if (!over) return;
+    const tile = active.data.current?.tile as RhythmTile | undefined;
+    if (!tile) return;
+    const [lineId, indexStr] = String(over.id).split(":");
+    const index = Number(indexStr);
+    setLines((prev) =>
+      prev.map((line) =>
+        line.id === lineId
+          ? { ...line, blocks: line.blocks.map((b, i) => (i === index ? tile : b)) }
+          : line
+      )
+    );
+  }
+
+  function addLine() {
+    setLines((prev) => [...prev, createLine(prev.length)]);
+  }
+
+  function removeLine(id: string) {
+    setLines((prev) => (prev.length > 1 ? prev.filter((l) => l.id !== id) : prev));
+  }
+
+  function changeInstrument(id: string, instrument: InstrumentId) {
+    setLines((prev) => prev.map((l) => (l.id === id ? { ...l, instrument } : l)));
+  }
+
+  function clearBlock(id: string, index: number) {
+    setLines((prev) =>
+      prev.map((l) =>
+        l.id === id ? { ...l, blocks: l.blocks.map((b, i) => (i === index ? null : b)) } : l
+      )
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
+      <header className="border-b border-white/10 px-6 py-4">
+        <h1 className="text-2xl font-black tracking-tight">
+          Rock<span className="text-yellow-400">Blox</span>
+        </h1>
+        <p className="text-sm text-white/50">
+          Drag rhythmic values into up to {MAX_BEATS} beat blocks per line to build a drum groove.
+        </p>
+      </header>
+
+      <DndContext
+        id="rockblox-dnd"
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <main className="flex flex-1 flex-col gap-4 p-4 md:flex-row md:gap-6 md:p-6">
+          <aside className="w-full shrink-0 rounded-xl bg-white/5 p-4 md:h-[calc(100vh-8rem)] md:w-72">
+            <TilePalette />
+          </aside>
+
+          <section className="flex flex-1 flex-col gap-4">
+            <Transport
+              bpm={bpm}
+              onBpmChange={setBpm}
+              isPlaying={isPlaying}
+              onTogglePlay={togglePlay}
+              disabled={measureLength < 1}
+              measureLength={measureLength}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+            <div className="flex flex-col gap-3">
+              {lines.map((line) => (
+                <LineRow
+                  key={line.id}
+                  lineId={line.id}
+                  instrument={line.instrument}
+                  blocks={line.blocks}
+                  measureLength={measureLength}
+                  playheadBeat={isPlaying ? playheadBeat : null}
+                  onInstrumentChange={(inst) => changeInstrument(line.id, inst)}
+                  onClearBlock={(i) => clearBlock(line.id, i)}
+                  onRemoveLine={() => removeLine(line.id)}
+                  canRemove={lines.length > 1}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={addLine}
+              className="self-start rounded-md border border-dashed border-white/20 px-4 py-2 text-sm text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+            >
+              + Add drum piece
+            </button>
+          </section>
+        </main>
+
+        <DragOverlay>
+          {activeTile ? (
+            <div className="w-24 rounded-md border border-yellow-400 bg-slate-800 p-1.5">
+              <TileVisual tile={activeTile} height={28} />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }
