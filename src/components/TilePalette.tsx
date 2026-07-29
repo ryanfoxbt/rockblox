@@ -1,13 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { NOTE_TILES, REST_TILES, TRIPLET_TILES } from "@/lib/rhythm";
+import { NOTE_TILES, REST_TILES, RhythmTile, TRIPLET_TILES } from "@/lib/rhythm";
 import { DraggableTile } from "./DraggableTile";
 
 type Mode = "straight" | "triplet";
 
-export function TilePalette() {
+export function TilePalette({
+  isMobile,
+  armedTile,
+  onArmTile,
+}: {
+  isMobile: boolean;
+  armedTile: RhythmTile | null;
+  onArmTile: (tile: RhythmTile) => void;
+}) {
   const [mode, setMode] = useState<Mode>("straight");
+
+  function renderTile(t: RhythmTile) {
+    return (
+      <DraggableTile
+        key={t.id}
+        tile={t}
+        isMobile={isMobile}
+        isArmed={armedTile?.id === t.id}
+        onArm={() => onArmTile(t)}
+      />
+    );
+  }
 
   return (
     <div className="flex h-full flex-col gap-3 overflow-hidden">
@@ -38,21 +58,13 @@ export function TilePalette() {
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-white/60">
               Notes <span className="text-white/30">({NOTE_TILES.length})</span>
             </h2>
-            <div className="grid grid-cols-2 gap-2">
-              {NOTE_TILES.map((t) => (
-                <DraggableTile key={t.id} tile={t} />
-              ))}
-            </div>
+            <div className="grid grid-cols-2 gap-2">{NOTE_TILES.map(renderTile)}</div>
           </div>
           <div className="flex-1 overflow-y-auto pr-1">
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-white/60">
               Rests <span className="text-white/30">({REST_TILES.length})</span>
             </h2>
-            <div className="grid grid-cols-2 gap-2 pb-2">
-              {REST_TILES.map((t) => (
-                <DraggableTile key={t.id} tile={t} />
-              ))}
-            </div>
+            <div className="grid grid-cols-2 gap-2 pb-2">{REST_TILES.map(renderTile)}</div>
           </div>
         </>
       ) : (
@@ -60,11 +72,7 @@ export function TilePalette() {
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-white/60">
             Triplet Notes <span className="text-white/30">({TRIPLET_TILES.length})</span>
           </h2>
-          <div className="grid grid-cols-2 gap-2 pb-2">
-            {TRIPLET_TILES.map((t) => (
-              <DraggableTile key={t.id} tile={t} />
-            ))}
-          </div>
+          <div className="grid grid-cols-2 gap-2 pb-2">{TRIPLET_TILES.map(renderTile)}</div>
         </div>
       )}
     </div>

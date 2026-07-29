@@ -10,8 +10,10 @@ export function LineRow({
   blocks,
   measureLength,
   playheadBeat,
+  isMobile,
   onInstrumentChange,
   onClearBlock,
+  onBlockTap,
   onRemoveLine,
   canRemove,
 }: {
@@ -20,45 +22,64 @@ export function LineRow({
   blocks: (RhythmTile | null)[];
   measureLength: number;
   playheadBeat: number | null;
+  isMobile: boolean;
   onInstrumentChange: (id: InstrumentId) => void;
   onClearBlock: (index: number) => void;
+  onBlockTap: (index: number) => void;
   onRemoveLine: () => void;
   canRemove: boolean;
 }) {
   const def = getInstrument(instrument);
 
+  const blockButtons = blocks.map((tile, i) => (
+    <Block
+      key={i}
+      id={`${lineId}:${i}`}
+      tile={tile}
+      active={i < measureLength}
+      playing={playheadBeat === i}
+      isMobile={isMobile}
+      onClear={() => onClearBlock(i)}
+      onTap={() => onBlockTap(i)}
+    />
+  ));
+
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl bg-white/5 p-3">
-      <span className={`h-3 w-3 shrink-0 rounded-full ${def.color}`} aria-hidden />
-      <select
-        value={instrument}
-        onChange={(e) => onInstrumentChange(e.target.value as InstrumentId)}
-        className="shrink-0 rounded-md border border-white/10 bg-slate-800 px-2 py-1.5 text-sm text-white"
-      >
-        {INSTRUMENTS.map((i) => (
-          <option key={i.id} value={i.id}>
-            {i.name}
-          </option>
-        ))}
-      </select>
-      <div className="flex gap-2 overflow-x-auto">
-        {blocks.map((tile, i) => (
-          <Block
-            key={i}
-            id={`${lineId}:${i}`}
-            tile={tile}
-            active={i < measureLength}
-            playing={playheadBeat === i}
-            onClear={() => onClearBlock(i)}
-          />
-        ))}
+    <div className="flex flex-col gap-3 rounded-xl bg-white/5 p-3 md:flex-row md:flex-wrap md:items-center">
+      <div className="flex items-center gap-3">
+        <span className={`h-3 w-3 shrink-0 rounded-full ${def.color}`} aria-hidden />
+        <select
+          value={instrument}
+          onChange={(e) => onInstrumentChange(e.target.value as InstrumentId)}
+          className="flex-1 rounded-md border border-white/10 bg-slate-800 px-2 py-1.5 text-sm text-white md:flex-none"
+        >
+          {INSTRUMENTS.map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={onRemoveLine}
+          disabled={!canRemove}
+          title="Remove this RockBlocks line"
+          className="shrink-0 rounded-md border border-white/10 px-2 py-1 text-xs text-white/60 transition hover:border-red-400 hover:text-red-400 disabled:opacity-20 md:hidden"
+        >
+          Remove
+        </button>
       </div>
+
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-7 md:flex md:flex-1 md:flex-nowrap md:gap-2 md:overflow-x-auto">
+        {blockButtons}
+      </div>
+
       <button
         type="button"
         onClick={onRemoveLine}
         disabled={!canRemove}
         title="Remove this RockBlocks line"
-        className="ml-auto shrink-0 rounded-md border border-white/10 px-2 py-1 text-xs text-white/60 transition hover:border-red-400 hover:text-red-400 disabled:opacity-20"
+        className="hidden shrink-0 rounded-md border border-white/10 px-2 py-1 text-xs text-white/60 transition hover:border-red-400 hover:text-red-400 disabled:opacity-20 md:ml-auto md:block"
       >
         Remove
       </button>

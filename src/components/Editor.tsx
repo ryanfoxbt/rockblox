@@ -18,6 +18,7 @@ import { SheetMusicView } from "@/components/SheetMusicView";
 import { TileVisual } from "@/components/TileVisual";
 import { RhythmTile } from "@/lib/rhythm";
 import { InstrumentId } from "@/lib/instruments";
+import { useIsMobile } from "@/lib/useIsMobile";
 import {
   LineData,
   MAX_BEATS,
@@ -45,7 +46,9 @@ export function Editor({
   const [playheadBeat, setPlayheadBeat] = useState<number | null>(null);
   const [activeTile, setActiveTile] = useState<RhythmTile | null>(null);
   const [showSheet, setShowSheet] = useState(false);
+  const [armedTile, setArmedTile] = useState<RhythmTile | null>(null);
 
+  const isMobile = useIsMobile();
   const playerRef = useRef<RockBloxPlayer | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -106,19 +109,7 @@ export function Editor({
     URL.revokeObjectURL(url);
   }
 
-  function handleDragStart(event: DragStartEvent) {
-    setActiveTile((event.active.data.current?.tile as RhythmTile) ?? null);
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    setActiveTile(null);
-    const { active, over } = event;
-    if (!over) return;
-    const tile = active.data.current?.tile as RhythmTile | undefined;
-    if (!tile) return;
-    const source = active.data.current?.source as string | undefined;
-    const [lineId, indexStr] = String(over.id).split(":");
-    const index = Number(indexStr);
+  function placeTile(tile: RhythmTile, lineId: string, index: number, source?: string) {
     if (source === `${lineId}:${index}`) return;
 
     setLines((prev) => {
@@ -138,6 +129,35 @@ export function Editor({
           : line
       );
     });
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveTile((event.active.data.current?.tile as RhythmTile) ?? null);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveTile(null);
+    const { active, over } = event;
+    if (!over) return;
+    const tile = active.data.current?.tile as RhythmTile | undefined;
+    if (!tile) return;
+    const source = active.data.current?.source as string | undefined;
+    const [lineId, indexStr] = String(over.id).split(":");
+    const index = Number(indexStr);
+    placeTile(tile, lineId, index, source);
+  }
+
+  function handleArmTile(tile: RhythmTile) {
+    setArmedTile((prev) => (prev?.id === tile.id ? null : tile));
+  }
+
+  function handleBlockTap(lineId: string, index: number) {
+    if (armedTile) {
+      placeTile(armedTile, lineId, index);
+      return;
+    }
+    const line = lines.find((l) => l.id === lineId);
+    if (line?.blocks[index]) clearBlock(lineId, index);
   }
 
   function addLine() {
@@ -168,7 +188,9 @@ export function Editor({
             Rock<span className="text-yellow-400">Blocks</span>
           </h1>
           <p className="text-sm text-white/50">
-            Drag rhythmic values into up to {MAX_BEATS} beat blocks per line to build a drum groove.
+            {isMobile
+              ? `Tap a tile, then tap up to ${MAX_BEATS} beat blocks per line to build a drum groove.`
+              : `Drag rhythmic values into up to ${MAX_BEATS} beat blocks per line to build a drum groove.`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -209,9 +231,9 @@ export function Editor({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <main className="flex flex-1 flex-col gap-4 p-4 md:flex-row md:gap-6 md:p-6">
-          <aside className="w-full shrink-0 rounded-xl bg-white/5 p-4 md:h-[calc(100vh-8rem)] md:w-72">
-            <TilePalette />
+        <main className="flex flex-1 flex-col gap-4 p-4 pb-24 md:flex-row md:gap-6 md:p-6">
+          <aside className="max-h-[45vh] w-full shrink-0 overflow-hidden rounded-xl bg-white/5 p-4 md:h-[calc(100vh-8rem)] md:max-h-none md:w-72">
+            <TilePalette isMobile={isMobile} armedTile={armedTile} onArmTile={handleArmTile} />
           </aside>
 
           <section className="flex flex-1 flex-col gap-4">
@@ -234,8 +256,10 @@ export function Editor({
                   blocks={line.blocks}
                   measureLength={measureLength}
                   playheadBeat={isPlaying ? playheadBeat : null}
+                  isMobile={isMobile}
                   onInstrumentChange={(inst) => changeInstrument(line.id, inst)}
                   onClearBlock={(i) => clearBlock(line.id, i)}
+                  onBlockTap={(i) => handleBlockTap(line.id, i)}
                   onRemoveLine={() => removeLine(line.id)}
                   canRemove={lines.length > 1}
                 />
@@ -260,6 +284,22 @@ export function Editor({
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {isMobile && armedTile && (
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t border-white/10 bg-slate-900/95 px-4 py-3 backdrop-blur">
+          <div className="flex min-w-0 items-center gap-2 text-sm">
+            <span className="shrink-0 text-white/50">Placing:</span>
+            <span className="truncate font-medium text-yellow-400">{armedTile.label}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setArmedTile(null)}
+            className="shrink-0 rounded-md border border-white/15 px-3 py-1.5 text-sm text-white/70"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
