@@ -12,16 +12,18 @@ interface StaffPosition {
   annotation?: string;
 }
 
+// Staff positions match the standard drum key (kick=F4 space, snare=C5 space,
+// hi-hat=F5 top line, ride=G5 above the staff, crash=A5 ledger above, etc.)
 const INSTRUMENT_POSITION: Record<InstrumentId, StaffPosition> = {
-  kick: { key: "c/4", stemUp: false },
-  lowTom: { key: "f/4", stemUp: false },
-  midTom: { key: "a/4", stemUp: false },
-  snare: { key: "b/4", stemUp: false },
-  rimshot: { key: "b/4", notehead: "d", stemUp: false },
-  highTom: { key: "d/5", stemUp: false },
-  ride: { key: "f/5", notehead: "x", stemUp: true },
-  hihatClosed: { key: "g/5", notehead: "x", stemUp: true },
-  hihatOpen: { key: "g/5", notehead: "x", stemUp: true, annotation: "o" },
+  kick: { key: "f/4", stemUp: false },
+  lowTom: { key: "a/4", stemUp: false },
+  midTom: { key: "d/5", stemUp: false },
+  snare: { key: "c/5", stemUp: false },
+  rimshot: { key: "c/5", notehead: "d", stemUp: false },
+  highTom: { key: "e/5", stemUp: false },
+  ride: { key: "g/5", notehead: "x", stemUp: true },
+  hihatClosed: { key: "f/5", notehead: "x", stemUp: true },
+  hihatOpen: { key: "f/5", notehead: "x", stemUp: true, annotation: "o" },
   crash: { key: "a/5", notehead: "x", stemUp: true },
 };
 
@@ -98,9 +100,26 @@ export function renderNotation(
         const dots = isDotted(hit.note) ? 1 : 0;
 
         if (hit.type === "rest") {
-          const ghost = new VF.GhostNote({ duration: DURATION_CODE[hit.note], dots });
-          notes.push(ghost);
-          beatNotes.push(ghost);
+          if (!tile) {
+            // Nothing was placed on this beat at all — stay silent rather than
+            // cluttering the page with a rest for every unplayed instrument.
+            const ghost = new VF.GhostNote({ duration: DURATION_CODE[hit.note], dots });
+            notes.push(ghost);
+            beatNotes.push(ghost);
+            continue;
+          }
+          // A rest inside an otherwise active beat carries real rhythmic
+          // information, so show it — on this instrument's own line, so beams
+          // that run through it stay flat instead of jumping pitch — and let
+          // the beam run through it.
+          const restNote = new VF.StaveNote({
+            keys: [pos.key],
+            duration: `${DURATION_CODE[hit.note]}r`,
+            dots,
+          });
+          if (dots > 0) VF.Dot.buildAndAttach([restNote], { all: true });
+          notes.push(restNote);
+          beatNotes.push(restNote);
           continue;
         }
 
@@ -123,17 +142,29 @@ export function renderNotation(
 
       beatStartNotes[beat] = beatStartNotes[beat] ?? beatNotes[0];
 
+      // Rests rendered above (when a tile is placed) have no stem of their own,
+      // so beams must be built with generateBeams's beam_rests option rather
+      // than a plain `new VF.Beam(...)`, which requires every member to have one.
+      const stemDirection = pos.stemUp ? 1 : -1;
       if (tile && hits.some((h) => isTriplet(h.note))) {
         tuplets.push(new VF.Tuplet(beatNotes, { numNotes: 3, notesOccupied: 2 }));
-        if (beatNotes.length >= 2) beams.push(new VF.Beam(beatNotes));
+        if (beatNotes.length >= 2) {
+          beams.push(
+            ...VF.Beam.generateBeams(beatNotes, { beamRests: true, stemDirection: stemDirection })
+          );
+        }
       } else {
         let run: InstanceType<VF["StemmableNote"]>[] = [];
         const flush = () => {
-          if (run.length >= 2) beams.push(new VF.Beam(run));
+          if (run.length >= 2) {
+            beams.push(
+              ...VF.Beam.generateBeams(run, { beamRests: true, stemDirection: stemDirection })
+            );
+          }
           run = [];
         };
         hits.forEach((h, i) => {
-          if (h.type === "note" && isBeamable(h.note)) {
+          if (isBeamable(h.note)) {
             run.push(beatNotes[i]);
           } else {
             flush();
