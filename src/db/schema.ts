@@ -3,6 +3,7 @@ import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 export interface StoredLine {
   instrument: string;
   blocks: (string | null)[];
+  volume?: number;
 }
 
 export const patterns = pgTable("patterns", {

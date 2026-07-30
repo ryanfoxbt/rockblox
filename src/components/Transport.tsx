@@ -11,6 +11,10 @@ export function Transport({
   measureLength,
   onDownloadMp3,
   onDownloadMidi,
+  samplesLoading,
+  kit,
+  kits,
+  onKitChange,
 }: {
   bpm: number;
   onBpmChange: (bpm: number) => void;
@@ -20,10 +24,15 @@ export function Transport({
   measureLength: number;
   onDownloadMp3: () => Promise<void>;
   onDownloadMidi: () => void;
+  samplesLoading: boolean;
+  kit: string;
+  kits: readonly string[];
+  onKitChange: (kit: string) => void;
 }) {
   const [rendering, setRendering] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const playDisabled = disabled || samplesLoading;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -54,11 +63,30 @@ export function Transport({
       <button
         type="button"
         onClick={onTogglePlay}
-        disabled={disabled}
+        disabled={playDisabled}
         className="rounded-full bg-yellow-400 px-6 py-2 font-bold text-slate-900 transition hover:bg-yellow-300 disabled:opacity-30"
       >
         {isPlaying ? "■ Stop" : "▶ Play"}
       </button>
+
+      <div className="flex items-center gap-2">
+        <label htmlFor="kit" className="text-sm text-white/60">
+          Kit
+        </label>
+        <select
+          id="kit"
+          value={kit}
+          onChange={(e) => onKitChange(e.target.value)}
+          className="rounded-md border border-white/10 bg-slate-800 px-2 py-1.5 text-sm text-white"
+        >
+          {kits.map((k) => (
+            <option key={k} value={k}>
+              {k}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="flex items-center gap-2">
         <label htmlFor="tempo" className="text-sm text-white/60">
           Tempo
@@ -79,7 +107,7 @@ export function Transport({
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
-          disabled={disabled || rendering}
+          disabled={playDisabled || rendering}
           className="rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
         >
           {rendering ? "Rendering…" : "Download ▾"}
@@ -105,7 +133,11 @@ export function Transport({
       </div>
 
       <span className="text-sm text-white/50">
-        {measureLength > 0 ? `${measureLength}/4 measure · loops` : "Drag a block in to begin"}
+        {samplesLoading
+          ? "Loading drum sounds…"
+          : measureLength > 0
+            ? `${measureLength}/4 measure · loops`
+            : "Drag a block in to begin"}
       </span>
     </div>
   );

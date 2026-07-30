@@ -28,6 +28,7 @@ import {
   deserializeLines,
 } from "@/lib/song";
 import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine";
+import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
 
 export function Editor({
   initialBpm,
@@ -47,6 +48,8 @@ export function Editor({
   const [activeTile, setActiveTile] = useState<RhythmTile | null>(null);
   const [showSheet, setShowSheet] = useState(false);
   const [armedTile, setArmedTile] = useState<RhythmTile | null>(null);
+  const [kit, setKit] = useState<string>(DEFAULT_KIT);
+  const [samplesLoading, setSamplesLoading] = useState(true);
 
   const isMobile = useIsMobile();
   const playerRef = useRef<RockBloxPlayer | null>(null);
@@ -60,9 +63,24 @@ export function Editor({
 
   useEffect(() => {
     if (!playerRef.current) return;
-    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks }));
+    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks, volume: l.volume }));
     playerRef.current.updateSong(lineStates, bpm, measureLength);
   }, [lines, bpm, measureLength]);
+
+  // Start fetching and decoding the drum samples as soon as the page mounts,
+  // so they're already in memory by the time the user hits Play.
+  useEffect(() => {
+    if (!playerRef.current) playerRef.current = new RockBloxPlayer(kit);
+    playerRef.current.ready.then(() => setSamplesLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleKitChange(newKit: string) {
+    setKit(newKit);
+    setSamplesLoading(true);
+    if (!playerRef.current) playerRef.current = new RockBloxPlayer(newKit);
+    playerRef.current.setKit(newKit).then(() => setSamplesLoading(false));
+  }
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -78,8 +96,8 @@ export function Editor({
   }, [isPlaying]);
 
   async function togglePlay() {
-    if (!playerRef.current) playerRef.current = new RockBloxPlayer();
-    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks }));
+    if (!playerRef.current) playerRef.current = new RockBloxPlayer(kit);
+    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks, volume: l.volume }));
     playerRef.current.updateSong(lineStates, bpm, measureLength);
 
     if (playerRef.current.isPlaying()) {
@@ -93,11 +111,11 @@ export function Editor({
 
   async function handleDownloadMp3() {
     if (measureLength < 1) return;
-    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks }));
+    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks, volume: l.volume }));
     const loopSeconds = (60 / bpm) * measureLength;
     const loops = Math.max(4, Math.ceil(12 / loopSeconds));
 
-    const buffer = await renderSongToBuffer(lineStates, bpm, measureLength, loops);
+    const buffer = await renderSongToBuffer(lineStates, bpm, measureLength, loops, kit);
     const { encodeAudioBufferToMp3 } = await import("@/lib/mp3Encoder");
     const blob = encodeAudioBufferToMp3(buffer);
 
@@ -111,7 +129,7 @@ export function Editor({
 
   async function handleDownloadMidi() {
     if (measureLength < 1) return;
-    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks }));
+    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks, volume: l.volume }));
     const { encodeSongToMidi } = await import("@/lib/midiEncoder");
     const blob = encodeSongToMidi(lineStates, bpm, measureLength);
 
@@ -198,6 +216,10 @@ export function Editor({
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, instrument } : l)));
   }
 
+  function changeVolume(id: string, volume: number) {
+    setLines((prev) => prev.map((l) => (l.id === id ? { ...l, volume } : l)));
+  }
+
   function clearBlock(id: string, index: number) {
     setLines((prev) =>
       prev.map((l) =>
@@ -272,6 +294,10 @@ export function Editor({
               measureLength={measureLength}
               onDownloadMp3={handleDownloadMp3}
               onDownloadMidi={handleDownloadMidi}
+              samplesLoading={samplesLoading}
+              kit={kit}
+              kits={DRUM_KITS}
+              onKitChange={handleKitChange}
             />
 
             <div className="flex flex-col gap-3">
@@ -281,10 +307,12 @@ export function Editor({
                   lineId={line.id}
                   instrument={line.instrument}
                   blocks={line.blocks}
+                  volume={line.volume}
                   measureLength={measureLength}
                   playheadBeat={isPlaying ? playheadBeat : null}
                   isMobile={isMobile}
                   onInstrumentChange={(inst) => changeInstrument(line.id, inst)}
+                  onVolumeChange={(v) => changeVolume(line.id, v)}
                   onClearBlock={(i) => clearBlock(line.id, i)}
                   onBlockTap={(i) => handleBlockTap(line.id, i)}
                   onToggleHit={(i, hitIndex) => handleToggleHit(line.id, i, hitIndex)}

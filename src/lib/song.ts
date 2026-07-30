@@ -3,9 +3,12 @@ import { RhythmTile, getTileById } from "./rhythm";
 
 export const MAX_BEATS = 7;
 
+export const DEFAULT_VOLUME = 100;
+
 export interface StoredLine {
   instrument: string;
   blocks: (string | null)[];
+  volume?: number;
 }
 
 export interface StoredSong {
@@ -17,6 +20,7 @@ export interface LineData {
   id: string;
   instrument: InstrumentId;
   blocks: (RhythmTile | null)[];
+  volume: number; // 0-100
 }
 
 export function createLine(index: number): LineData {
@@ -24,6 +28,7 @@ export function createLine(index: number): LineData {
     id: `line-${index}-${Math.random().toString(36).slice(2, 8)}`,
     instrument: defaultInstrumentFor(index),
     blocks: Array(MAX_BEATS).fill(null),
+    volume: DEFAULT_VOLUME,
   };
 }
 
@@ -31,6 +36,7 @@ export function serializeLines(lines: LineData[]): StoredLine[] {
   return lines.map((l) => ({
     instrument: l.instrument,
     blocks: l.blocks.map((b) => b?.id ?? null),
+    volume: l.volume,
   }));
 }
 
@@ -39,6 +45,7 @@ export function deserializeLines(stored: StoredLine[]): LineData[] {
     id: `line-${index}-${Math.random().toString(36).slice(2, 8)}`,
     instrument: l.instrument as InstrumentId,
     blocks: l.blocks.map((id) => (id ? getTileById(id) ?? null : null)),
+    volume: l.volume ?? DEFAULT_VOLUME,
   }));
 }
 

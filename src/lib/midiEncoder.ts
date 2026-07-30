@@ -34,6 +34,7 @@ interface NoteEvent {
   tick: number;
   isOn: boolean;
   note: number;
+  velocity: number;
 }
 
 export function encodeSongToMidi(lines: LineState[], bpm: number, measureBeats: number): Blob {
@@ -41,6 +42,7 @@ export function encodeSongToMidi(lines: LineState[], bpm: number, measureBeats: 
 
   for (const line of lines) {
     const note = GM_DRUM_NOTE[line.instrument];
+    const velocity = Math.max(1, Math.min(127, Math.round(NOTE_VELOCITY * (line.volume / 100))));
     for (let beatIndex = 0; beatIndex < measureBeats; beatIndex++) {
       const tile = line.blocks[beatIndex];
       if (!tile) continue;
@@ -48,8 +50,8 @@ export function encodeSongToMidi(lines: LineState[], bpm: number, measureBeats: 
       for (const h of tile.hits) {
         if (h.type === "note") {
           const onTick = Math.round((beatIndex + beatOffset) * PPQ);
-          noteEvents.push({ tick: onTick, isOn: true, note });
-          noteEvents.push({ tick: onTick + NOTE_GATE_TICKS, isOn: false, note });
+          noteEvents.push({ tick: onTick, isOn: true, note, velocity });
+          noteEvents.push({ tick: onTick + NOTE_GATE_TICKS, isOn: false, note, velocity: 0 });
         }
         beatOffset += NOTE_FRACTION[h.note];
       }
@@ -80,7 +82,7 @@ export function encodeSongToMidi(lines: LineState[], bpm: number, measureBeats: 
   const DRUM_CHANNEL = 9; // MIDI channel 10
   for (const ev of noteEvents) {
     const status = (ev.isOn ? 0x90 : 0x80) | DRUM_CHANNEL;
-    pushEvent(ev.tick, [status, ev.note, ev.isOn ? NOTE_VELOCITY : 0]);
+    pushEvent(ev.tick, [status, ev.note, ev.velocity]);
   }
 
   pushEvent(Math.max(lastTick, measureBeats * PPQ), [0xff, 0x2f, 0x00]);
