@@ -12,6 +12,7 @@ export function Block({
   isMobile,
   onClear,
   onTap,
+  onToggleHit,
 }: {
   id: string;
   tile: RhythmTile | null;
@@ -20,6 +21,7 @@ export function Block({
   isMobile: boolean;
   onClear: () => void;
   onTap: () => void;
+  onToggleHit: (hitIndex: number) => void;
 }) {
   const { isOver, setNodeRef: setDropRef } = useDroppable({ id });
   const {
@@ -33,37 +35,54 @@ export function Block({
     disabled: isMobile || !tile,
   });
 
-  function setRefs(node: HTMLButtonElement | null) {
+  function setRefs(node: HTMLDivElement | null) {
     setDropRef(node);
     setDragRef(node);
   }
 
   const title = isMobile
     ? tile
-      ? `${tile.label} — tap to place selected tile, or clear`
+      ? "Tap a hit to toggle it as a rest — tap ✕ to clear"
       : "Tap to place the selected tile here"
     : tile
-      ? `${tile.label} — drag to move, click to clear`
+      ? "Click a hit to toggle it as a rest, drag to move, or click ✕ to clear"
       : "Drop a rhythm tile here";
 
   return (
-    <button
-      type="button"
+    <div
       ref={setRefs}
       {...(isMobile ? {} : tile ? attributes : {})}
       {...(isMobile ? {} : tile ? listeners : {})}
-      onClick={isMobile ? onTap : tile ? onClear : undefined}
+      onClick={!tile ? onTap : undefined}
       title={title}
       className={[
-        "flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border-2 p-1.5 transition",
+        "relative flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border-2 p-1.5 transition",
         tile && !isMobile ? "cursor-grab active:cursor-grabbing" : "",
+        !tile ? "cursor-pointer" : "",
         active ? "border-white/25" : "border-dashed border-white/10 opacity-40",
         isOver ? "!border-yellow-400 bg-yellow-400/10" : tile ? "bg-white/5" : "bg-transparent",
         playing ? "ring-2 ring-yellow-400 ring-offset-2 ring-offset-slate-900" : "",
         isDragging ? "opacity-30" : "",
       ].join(" ")}
     >
-      {tile ? <TileVisual tile={tile} height={44} /> : <span className="text-2xl text-white/20">+</span>}
-    </button>
+      {tile ? (
+        <>
+          <TileVisual tile={tile} height={44} onToggleHit={onToggleHit} />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClear();
+            }}
+            title="Clear this block"
+            className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-white/20 bg-slate-800 text-[9px] leading-none text-white/60 transition hover:border-red-400 hover:text-red-400"
+          >
+            ×
+          </button>
+        </>
+      ) : (
+        <span className="text-2xl text-white/20">+</span>
+      )}
+    </div>
   );
 }

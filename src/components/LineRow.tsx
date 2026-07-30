@@ -14,6 +14,7 @@ export function LineRow({
   onInstrumentChange,
   onClearBlock,
   onBlockTap,
+  onToggleHit,
   onRemoveLine,
   canRemove,
 }: {
@@ -26,6 +27,7 @@ export function LineRow({
   onInstrumentChange: (id: InstrumentId) => void;
   onClearBlock: (index: number) => void;
   onBlockTap: (index: number) => void;
+  onToggleHit: (index: number, hitIndex: number) => void;
   onRemoveLine: () => void;
   canRemove: boolean;
 }) {
@@ -41,6 +43,7 @@ export function LineRow({
       isMobile={isMobile}
       onClear={() => onClearBlock(i)}
       onTap={() => onBlockTap(i)}
+      onToggleHit={(hitIndex) => onToggleHit(i, hitIndex)}
     />
   ));
 

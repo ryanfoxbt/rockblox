@@ -16,7 +16,7 @@ import { Transport } from "@/components/Transport";
 import { SaveShare } from "@/components/SaveShare";
 import { SheetMusicView } from "@/components/SheetMusicView";
 import { TileVisual } from "@/components/TileVisual";
-import { RhythmTile } from "@/lib/rhythm";
+import { RhythmTile, toggleHitRest } from "@/lib/rhythm";
 import { InstrumentId } from "@/lib/instruments";
 import { useIsMobile } from "@/lib/useIsMobile";
 import {
@@ -91,7 +91,7 @@ export function Editor({
     }
   }
 
-  async function handleDownload() {
+  async function handleDownloadMp3() {
     if (measureLength < 1) return;
     const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks }));
     const loopSeconds = (60 / bpm) * measureLength;
@@ -105,6 +105,20 @@ export function Editor({
     const a = document.createElement("a");
     a.href = url;
     a.download = "rockblocks-beat.mp3";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleDownloadMidi() {
+    if (measureLength < 1) return;
+    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks }));
+    const { encodeSongToMidi } = await import("@/lib/midiEncoder");
+    const blob = encodeSongToMidi(lineStates, bpm, measureLength);
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "rockblocks-beat.mid";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -152,12 +166,24 @@ export function Editor({
   }
 
   function handleBlockTap(lineId: string, index: number) {
+    if (armedTile) placeTile(armedTile, lineId, index);
+  }
+
+  function handleToggleHit(lineId: string, index: number, hitIndex: number) {
     if (armedTile) {
       placeTile(armedTile, lineId, index);
       return;
     }
-    const line = lines.find((l) => l.id === lineId);
-    if (line?.blocks[index]) clearBlock(lineId, index);
+    setLines((prev) =>
+      prev.map((line) =>
+        line.id === lineId
+          ? {
+              ...line,
+              blocks: line.blocks.map((b, i) => (i === index && b ? toggleHitRest(b, hitIndex) : b)),
+            }
+          : line
+      )
+    );
   }
 
   function addLine() {
@@ -189,8 +215,8 @@ export function Editor({
           </h1>
           <p className="text-sm text-white/50">
             {isMobile
-              ? `Tap a tile, then tap up to ${MAX_BEATS} beat blocks per line to build a drum groove.`
-              : `Drag rhythmic values into up to ${MAX_BEATS} beat blocks per line to build a drum groove.`}
+              ? `Tap a tile, then tap up to ${MAX_BEATS} beat blocks per line to build a drum groove. Tap a hit again to rest it.`
+              : `Drag rhythmic values into up to ${MAX_BEATS} beat blocks per line to build a drum groove. Click a hit to rest it.`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -244,7 +270,8 @@ export function Editor({
               onTogglePlay={togglePlay}
               disabled={measureLength < 1}
               measureLength={measureLength}
-              onDownload={handleDownload}
+              onDownloadMp3={handleDownloadMp3}
+              onDownloadMidi={handleDownloadMidi}
             />
 
             <div className="flex flex-col gap-3">
@@ -260,6 +287,7 @@ export function Editor({
                   onInstrumentChange={(inst) => changeInstrument(line.id, inst)}
                   onClearBlock={(i) => clearBlock(line.id, i)}
                   onBlockTap={(i) => handleBlockTap(line.id, i)}
+                  onToggleHit={(i, hitIndex) => handleToggleHit(line.id, i, hitIndex)}
                   onRemoveLine={() => removeLine(line.id)}
                   canRemove={lines.length > 1}
                 />

@@ -240,10 +240,73 @@ export const TRIPLET_TILES: RhythmTile[] = [
   ]),
 ];
 
+// REST_TILES is no longer offered in the palette — rests are now created by
+// toggling individual hits on a placed note tile (see toggleHitRest below).
+// The catalog is kept so older saved/shared patterns referencing these ids
+// keep loading correctly.
 export const ALL_TILES: RhythmTile[] = [...NOTE_TILES, ...REST_TILES, ...TRIPLET_TILES];
 
+// --- Dynamic rest toggling --------------------------------------------------
+// Toggling a hit produces an arbitrary note/rest pattern that isn't necessarily
+// in the static catalog above, so its id encodes the pattern directly. This
+// lets any hit combination round-trip through save/share without having to
+// pre-enumerate every combination.
+
+const NOTE_CODE: Record<NoteName, string> = {
+  sixteenth: "s",
+  eighth: "e",
+  dottedEighth: "d",
+  quarter: "q",
+  eighthTriplet: "te",
+  sixteenthTriplet: "ts",
+};
+
+const CODE_TO_NOTE: Record<string, NoteName> = Object.fromEntries(
+  Object.entries(NOTE_CODE).map(([note, code]) => [code, note as NoteName])
+);
+
+function encodeHits(hits: RhythmHit[]): string {
+  return "c:" + hits.map((h) => `${h.type === "rest" ? "r" : "n"}${NOTE_CODE[h.note]}`).join("-");
+}
+
+function decodeHits(id: string): RhythmHit[] | undefined {
+  if (!id.startsWith("c:")) return undefined;
+  const hits: RhythmHit[] = [];
+  for (const part of id.slice(2).split("-")) {
+    const type = part[0] === "r" ? "rest" : part[0] === "n" ? "note" : undefined;
+    const note = CODE_TO_NOTE[part.slice(1)];
+    if (!type || !note) return undefined;
+    hits.push({ type, note });
+  }
+  return hits.length > 0 ? hits : undefined;
+}
+
+function tileFromHits(hits: RhythmHit[]): RhythmTile {
+  // Prefer the stable catalog id when the pattern matches a known pure-note shape.
+  const match = [...NOTE_TILES, ...TRIPLET_TILES].find(
+    (t) =>
+      t.hits.length === hits.length &&
+      t.hits.every((h, i) => h.note === hits[i].note && h.type === hits[i].type)
+  );
+  if (match) return match;
+  return {
+    id: encodeHits(hits),
+    label: label(hits),
+    category: hits.some((h) => h.type === "rest") ? "rest" : "note",
+    hits,
+  };
+}
+
+export function toggleHitRest(t: RhythmTile, index: number): RhythmTile {
+  const hits = t.hits.map((h, i) => (i === index ? hit(h.type === "rest" ? "note" : "rest", h.note) : h));
+  return tileFromHits(hits);
+}
+
 export function getTileById(id: string): RhythmTile | undefined {
-  return ALL_TILES.find((t) => t.id === id);
+  const direct = ALL_TILES.find((t) => t.id === id);
+  if (direct) return direct;
+  const hits = decodeHits(id);
+  return hits ? tileFromHits(hits) : undefined;
 }
 
 export function tileBeatFraction(t: RhythmTile): number {
