@@ -3,7 +3,7 @@ import { InstrumentId } from "./instruments";
 import { NoteName, NOTE_FRACTION } from "./rhythm";
 import { LineData } from "./song";
 
-type VF = typeof VexflowModule;
+export type VF = typeof VexflowModule;
 
 interface StaffPosition {
   key: string;

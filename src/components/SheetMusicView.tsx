@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LineData } from "@/lib/song";
-import { NotationLayout, renderNotation } from "@/lib/notation";
+import { NotationLayout, renderNotation, VF } from "@/lib/notation";
 
 export function SheetMusicView({
   lines,
@@ -25,6 +25,7 @@ export function SheetMusicView({
   const notationRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<NotationLayout | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -53,21 +54,51 @@ export function SheetMusicView({
 
   useEffect(() => {
     let cancelled = false;
+    let vfModule: VF | null = null;
+    let lastWidth = -1;
 
-    async function draw() {
-      const VF = await import("vexflow");
+    async function draw(width: number) {
+      if (!vfModule) vfModule = await import("vexflow");
+      // vexflow's own entry module kicks off loading its music-glyph font
+      // (Bravura, embedded as a base64 FontFace) the moment it's imported,
+      // but never awaits that load itself — so the glyphs it draws as SVG
+      // <text> can still land before the font has finished decoding, which
+      // renders as garbled/missing noteheads. document.fonts.ready resolves
+      // once every font that's currently loading (including this one) has
+      // settled, and resolves immediately on later draws once it's cached.
+      await document.fonts.ready;
       const target = notationRef.current;
       if (cancelled || !target) return;
-      const width = target.clientWidth || 800;
-      layoutRef.current = renderNotation(VF, target, lines, measureLength, width);
+      layoutRef.current = renderNotation(vfModule, target, lines, measureLength, width);
       updateHighlight();
+      setReady(true);
     }
 
-    draw();
-    window.addEventListener("resize", draw);
+    const target = notationRef.current;
+    if (!target) return;
+
+    // Measuring clientWidth right when vexflow's dynamic import resolves is
+    // a race: requestFullscreen (above) resizes the viewport asynchronously,
+    // and if that transition is still in flight, this reads the pre-
+    // fullscreen width and draws a squished/overlapping layout — with no
+    // "resize" or "fullscreenchange" event afterward reliably firing to fix
+    // it, since some browsers dispatch fullscreenchange a frame or two
+    // before the geometry actually settles. A ResizeObserver sidesteps the
+    // guessing: it reports the container's real box size whenever it
+    // changes, for whatever reason, so it also naturally covers window
+    // resizes and provides the very first measurement (no separate initial
+    // draw() call needed).
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width || target.clientWidth || 800;
+      if (Math.abs(width - lastWidth) < 1) return;
+      lastWidth = width;
+      draw(width);
+    });
+    observer.observe(target);
+
     return () => {
       cancelled = true;
-      window.removeEventListener("resize", draw);
+      observer.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lines, measureLength]);
@@ -124,14 +155,19 @@ export function SheetMusicView({
       </div>
 
       <div className="flex flex-1 items-center overflow-auto p-6">
-        <div className="w-full rounded-lg bg-white p-4 shadow-xl">
-          <div className="relative w-full">
+        <div className="relative min-h-[280px] w-full rounded-lg bg-white p-4 shadow-xl">
+          <div className="relative w-full" style={{ visibility: ready ? "visible" : "hidden" }}>
             <div ref={notationRef} className="w-full" />
             <div
               ref={highlightRef}
               className="pointer-events-none absolute rounded bg-yellow-400/40 opacity-0 transition-opacity"
             />
           </div>
+          {!ready && (
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
+              Loading notation…
+            </div>
+          )}
         </div>
       </div>
     </div>
