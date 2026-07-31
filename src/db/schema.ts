@@ -30,3 +30,12 @@ export const boards = pgTable("boards", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Freeform gripes from the "Complain" button — not tied to a user (there's
+// no login), just whatever page they typed it from, for context.
+export const complaints = pgTable("complaints", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  message: text("message").notNull(),
+  url: text("url").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
