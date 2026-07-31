@@ -14,13 +14,18 @@ interface StaffPosition {
 
 // Staff positions match the standard drum key (kick=F4 space, snare=C5 space,
 // hi-hat=F5 top line, ride=G5 above the staff, crash=A5 ledger above, etc.)
+// Every voice uses an upward stem, matching the reference drum key's own
+// convention — and, as a bonus, sidesteps a VexFlow 5.0.0 beam rendering bug
+// where a downward-stem beam fails to connect its first note whenever that
+// note has fewer beam lines than the notes following it (confirmed in
+// isolation, independent of this app's code).
 const INSTRUMENT_POSITION: Record<InstrumentId, StaffPosition> = {
-  kick: { key: "f/4", stemUp: false },
-  lowTom: { key: "a/4", stemUp: false },
-  midTom: { key: "d/5", stemUp: false },
-  snare: { key: "c/5", stemUp: false },
-  rimshot: { key: "c/5", notehead: "d", stemUp: false },
-  highTom: { key: "e/5", stemUp: false },
+  kick: { key: "f/4", stemUp: true },
+  lowTom: { key: "a/4", stemUp: true },
+  midTom: { key: "d/5", stemUp: true },
+  snare: { key: "c/5", stemUp: true },
+  rimshot: { key: "c/5", notehead: "d", stemUp: true },
+  highTom: { key: "e/5", stemUp: true },
   ride: { key: "g/5", notehead: "x", stemUp: true },
   hihatClosed: { key: "f/5", notehead: "x", stemUp: true },
   hihatOpen: { key: "f/5", notehead: "x", stemUp: true, annotation: "o" },
@@ -80,6 +85,7 @@ export function renderNotation(
   const voices: InstanceType<VF["Voice"]>[] = [];
   const beams: InstanceType<VF["Beam"]>[] = [];
   const tuplets: InstanceType<VF["Tuplet"]>[] = [];
+  const staveNotes: InstanceType<VF["StaveNote"]>[] = [];
   const beatStartNotes: (InstanceType<VF["StemmableNote"]> | undefined)[] = new Array(
     measureLength
   ).fill(undefined);
@@ -120,6 +126,7 @@ export function renderNotation(
           if (dots > 0) VF.Dot.buildAndAttach([restNote], { all: true });
           notes.push(restNote);
           beatNotes.push(restNote);
+          staveNotes.push(restNote);
           continue;
         }
 
@@ -138,6 +145,7 @@ export function renderNotation(
         }
         notes.push(staveNote);
         beatNotes.push(staveNote);
+        staveNotes.push(staveNote);
       }
 
       beatStartNotes[beat] = beatStartNotes[beat] ?? beatNotes[0];
@@ -179,6 +187,13 @@ export function renderNotation(
   }
 
   new VF.Formatter().joinVoices(voices).formatToStave(voices, stave);
+  // VexFlow's multi-voice formatter automatically nudges notes apart
+  // horizontally whenever two voices land on the same tick (its SATB-style
+  // "voice collision avoidance"), so simultaneous hits across instrument
+  // lines don't land at the exact same x. Drum notation wants the opposite —
+  // notes on the same beat should sit directly on top of one another — so
+  // undo that shift after formatting places notes at their shared tick x.
+  staveNotes.forEach((n) => n.setXShift(0));
   voices.forEach((v) => v.draw(context, stave));
   beams.forEach((b) => b.setContext(context).draw());
   tuplets.forEach((t) => t.setContext(context).draw());

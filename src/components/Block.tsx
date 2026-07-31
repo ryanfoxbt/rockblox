@@ -59,7 +59,11 @@ export function Block({
         "relative flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border-2 p-1.5 transition",
         tile && !isMobile ? "cursor-grab active:cursor-grabbing" : "",
         !tile ? "cursor-pointer" : "",
-        active ? "border-white/25" : "border-dashed border-white/10 opacity-40",
+        active
+          ? !tile && isMobile
+            ? "border-white/40 bg-white/[0.04]"
+            : "border-white/25"
+          : "border-dashed border-white/10 opacity-40",
         isOver ? "!border-yellow-400 bg-yellow-400/10" : tile ? "bg-white/5" : "bg-transparent",
         playing ? "ring-2 ring-yellow-400 ring-offset-2 ring-offset-slate-900" : "",
         isDragging ? "opacity-30" : "",
@@ -81,7 +85,7 @@ export function Block({
           </button>
         </>
       ) : (
-        <span className="text-2xl text-white/20">+</span>
+        <span className={isMobile ? "text-2xl text-white/50" : "text-2xl text-white/20"}>+</span>
       )}
     </div>
   );

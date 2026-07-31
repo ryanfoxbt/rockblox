@@ -29,6 +29,7 @@ import {
 } from "@/lib/song";
 import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine";
 import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
+import { useHistoryState } from "@/lib/useHistoryState";
 
 export function Editor({
   initialBpm,
@@ -39,7 +40,7 @@ export function Editor({
   initialLines?: StoredLine[];
   initialSlug?: string;
 }) {
-  const [lines, setLines] = useState<LineData[]>(() =>
+  const [lines, setLines, { undo, redo, canUndo, canRedo }] = useHistoryState<LineData[]>(() =>
     initialLines && initialLines.length > 0 ? deserializeLines(initialLines) : [createLine(0)]
   );
   const [bpm, setBpm] = useState(initialBpm ?? 100);
@@ -81,6 +82,20 @@ export function Editor({
     if (!playerRef.current) playerRef.current = new RockBloxPlayer(newKit);
     playerRef.current.setKit(newKit).then(() => setSamplesLoading(false));
   }
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      if (target && ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)) return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod || e.key.toLowerCase() !== "z") return;
+      e.preventDefault();
+      if (e.shiftKey) redo();
+      else undo();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [undo, redo]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -242,6 +257,30 @@ export function Editor({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={undo}
+            disabled={!canUndo}
+            title="Undo (Ctrl+Z)"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path d="M9 8 4 12l5 4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M4 12h11a5 5 0 0 1 0 10h-1" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={redo}
+            disabled={!canRedo}
+            title="Redo (Ctrl+Shift+Z)"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path d="m15 8 5 4-5 4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M20 12H9a5 5 0 0 0 0 10h1" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
           <button
             type="button"
             onClick={() => setShowSheet(true)}
