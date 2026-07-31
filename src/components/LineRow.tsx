@@ -3,18 +3,15 @@
 import { INSTRUMENTS, InstrumentId, getInstrument } from "@/lib/instruments";
 import { RhythmTile } from "@/lib/rhythm";
 import { Block } from "./Block";
-import { VolumeKnob } from "./VolumeKnob";
 
 export function LineRow({
   lineId,
   instrument,
   blocks,
-  volume,
   measureLength,
   playheadBeat,
   isMobile,
   onInstrumentChange,
-  onVolumeChange,
   onClearBlock,
   onBlockTap,
   onToggleHit,
@@ -24,12 +21,10 @@ export function LineRow({
   lineId: string;
   instrument: InstrumentId;
   blocks: (RhythmTile | null)[];
-  volume: number;
   measureLength: number;
   playheadBeat: number | null;
   isMobile: boolean;
   onInstrumentChange: (id: InstrumentId) => void;
-  onVolumeChange: (volume: number) => void;
   onClearBlock: (index: number) => void;
   onBlockTap: (index: number) => void;
   onToggleHit: (index: number, hitIndex: number) => void;
@@ -67,7 +62,6 @@ export function LineRow({
             </option>
           ))}
         </select>
-        <VolumeKnob value={volume} onChange={onVolumeChange} />
         <button
           type="button"
           onClick={onRemoveLine}

@@ -309,10 +309,6 @@ export function Editor({
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, instrument } : l)));
   }
 
-  function changeVolume(id: string, volume: number) {
-    setLines((prev) => prev.map((l) => (l.id === id ? { ...l, volume } : l)));
-  }
-
   function clearBlock(id: string, index: number) {
     setLines((prev) =>
       prev.map((l) =>
@@ -469,12 +465,10 @@ export function Editor({
                   lineId={line.id}
                   instrument={line.instrument}
                   blocks={line.blocks}
-                  volume={line.volume}
                   measureLength={measureLength}
                   playheadBeat={isPlaying ? playheadBeat : null}
                   isMobile={isMobile}
                   onInstrumentChange={(inst) => changeInstrument(line.id, inst)}
-                  onVolumeChange={(v) => changeVolume(line.id, v)}
                   onClearBlock={(i) => clearBlock(line.id, i)}
                   onBlockTap={(i) => handleBlockTap(line.id, i)}
                   onToggleHit={(i, hitIndex) => handleToggleHit(line.id, i, hitIndex)}
