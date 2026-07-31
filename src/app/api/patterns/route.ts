@@ -37,8 +37,9 @@ export async function POST(request: NextRequest) {
       await db.insert(patterns).values({ slug, bpm: body.bpm, lines: body.lines });
       return NextResponse.json({ slug }, { status: 201 });
     } catch (err) {
+      const cause = err instanceof Error && err.cause instanceof Error ? err.cause.message : "";
       const message = err instanceof Error ? err.message : String(err);
-      if (!message.includes("duplicate key")) {
+      if (!message.includes("duplicate key") && !cause.includes("duplicate key")) {
         return NextResponse.json({ error: "Failed to save pattern" }, { status: 500 });
       }
     }

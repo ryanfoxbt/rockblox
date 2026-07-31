@@ -26,24 +26,54 @@ import {
   computeMeasureLength,
   createLine,
   deserializeLines,
+  serializeLines,
 } from "@/lib/song";
 import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine";
 import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
 import { useHistoryState } from "@/lib/useHistoryState";
+import { BoardData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
+import { ClaimUrlBox } from "@/components/ClaimUrlBox";
 
 export function Editor({
   initialBpm,
   initialLines,
   initialSlug,
+  board,
 }: {
   initialBpm?: number;
   initialLines?: StoredLine[];
   initialSlug?: string;
+  board?: BoardData;
 }) {
-  const [lines, setLines, { undo, redo, canUndo, canRedo }] = useHistoryState<LineData[]>(() =>
-    initialLines && initialLines.length > 0 ? deserializeLines(initialLines) : [createLine(0)]
+  const [activeSlot, setActiveSlot] = useState<SlotLetter>(
+    () => (board && SLOT_LETTERS.find((l) => board.slots[l])) || "A"
   );
-  const [bpm, setBpm] = useState(initialBpm ?? 100);
+  // Tracks the last payload known to be persisted for this slot, so the
+  // autosave effect only fires on real edits — not on mount, not when
+  // switching slots to data that's already saved, and not on React Strict
+  // Mode's dev-only double-invoke of effects on mount.
+  const lastSavedRef = useRef<string | null>(null);
+  // Client-side copy of every slot's content, seeded from the server-fetched
+  // `board` prop but kept current as the user edits — `board` itself is a
+  // one-time snapshot from page load, so without this, switching to a slot
+  // edited earlier in the same session (then switching away and back) would
+  // show stale, pre-edit data instead of what's actually on screen.
+  const slotsRef = useRef<Record<SlotLetter, { bpm: number; lines: StoredLine[] } | null>>(
+    board?.slots ?? { A: null, B: null, C: null, D: null }
+  );
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  const [lines, setLines, { undo, redo, reset: resetLines, canUndo, canRedo }] = useHistoryState<LineData[]>(() => {
+    if (board) {
+      const data = board.slots[activeSlot];
+      return data && data.lines.length > 0 ? deserializeLines(data.lines) : [createLine(0)];
+    }
+    return initialLines && initialLines.length > 0 ? deserializeLines(initialLines) : [createLine(0)];
+  });
+  const [bpm, setBpm] = useState(() => {
+    if (board) return board.slots[activeSlot]?.bpm ?? 100;
+    return initialBpm ?? 100;
+  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [playheadBeat, setPlayheadBeat] = useState<number | null>(null);
   const [activeTile, setActiveTile] = useState<RhythmTile | null>(null);
@@ -96,6 +126,54 @@ export function Editor({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [undo, redo]);
+
+  function switchSlot(slot: SlotLetter) {
+    if (!board || slot === activeSlot) return;
+    // Snapshot the outgoing slot's current state into our client-side copy
+    // before leaving it, so switching back later reflects this session's
+    // edits rather than the stale data the server sent on page load.
+    slotsRef.current[activeSlot] = { bpm, lines: serializeLines(lines) };
+
+    const data = slotsRef.current[slot];
+    const nextLines = data && data.lines.length > 0 ? deserializeLines(data.lines) : [createLine(0)];
+    const nextBpm = data?.bpm ?? 100;
+    // Loading a slot's already-persisted data isn't an edit — set the
+    // baseline now so the autosave effect below doesn't immediately re-save it.
+    lastSavedRef.current = JSON.stringify({ slot, bpm: nextBpm, lines: serializeLines(nextLines) });
+    setActiveSlot(slot);
+    setArmedTile(null);
+    resetLines(nextLines);
+    setBpm(nextBpm);
+  }
+
+  // Autosave the active slot to this board's page whenever the pattern
+  // changes, so a personalized URL always reflects what's on screen without
+  // needing an explicit save action.
+  useEffect(() => {
+    if (!board) return;
+    const payload = JSON.stringify({ slot: activeSlot, bpm, lines: serializeLines(lines) });
+    if (lastSavedRef.current === null) {
+      lastSavedRef.current = payload;
+      return;
+    }
+    if (lastSavedRef.current === payload) return;
+
+    setSaveStatus("saving");
+    const handle = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/boards/${board.slug}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+        });
+        if (res.ok) lastSavedRef.current = payload;
+        setSaveStatus(res.ok ? "saved" : "error");
+      } catch {
+        setSaveStatus("error");
+      }
+    }, 800);
+    return () => clearTimeout(handle);
+  }, [lines, bpm, activeSlot, board]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -255,8 +333,48 @@ export function Editor({
               ? `Tap a tile, then tap up to ${MAX_BEATS} beat blocks per line to build a drum groove. Tap a hit again to rest it.`
               : `Drag rhythmic values into up to ${MAX_BEATS} beat blocks per line to build a drum groove. Click a hit to rest it.`}
           </p>
+          {board ? (
+            <p className="mt-1 text-xs text-white/40">
+              Your page: <span className="font-mono text-yellow-400">/{board.displayName}</span>
+            </p>
+          ) : (
+            <div className="mt-2">
+              <ClaimUrlBox bpm={bpm} lines={lines} />
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
+          {board && (
+            <div className="flex items-center gap-2">
+              <div className="flex overflow-hidden rounded-md border border-white/15">
+                {SLOT_LETTERS.map((slot) => (
+                  <button
+                    key={slot}
+                    type="button"
+                    onClick={() => switchSlot(slot)}
+                    title={`Beat ${slot}`}
+                    className={[
+                      "flex h-9 w-9 items-center justify-center text-sm font-semibold transition",
+                      slot === activeSlot
+                        ? "bg-yellow-400 text-slate-900"
+                        : "bg-white/5 text-white/60 hover:bg-white/10",
+                    ].join(" ")}
+                  >
+                    {slot}
+                  </button>
+                ))}
+              </div>
+              <span className="w-12 shrink-0 text-xs text-white/40">
+                {saveStatus === "saving"
+                  ? "Saving…"
+                  : saveStatus === "error"
+                    ? "Error"
+                    : saveStatus === "saved"
+                      ? "Saved"
+                      : ""}
+              </span>
+            </div>
+          )}
           <button
             type="button"
             onClick={undo}
@@ -296,7 +414,12 @@ export function Editor({
               <line x1="11" y1="17.5" x2="11" y2="9" />
             </svg>
           </button>
-          <SaveShare bpm={bpm} lines={lines} initialSlug={initialSlug} />
+          <SaveShare
+            bpm={bpm}
+            lines={lines}
+            initialSlug={initialSlug}
+            boardPath={board ? `/${board.displayName}` : undefined}
+          />
         </div>
       </header>
 

@@ -42,5 +42,16 @@ export function useHistoryState<T>(initial: T | (() => T)) {
     setCanRedo(futureRef.current.length > 0);
   }, [present]);
 
-  return [present, set, { undo, redo, canUndo, canRedo }] as const;
+  // Replaces the present value without recording it in undo history — for
+  // swapping in an entirely different document (e.g. switching drum-beat
+  // slots), where undo should never jump back to the previous document.
+  const reset = useCallback((value: T) => {
+    pastRef.current = [];
+    futureRef.current = [];
+    setPresent(value);
+    setCanUndo(false);
+    setCanRedo(false);
+  }, []);
+
+  return [present, set, { undo, redo, reset, canUndo, canRedo }] as const;
 }
