@@ -1,56 +1,74 @@
 import type * as VexflowModule from "vexflow";
 import { InstrumentId } from "./instruments";
-import { NoteName, RhythmHit } from "./rhythm";
+import { NoteName, NOTE_FRACTION } from "./rhythm";
 import { LineData } from "./song";
 
 type VF = typeof VexflowModule;
 
 interface StaffPosition {
   key: string;
-  notehead?: "x" | "d";
-  stemUp: boolean;
+  // VexFlow inline notehead-glyph override, appended to the key as
+  // "note/octave/CODE" — "X2" for an x-notehead (cymbals), "D2" for a
+  // black diamond (rimshot). Omitted means the default round notehead.
+  noteheadCode?: string;
   annotation?: string;
 }
 
 // Staff positions match the standard drum key (kick=F4 space, snare=C5 space,
 // hi-hat=F5 top line, ride=G5 above the staff, crash=A5 ledger above, etc.)
-// Every voice uses an upward stem, matching the reference drum key's own
-// convention — and, as a bonus, sidesteps a VexFlow 5.0.0 beam rendering bug
-// where a downward-stem beam fails to connect its first note whenever that
-// note has fewer beam lines than the notes following it (confirmed in
-// isolation, independent of this app's code).
 const INSTRUMENT_POSITION: Record<InstrumentId, StaffPosition> = {
-  kick: { key: "f/4", stemUp: true },
-  lowTom: { key: "a/4", stemUp: true },
-  midTom: { key: "d/5", stemUp: true },
-  snare: { key: "c/5", stemUp: true },
-  rimshot: { key: "c/5", notehead: "d", stemUp: true },
-  highTom: { key: "e/5", stemUp: true },
-  ride: { key: "g/5", notehead: "x", stemUp: true },
-  hihatClosed: { key: "f/5", notehead: "x", stemUp: true },
-  hihatOpen: { key: "f/5", notehead: "x", stemUp: true, annotation: "o" },
-  crash: { key: "a/5", notehead: "x", stemUp: true },
+  kick: { key: "f/4" },
+  lowTom: { key: "a/4" },
+  midTom: { key: "d/5" },
+  snare: { key: "c/5" },
+  rimshot: { key: "c/5", noteheadCode: "D2" },
+  highTom: { key: "e/5" },
+  ride: { key: "g/5", noteheadCode: "X2" },
+  hihatClosed: { key: "f/5", noteheadCode: "X2" },
+  hihatOpen: { key: "f/5", noteheadCode: "X2", annotation: "o" },
+  crash: { key: "a/5", noteheadCode: "X2" },
 };
 
-const DURATION_CODE: Record<NoteName, string> = {
-  quarter: "q",
-  dottedEighth: "8",
-  eighth: "8",
-  sixteenth: "16",
-  eighthTriplet: "8",
-  sixteenthTriplet: "16",
-};
+// Every instrument shares one upward stem, matching the reference drum key's
+// own convention — and, as a bonus, sidesteps a VexFlow 5.0.0 beam-rendering
+// bug where a downward-stem beam fails to connect its first note whenever
+// that note has fewer beam lines than the notes following it.
+const STEM_DIRECTION = 1; // VF.Stem.UP
 
-function isDotted(note: NoteName): boolean {
-  return note === "dottedEighth";
+// One beat is divided into 24 ticks so every duration in the tile catalog —
+// including triplets — lands on a whole number of ticks: quarter=24,
+// dottedEighth=18, eighth=12, eighthTriplet=8, sixteenth=6, sixteenthTriplet=4.
+const TICKS_PER_BEAT = 24;
+
+const NOTE_TICKS: Record<NoteName, number> = Object.fromEntries(
+  Object.entries(NOTE_FRACTION).map(([note, fraction]) => [note, Math.round(fraction * TICKS_PER_BEAT)])
+) as Record<NoteName, number>;
+
+interface DurationInfo {
+  code: string;
+  dots: number;
+  isTriplet: boolean;
 }
 
-function isBeamable(note: NoteName): boolean {
-  return note !== "quarter";
-}
+const KNOWN_DURATIONS: [number, DurationInfo][] = [
+  [24, { code: "q", dots: 0, isTriplet: false }],
+  [18, { code: "8", dots: 1, isTriplet: false }],
+  [12, { code: "8", dots: 0, isTriplet: false }],
+  [8, { code: "8", dots: 0, isTriplet: true }],
+  [6, { code: "16", dots: 0, isTriplet: false }],
+  [4, { code: "16", dots: 0, isTriplet: true }],
+];
 
-function isTriplet(note: NoteName): boolean {
-  return note === "eighthTriplet" || note === "sixteenthTriplet";
+function durationForTicks(ticks: number): DurationInfo {
+  const exact = KNOWN_DURATIONS.find(([t]) => t === ticks);
+  if (exact) return exact[1];
+  // An irregular gap can only happen when a triplet subdivision on one line
+  // collides with a straight subdivision on another within the same beat —
+  // snap to the closest known duration rather than failing to render.
+  const [, info] = KNOWN_DURATIONS.reduce((closest, entry) =>
+    Math.abs(entry[0] - ticks) < Math.abs(closest[0] - ticks) ? entry : closest
+  );
+  return info;
 }
 
 export interface NotationLayout {
@@ -62,6 +80,13 @@ export interface NotationLayout {
 const STAVE_MARGIN_X = 10;
 const STAVE_Y = 110;
 const CANVAS_HEIGHT = 280;
+
+// A slot within a beat: either a chord of simultaneous instrument hits, or a
+// rest covering a stretch where nothing on the kit sounds.
+interface Segment {
+  ticks: number;
+  instruments: InstrumentId[] | null;
+}
 
 export function renderNotation(
   VF: VF,
@@ -82,119 +107,144 @@ export function renderNotation(
   stave.addTimeSignature(`${measureLength}/4`);
   stave.setContext(context).draw();
 
-  const voices: InstanceType<VF["Voice"]>[] = [];
+  // Real drum notation puts every instrument on one shared staff voice, with
+  // simultaneous hits drawn as one chorded notehead group under a single
+  // stem/beam — not one independent voice per instrument. That's the piece
+  // this file got wrong before: N separate voices meant N separate beams
+  // stacked on top of each other, and per-voice formatting that never
+  // actually aligned same-beat hits.
+  const voice = new VF.Voice({ numBeats: measureLength, beatValue: 4 });
+  voice.setStrict(false);
+
+  const notes: InstanceType<VF["StemmableNote"]>[] = [];
   const beams: InstanceType<VF["Beam"]>[] = [];
   const tuplets: InstanceType<VF["Tuplet"]>[] = [];
-  const staveNotes: InstanceType<VF["StaveNote"]>[] = [];
   const beatStartNotes: (InstanceType<VF["StemmableNote"]> | undefined)[] = new Array(
     measureLength
   ).fill(undefined);
 
-  for (const line of lines) {
-    const pos = INSTRUMENT_POSITION[line.instrument];
-    const voice = new VF.Voice({ numBeats: measureLength, beatValue: 4 });
-    voice.setStrict(false);
-    const notes: InstanceType<VF["StemmableNote"]>[] = [];
+  for (let beat = 0; beat < measureLength; beat++) {
+    // Collect every note onset in this beat, across all instrument lines,
+    // keyed by its tick offset — so hits that land on the same tick become
+    // one chord instead of independently-positioned noteheads.
+    const onsetsByTick = new Map<number, InstrumentId[]>();
+    let anyTilePlaced = false;
+    let anyRealNote = false;
 
-    for (let beat = 0; beat < measureLength; beat++) {
+    for (const line of lines) {
       const tile = line.blocks[beat];
-      const beatNotes: InstanceType<VF["StemmableNote"]>[] = [];
+      if (!tile) continue;
+      anyTilePlaced = true;
 
-      const hits: RhythmHit[] = tile ? tile.hits : [{ type: "rest", note: "quarter" }];
-
-      for (const hit of hits) {
-        const dots = isDotted(hit.note) ? 1 : 0;
-
-        if (hit.type === "rest") {
-          if (!tile) {
-            // Nothing was placed on this beat at all — stay silent rather than
-            // cluttering the page with a rest for every unplayed instrument.
-            const ghost = new VF.GhostNote({ duration: DURATION_CODE[hit.note], dots });
-            notes.push(ghost);
-            beatNotes.push(ghost);
-            continue;
-          }
-          // A rest inside an otherwise active beat carries real rhythmic
-          // information, so show it — on this instrument's own line, so beams
-          // that run through it stay flat instead of jumping pitch — and let
-          // the beam run through it.
-          const restNote = new VF.StaveNote({
-            keys: [pos.key],
-            duration: `${DURATION_CODE[hit.note]}r`,
-            dots,
-          });
-          if (dots > 0) VF.Dot.buildAndAttach([restNote], { all: true });
-          notes.push(restNote);
-          beatNotes.push(restNote);
-          staveNotes.push(restNote);
-          continue;
-        }
-
-        const staveNote = new VF.StaveNote({
-          keys: [pos.key],
-          duration: DURATION_CODE[hit.note],
-          dots,
-          type: pos.notehead,
-        });
-        if (dots > 0) VF.Dot.buildAndAttach([staveNote], { all: true });
-        staveNote.setStemDirection(pos.stemUp ? VF.Stem.UP : VF.Stem.DOWN);
-        if (pos.annotation) {
-          staveNote.addModifier(
-            new VF.Annotation(pos.annotation).setVerticalJustification(VF.AnnotationVerticalJustify.TOP)
-          );
-        }
-        notes.push(staveNote);
-        beatNotes.push(staveNote);
-        staveNotes.push(staveNote);
-      }
-
-      beatStartNotes[beat] = beatStartNotes[beat] ?? beatNotes[0];
-
-      // Rests rendered above (when a tile is placed) have no stem of their own,
-      // so beams must be built with generateBeams's beam_rests option rather
-      // than a plain `new VF.Beam(...)`, which requires every member to have one.
-      const stemDirection = pos.stemUp ? 1 : -1;
-      if (tile && hits.some((h) => isTriplet(h.note))) {
-        tuplets.push(new VF.Tuplet(beatNotes, { numNotes: 3, notesOccupied: 2 }));
-        if (beatNotes.length >= 2) {
-          beams.push(
-            ...VF.Beam.generateBeams(beatNotes, { beamRests: true, stemDirection: stemDirection })
-          );
-        }
-      } else {
-        let run: InstanceType<VF["StemmableNote"]>[] = [];
-        const flush = () => {
-          if (run.length >= 2) {
-            beams.push(
-              ...VF.Beam.generateBeams(run, { beamRests: true, stemDirection: stemDirection })
-            );
-          }
-          run = [];
-        };
-        hits.forEach((h, i) => {
-          if (isBeamable(h.note)) {
-            run.push(beatNotes[i]);
+      let cursor = 0;
+      for (const hit of tile.hits) {
+        const ticks = NOTE_TICKS[hit.note];
+        if (hit.type === "note") {
+          anyRealNote = true;
+          const existing = onsetsByTick.get(cursor);
+          if (existing) {
+            if (!existing.includes(line.instrument)) existing.push(line.instrument);
           } else {
-            flush();
+            onsetsByTick.set(cursor, [line.instrument]);
           }
-        });
-        flush();
+        }
+        cursor += ticks;
       }
     }
 
-    voice.addTickables(notes);
-    voices.push(voice);
+    if (!anyTilePlaced) {
+      // Nothing placed on this beat by any instrument — stay silent rather
+      // than cluttering the page with a rest for every unplayed instrument.
+      const ghost = new VF.GhostNote({ duration: "q" });
+      notes.push(ghost);
+      beatStartNotes[beat] = ghost;
+      continue;
+    }
+
+    const segments: Segment[] = [];
+    if (!anyRealNote) {
+      // Something was placed, but every hit on every line is a rest.
+      segments.push({ ticks: TICKS_PER_BEAT, instruments: null });
+    } else {
+      const onsetTicks = [...onsetsByTick.keys()].sort((a, b) => a - b);
+      if (onsetTicks[0] > 0) {
+        // Silence before the first attack in the beat.
+        segments.push({ ticks: onsetTicks[0], instruments: null });
+      }
+      onsetTicks.forEach((tick, i) => {
+        const end = i + 1 < onsetTicks.length ? onsetTicks[i + 1] : TICKS_PER_BEAT;
+        segments.push({ ticks: end - tick, instruments: onsetsByTick.get(tick)! });
+      });
+    }
+
+    const beatNotes: InstanceType<VF["StemmableNote"]>[] = [];
+    let beatHasTriplet = false;
+
+    for (const seg of segments) {
+      const { code, dots, isTriplet } = durationForTicks(seg.ticks);
+      if (isTriplet) beatHasTriplet = true;
+
+      if (!seg.instruments) {
+        const restNote = new VF.StaveNote({ keys: ["b/4"], duration: `${code}r`, dots });
+        if (dots > 0) VF.Dot.buildAndAttach([restNote], { all: true });
+        notes.push(restNote);
+        beatNotes.push(restNote);
+        continue;
+      }
+
+      const keys = seg.instruments.map((inst) => {
+        const pos = INSTRUMENT_POSITION[inst];
+        return pos.noteheadCode ? `${pos.key}/${pos.noteheadCode}` : pos.key;
+      });
+      const staveNote = new VF.StaveNote({ keys, duration: code, dots });
+      if (dots > 0) VF.Dot.buildAndAttach([staveNote], { all: true });
+      staveNote.setStemDirection(STEM_DIRECTION);
+      seg.instruments.forEach((inst, i) => {
+        const annotation = INSTRUMENT_POSITION[inst].annotation;
+        if (annotation) {
+          staveNote.addModifier(
+            new VF.Annotation(annotation).setVerticalJustification(VF.AnnotationVerticalJustify.TOP),
+            i
+          );
+        }
+      });
+      notes.push(staveNote);
+      beatNotes.push(staveNote);
+    }
+
+    beatStartNotes[beat] = beatNotes[0];
+
+    // Rests have no stem of their own, so beams must be built with
+    // generateBeams's beamRests option rather than a plain `new VF.Beam(...)`,
+    // which requires every member to already have one.
+    if (beatHasTriplet) {
+      tuplets.push(new VF.Tuplet(beatNotes, { numNotes: 3, notesOccupied: 2 }));
+      if (beatNotes.length >= 2) {
+        beams.push(
+          ...VF.Beam.generateBeams(beatNotes, { beamRests: true, stemDirection: STEM_DIRECTION })
+        );
+      }
+    } else {
+      let run: InstanceType<VF["StemmableNote"]>[] = [];
+      const flush = () => {
+        if (run.length >= 2) {
+          beams.push(
+            ...VF.Beam.generateBeams(run, { beamRests: true, stemDirection: STEM_DIRECTION })
+          );
+        }
+        run = [];
+      };
+      segments.forEach((seg, i) => {
+        if (seg.ticks !== TICKS_PER_BEAT) run.push(beatNotes[i]);
+        else flush();
+      });
+      flush();
+    }
   }
 
-  new VF.Formatter().joinVoices(voices).formatToStave(voices, stave);
-  // VexFlow's multi-voice formatter automatically nudges notes apart
-  // horizontally whenever two voices land on the same tick (its SATB-style
-  // "voice collision avoidance"), so simultaneous hits across instrument
-  // lines don't land at the exact same x. Drum notation wants the opposite —
-  // notes on the same beat should sit directly on top of one another — so
-  // undo that shift after formatting places notes at their shared tick x.
-  staveNotes.forEach((n) => n.setXShift(0));
-  voices.forEach((v) => v.draw(context, stave));
+  voice.addTickables(notes);
+  new VF.Formatter().joinVoices([voice]).formatToStave([voice], stave);
+  voice.draw(context, stave);
   beams.forEach((b) => b.setContext(context).draw());
   tuplets.forEach((t) => t.setContext(context).draw());
 
