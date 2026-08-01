@@ -16,5 +16,12 @@ export default async function SharedPattern({
 
   if (!pattern) notFound();
 
-  return <Editor initialBpm={pattern.bpm} initialLines={pattern.lines} initialSlug={slug} />;
+  return (
+    <Editor
+      initialBpm={pattern.bpm}
+      initialLines={pattern.lines}
+      initialKit={pattern.kit ?? undefined}
+      initialSlug={slug}
+    />
+  );
 }

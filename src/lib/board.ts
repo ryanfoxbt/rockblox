@@ -7,6 +7,9 @@ export const SLOT_LETTERS: SlotLetter[] = ["A", "B", "C", "D"];
 export interface BoardSlotData {
   bpm: number;
   lines: StoredLine[];
+  // Optional so old, already-saved slots (from before a given setting
+  // existed) still deserialize fine — add future remembered settings here.
+  kit?: string;
 }
 
 export interface BoardData {

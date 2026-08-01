@@ -7,6 +7,7 @@ import { StoredLine } from "@/lib/song";
 interface SavePatternBody {
   bpm: number;
   lines: StoredLine[];
+  kit?: string;
 }
 
 function isValidBody(body: unknown): body is SavePatternBody {
@@ -14,6 +15,7 @@ function isValidBody(body: unknown): body is SavePatternBody {
   const b = body as Record<string, unknown>;
   if (typeof b.bpm !== "number" || !Number.isFinite(b.bpm)) return false;
   if (!Array.isArray(b.lines)) return false;
+  if (b.kit !== undefined && typeof b.kit !== "string") return false;
   return b.lines.every(
     (l) =>
       l &&
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
   for (let attempt = 0; attempt < 5; attempt++) {
     const slug = generateSlug();
     try {
-      await db.insert(patterns).values({ slug, bpm: body.bpm, lines: body.lines });
+      await db.insert(patterns).values({ slug, bpm: body.bpm, lines: body.lines, kit: body.kit });
       return NextResponse.json({ slug }, { status: 201 });
     } catch (err) {
       const cause = err instanceof Error && err.cause instanceof Error ? err.cause.message : "";

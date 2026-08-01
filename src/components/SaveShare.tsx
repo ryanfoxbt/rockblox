@@ -6,11 +6,13 @@ import { LineData, computeMeasureLength, serializeLines } from "@/lib/song";
 export function SaveShare({
   bpm,
   lines,
+  kit,
   initialSlug,
   boardPath,
 }: {
   bpm: number;
   lines: LineData[];
+  kit: string;
   initialSlug?: string;
   boardPath?: string;
 }) {
@@ -28,7 +30,7 @@ export function SaveShare({
       const res = await fetch("/api/patterns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bpm, lines: serializeLines(lines) }),
+        body: JSON.stringify({ bpm, lines: serializeLines(lines), kit }),
       });
       if (!res.ok) throw new Error("Save failed");
       const data = (await res.json()) as { slug: string };

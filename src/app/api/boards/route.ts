@@ -19,7 +19,7 @@ function isValidStoredLines(lines: unknown): lines is StoredLine[] {
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as
-    | { name?: unknown; bpm?: unknown; lines?: unknown }
+    | { name?: unknown; bpm?: unknown; lines?: unknown; kit?: unknown }
     | null;
   const rawName = body && typeof body.name === "string" ? body.name : "";
   const name = rawName.trim();
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     isValidStoredLines(body.lines) &&
     body.lines.length > 0
   ) {
-    slotA = { bpm: body.bpm, lines: body.lines };
+    slotA = { bpm: body.bpm, lines: body.lines, kit: typeof body.kit === "string" ? body.kit : undefined };
   }
 
   const db = getDb();

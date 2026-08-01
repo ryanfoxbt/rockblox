@@ -30,6 +30,7 @@ interface SaveSlotBody {
   slot: SlotLetter;
   bpm: number;
   lines: StoredLine[];
+  kit?: string;
 }
 
 function isValidBody(body: unknown): body is SaveSlotBody {
@@ -38,6 +39,7 @@ function isValidBody(body: unknown): body is SaveSlotBody {
   if (b.slot !== "A" && b.slot !== "B" && b.slot !== "C" && b.slot !== "D") return false;
   if (typeof b.bpm !== "number" || !Number.isFinite(b.bpm)) return false;
   if (!Array.isArray(b.lines)) return false;
+  if (b.kit !== undefined && typeof b.kit !== "string") return false;
   return b.lines.every(
     (l) =>
       l &&
@@ -55,7 +57,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "Invalid slot payload" }, { status: 400 });
   }
 
-  const data = { bpm: body.bpm, lines: body.lines };
+  const data = { bpm: body.bpm, lines: body.lines, kit: body.kit };
   const patch: { updatedAt: Date; slotA?: typeof data; slotB?: typeof data; slotC?: typeof data; slotD?: typeof data } = {
     updatedAt: new Date(),
   };

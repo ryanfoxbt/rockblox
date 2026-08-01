@@ -31,17 +31,19 @@ import {
 import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine";
 import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
 import { useHistoryState } from "@/lib/useHistoryState";
-import { BoardData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
+import { BoardData, BoardSlotData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
 import { ClaimUrlBox } from "@/components/ClaimUrlBox";
 
 export function Editor({
   initialBpm,
   initialLines,
+  initialKit,
   initialSlug,
   board,
 }: {
   initialBpm?: number;
   initialLines?: StoredLine[];
+  initialKit?: string;
   initialSlug?: string;
   board?: BoardData;
 }) {
@@ -58,7 +60,7 @@ export function Editor({
   // one-time snapshot from page load, so without this, switching to a slot
   // edited earlier in the same session (then switching away and back) would
   // show stale, pre-edit data instead of what's actually on screen.
-  const slotsRef = useRef<Record<SlotLetter, { bpm: number; lines: StoredLine[] } | null>>(
+  const slotsRef = useRef<Record<SlotLetter, BoardSlotData | null>>(
     board?.slots ?? { A: null, B: null, C: null, D: null }
   );
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -80,7 +82,10 @@ export function Editor({
   const [showSheet, setShowSheet] = useState(false);
   const [armedTile, setArmedTile] = useState<RhythmTile | null>(null);
   const [movingFrom, setMovingFrom] = useState<{ lineId: string; index: number; tile: RhythmTile } | null>(null);
-  const [kit, setKit] = useState<string>(DEFAULT_KIT);
+  const [kit, setKit] = useState<string>(() => {
+    if (board) return board.slots[activeSlot]?.kit ?? DEFAULT_KIT;
+    return initialKit ?? DEFAULT_KIT;
+  });
   const [samplesLoading, setSamplesLoading] = useState(true);
 
   const isMobile = useIsMobile();
@@ -107,7 +112,7 @@ export function Editor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleKitChange(newKit: string) {
+  function applyKit(newKit: string) {
     setKit(newKit);
     setSamplesLoading(true);
     if (!playerRef.current) playerRef.current = new RockBloxPlayer(newKit);
@@ -138,19 +143,21 @@ export function Editor({
     // Snapshot the outgoing slot's current state into our client-side copy
     // before leaving it, so switching back later reflects this session's
     // edits rather than the stale data the server sent on page load.
-    slotsRef.current[activeSlot] = { bpm, lines: serializeLines(lines) };
+    slotsRef.current[activeSlot] = { bpm, lines: serializeLines(lines), kit };
 
     const data = slotsRef.current[slot];
     const nextLines = data && data.lines.length > 0 ? deserializeLines(data.lines) : [createLine(0)];
     const nextBpm = data?.bpm ?? 100;
+    const nextKit = data?.kit ?? DEFAULT_KIT;
     // Loading a slot's already-persisted data isn't an edit — set the
     // baseline now so the autosave effect below doesn't immediately re-save it.
-    lastSavedRef.current = JSON.stringify({ slot, bpm: nextBpm, lines: serializeLines(nextLines) });
+    lastSavedRef.current = JSON.stringify({ slot, bpm: nextBpm, lines: serializeLines(nextLines), kit: nextKit });
     setActiveSlot(slot);
     setArmedTile(null);
     setMovingFrom(null);
     resetLines(nextLines);
     setBpm(nextBpm);
+    if (nextKit !== kit) applyKit(nextKit);
   }
 
   // Autosave the active slot to this board's page whenever the pattern
@@ -158,7 +165,7 @@ export function Editor({
   // needing an explicit save action.
   useEffect(() => {
     if (!board) return;
-    const payload = JSON.stringify({ slot: activeSlot, bpm, lines: serializeLines(lines) });
+    const payload = JSON.stringify({ slot: activeSlot, bpm, lines: serializeLines(lines), kit });
     if (lastSavedRef.current === null) {
       lastSavedRef.current = payload;
       return;
@@ -180,7 +187,7 @@ export function Editor({
       }
     }, 800);
     return () => clearTimeout(handle);
-  }, [lines, bpm, activeSlot, board]);
+  }, [lines, bpm, kit, activeSlot, board]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -368,7 +375,7 @@ export function Editor({
             </p>
           ) : (
             <div className="mt-2">
-              <ClaimUrlBox bpm={bpm} lines={lines} />
+              <ClaimUrlBox bpm={bpm} lines={lines} kit={kit} />
             </div>
           )}
         </div>
@@ -446,6 +453,7 @@ export function Editor({
           <SaveShare
             bpm={bpm}
             lines={lines}
+            kit={kit}
             initialSlug={initialSlug}
             boardPath={board ? `/${board.displayName}` : undefined}
           />
@@ -488,7 +496,7 @@ export function Editor({
               samplesLoading={samplesLoading}
               kit={kit}
               kits={DRUM_KITS}
-              onKitChange={handleKitChange}
+              onKitChange={applyKit}
             />
 
             <div className="flex flex-col gap-3">

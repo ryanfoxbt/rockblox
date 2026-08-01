@@ -16,5 +16,5 @@ export async function GET(
     return NextResponse.json({ error: "Pattern not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ bpm: pattern.bpm, lines: pattern.lines });
+  return NextResponse.json({ bpm: pattern.bpm, lines: pattern.lines, kit: pattern.kit ?? undefined });
 }

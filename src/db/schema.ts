@@ -12,6 +12,7 @@ export const patterns = pgTable("patterns", {
   slug: text("slug").notNull().unique(),
   bpm: integer("bpm").notNull(),
   lines: jsonb("lines").$type<StoredLine[]>().notNull(),
+  kit: text("kit"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

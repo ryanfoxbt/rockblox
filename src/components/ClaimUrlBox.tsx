@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LineData, serializeLines } from "@/lib/song";
 
-export function ClaimUrlBox({ bpm, lines }: { bpm: number; lines: LineData[] }) {
+export function ClaimUrlBox({ bpm, lines, kit }: { bpm: number; lines: LineData[]; kit: string }) {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ export function ClaimUrlBox({ bpm, lines }: { bpm: number; lines: LineData[] }) 
       const res = await fetch("/api/boards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed, bpm, lines: serializeLines(lines) }),
+        body: JSON.stringify({ name: trimmed, bpm, lines: serializeLines(lines), kit }),
       });
       const data = (await res.json()) as { error?: string; displayName?: string };
       if (!res.ok) {
