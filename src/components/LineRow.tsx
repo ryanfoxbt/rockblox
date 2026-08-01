@@ -11,11 +11,13 @@ export function LineRow({
   measureLength,
   playheadBeat,
   isMobile,
+  movingBlock,
   onInstrumentChange,
   onClearBlock,
   onBlockTap,
   onToggleHit,
   onRemoveLine,
+  onPickUp,
   canRemove,
 }: {
   lineId: string;
@@ -24,11 +26,13 @@ export function LineRow({
   measureLength: number;
   playheadBeat: number | null;
   isMobile: boolean;
+  movingBlock: { lineId: string; index: number } | null;
   onInstrumentChange: (id: InstrumentId) => void;
   onClearBlock: (index: number) => void;
   onBlockTap: (index: number) => void;
   onToggleHit: (index: number, hitIndex: number) => void;
   onRemoveLine: () => void;
+  onPickUp: (index: number) => void;
   canRemove: boolean;
 }) {
   const def = getInstrument(instrument);
@@ -41,9 +45,12 @@ export function LineRow({
       active={i < measureLength}
       playing={playheadBeat === i}
       isMobile={isMobile}
+      picked={movingBlock?.lineId === lineId && movingBlock?.index === i}
+      movePending={movingBlock !== null}
       onClear={() => onClearBlock(i)}
       onTap={() => onBlockTap(i)}
       onToggleHit={(hitIndex) => onToggleHit(i, hitIndex)}
+      onPickUp={() => onPickUp(i)}
     />
   ));
 

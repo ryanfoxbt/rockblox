@@ -26,7 +26,7 @@ export function DraggableTile({
       ref={setNodeRef}
       {...(isMobile ? {} : listeners)}
       {...(isMobile ? {} : attributes)}
-      onClick={isMobile ? onArm : undefined}
+      onClick={onArm}
       type="button"
       title={tile.label}
       className={`flex w-full flex-col gap-1 rounded-md border p-1.5 text-left transition ${

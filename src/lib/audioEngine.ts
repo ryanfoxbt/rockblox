@@ -1,6 +1,7 @@
 import { InstrumentId } from "./instruments";
 import { NOTE_FRACTION, RhythmTile } from "./rhythm";
 import { DEFAULT_KIT, sampleUrlsForKit } from "./drumKits";
+import { synthesizeFartBuffers } from "./fartKit";
 
 export interface LineState {
   instrument: InstrumentId;
@@ -26,6 +27,14 @@ const loadingByKit = new Map<string, Promise<BufferMap>>();
 export function loadDrumBuffers(ctx: BaseAudioContext, kit: string): Promise<BufferMap> {
   const cached = bufferCacheByKit.get(kit);
   if (cached) return Promise.resolve(cached);
+
+  if (kit === "Fart") {
+    // Synthesized instead of fetched — no network round trip needed, so we
+    // can build and cache it synchronously just like the fetched kits above.
+    const map = synthesizeFartBuffers(ctx);
+    bufferCacheByKit.set(kit, map);
+    return Promise.resolve(map);
+  }
 
   const loading = loadingByKit.get(kit);
   if (loading) return loading;

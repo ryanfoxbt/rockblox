@@ -79,6 +79,7 @@ export function Editor({
   const [activeTile, setActiveTile] = useState<RhythmTile | null>(null);
   const [showSheet, setShowSheet] = useState(false);
   const [armedTile, setArmedTile] = useState<RhythmTile | null>(null);
+  const [movingFrom, setMovingFrom] = useState<{ lineId: string; index: number; tile: RhythmTile } | null>(null);
   const [kit, setKit] = useState<string>(DEFAULT_KIT);
   const [samplesLoading, setSamplesLoading] = useState(true);
 
@@ -117,6 +118,11 @@ export function Editor({
     function onKeyDown(e: KeyboardEvent) {
       const target = e.target as HTMLElement | null;
       if (target && ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)) return;
+      if (e.key === "Escape" && (movingFrom || armedTile)) {
+        setMovingFrom(null);
+        setArmedTile(null);
+        return;
+      }
       const mod = e.ctrlKey || e.metaKey;
       if (!mod || e.key.toLowerCase() !== "z") return;
       e.preventDefault();
@@ -125,7 +131,7 @@ export function Editor({
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [undo, redo]);
+  }, [undo, redo, movingFrom, armedTile]);
 
   function switchSlot(slot: SlotLetter) {
     if (!board || slot === activeSlot) return;
@@ -142,6 +148,7 @@ export function Editor({
     lastSavedRef.current = JSON.stringify({ slot, bpm: nextBpm, lines: serializeLines(nextLines) });
     setActiveSlot(slot);
     setArmedTile(null);
+    setMovingFrom(null);
     resetLines(nextLines);
     setBpm(nextBpm);
   }
@@ -273,14 +280,40 @@ export function Editor({
   }
 
   function handleArmTile(tile: RhythmTile) {
+    setMovingFrom(null);
     setArmedTile((prev) => (prev?.id === tile.id ? null : tile));
   }
 
+  function handlePickUp(lineId: string, index: number, tile: RhythmTile) {
+    setArmedTile(null);
+    setMovingFrom((prev) =>
+      prev && prev.lineId === lineId && prev.index === index ? null : { lineId, index, tile }
+    );
+  }
+
   function handleBlockTap(lineId: string, index: number) {
+    if (movingFrom) {
+      if (movingFrom.lineId === lineId && movingFrom.index === index) {
+        setMovingFrom(null);
+        return;
+      }
+      placeTile(movingFrom.tile, lineId, index, `${movingFrom.lineId}:${movingFrom.index}`);
+      setMovingFrom(null);
+      return;
+    }
     if (armedTile) placeTile(armedTile, lineId, index);
   }
 
   function handleToggleHit(lineId: string, index: number, hitIndex: number) {
+    if (movingFrom) {
+      if (movingFrom.lineId === lineId && movingFrom.index === index) {
+        setMovingFrom(null);
+        return;
+      }
+      placeTile(movingFrom.tile, lineId, index, `${movingFrom.lineId}:${movingFrom.index}`);
+      setMovingFrom(null);
+      return;
+    }
     if (armedTile) {
       placeTile(armedTile, lineId, index);
       return;
@@ -327,7 +360,7 @@ export function Editor({
           <p className="text-sm text-white/50">
             {isMobile
               ? `Tap a tile, then tap up to ${MAX_BEATS} beat blocks per line to build a drum groove. Tap a hit again to rest it.`
-              : `Drag rhythmic values into up to ${MAX_BEATS} beat blocks per line to build a drum groove. Click a hit to rest it.`}
+              : `Drag rhythmic values into up to ${MAX_BEATS} beat blocks per line to build a drum groove, or click a tile then click a block to place it — handy on a trackpad. Click a hit to rest it, or click a block's grip handle to pick it up and move it elsewhere.`}
           </p>
           {board ? (
             <p className="mt-1 text-xs text-white/40">
@@ -468,11 +501,16 @@ export function Editor({
                   measureLength={measureLength}
                   playheadBeat={isPlaying ? playheadBeat : null}
                   isMobile={isMobile}
+                  movingBlock={movingFrom}
                   onInstrumentChange={(inst) => changeInstrument(line.id, inst)}
                   onClearBlock={(i) => clearBlock(line.id, i)}
                   onBlockTap={(i) => handleBlockTap(line.id, i)}
                   onToggleHit={(i, hitIndex) => handleToggleHit(line.id, i, hitIndex)}
                   onRemoveLine={() => removeLine(line.id)}
+                  onPickUp={(i) => {
+                    const t = line.blocks[i];
+                    if (t) handlePickUp(line.id, i, t);
+                  }}
                   canRemove={lines.length > 1}
                 />
               ))}

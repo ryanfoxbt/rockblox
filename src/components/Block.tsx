@@ -10,18 +10,24 @@ export function Block({
   active,
   playing,
   isMobile,
+  picked,
+  movePending,
   onClear,
   onTap,
   onToggleHit,
+  onPickUp,
 }: {
   id: string;
   tile: RhythmTile | null;
   active: boolean;
   playing: boolean;
   isMobile: boolean;
+  picked: boolean;
+  movePending: boolean;
   onClear: () => void;
   onTap: () => void;
   onToggleHit: (hitIndex: number) => void;
+  onPickUp: () => void;
 }) {
   const { isOver, setNodeRef: setDropRef } = useDroppable({ id });
   const {
@@ -45,8 +51,12 @@ export function Block({
       ? "Tap a hit to toggle it as a rest — tap ✕ to clear"
       : "Tap to place the selected tile here"
     : tile
-      ? "Click a hit to toggle it as a rest, drag to move, or click ✕ to clear"
-      : "Drop a rhythm tile here";
+      ? picked
+        ? "Click another block to drop it here, or click the grip again to cancel"
+        : "Click a hit to toggle it as a rest, drag to move, click the grip to pick it up, or click ✕ to clear"
+      : movePending
+        ? "Click here to drop the picked-up block"
+        : "Drop a rhythm tile here";
 
   return (
     <div
@@ -67,11 +77,38 @@ export function Block({
         isOver ? "!border-yellow-400 bg-yellow-400/10" : tile ? "bg-white/5" : "bg-transparent",
         playing ? "ring-2 ring-yellow-400 ring-offset-2 ring-offset-slate-900" : "",
         isDragging ? "opacity-30" : "",
+        picked ? "!border-yellow-400 bg-yellow-400/15 ring-2 ring-yellow-400/70 ring-offset-2 ring-offset-slate-900" : "",
+        !tile && !isMobile && movePending && !picked ? "!border-yellow-400/50 bg-yellow-400/5" : "",
       ].join(" ")}
     >
       {tile ? (
         <>
           <TileVisual tile={tile} height={44} onToggleHit={onToggleHit} />
+          {!isMobile && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPickUp();
+              }}
+              title={picked ? "Cancel move" : "Pick up to move (click another block to drop it)"}
+              className={[
+                "absolute -left-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full border bg-slate-800 transition",
+                picked
+                  ? "border-yellow-400 text-yellow-400"
+                  : "border-white/20 text-white/60 hover:border-yellow-400 hover:text-yellow-400",
+              ].join(" ")}
+            >
+              <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="currentColor">
+                <circle cx="8" cy="6" r="1.6" />
+                <circle cx="16" cy="6" r="1.6" />
+                <circle cx="8" cy="12" r="1.6" />
+                <circle cx="16" cy="12" r="1.6" />
+                <circle cx="8" cy="18" r="1.6" />
+                <circle cx="16" cy="18" r="1.6" />
+              </svg>
+            </button>
+          )}
           <button
             type="button"
             onClick={(e) => {
