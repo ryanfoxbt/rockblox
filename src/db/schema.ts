@@ -1,5 +1,7 @@
 import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import type { BoardSlotData } from "@/lib/board";
+import type { CustomSamples } from "@/lib/customSamples";
+import type { StackArrangement } from "@/lib/stack";
 
 export interface StoredLine {
   instrument: string;
@@ -13,6 +15,7 @@ export const patterns = pgTable("patterns", {
   bpm: integer("bpm").notNull(),
   lines: jsonb("lines").$type<StoredLine[]>().notNull(),
   kit: text("kit"),
+  customSamples: jsonb("custom_samples").$type<CustomSamples>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -28,6 +31,9 @@ export const boards = pgTable("boards", {
   slotB: jsonb("slot_b").$type<BoardSlotData>(),
   slotC: jsonb("slot_c").$type<BoardSlotData>(),
   slotD: jsonb("slot_d").$type<BoardSlotData>(),
+  // Stack Builder: an arrangement sequencing repeats of slots A-D, played at
+  // one global tempo, into a longer song (see lib/stack.ts).
+  stack: jsonb("stack").$type<StackArrangement>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

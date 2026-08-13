@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 
 export function Transport({
   bpm,
@@ -15,6 +15,7 @@ export function Transport({
   kit,
   kits,
   onKitChange,
+  children,
 }: {
   bpm: number;
   onBpmChange: (bpm: number) => void;
@@ -28,6 +29,7 @@ export function Transport({
   kit: string;
   kits: readonly string[];
   onKitChange: (kit: string) => void;
+  children?: ReactNode;
 }) {
   const [rendering, setRendering] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -131,6 +133,8 @@ export function Transport({
           </div>
         )}
       </div>
+
+      {children}
 
       <span className="text-sm text-white/50">
         {samplesLoading

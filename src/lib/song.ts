@@ -61,3 +61,19 @@ export function computeMeasureLength(lines: LineData[]): number {
   }
   return max;
 }
+
+// Same measure-length rule as computeMeasureLength above, but for the
+// as-stored (not-yet-deserialized) shape — used server-side where we don't
+// need to resolve tile ids, just how many beat-blocks are filled.
+export function measureLengthFromStoredLines(lines: StoredLine[]): number {
+  let max = 0;
+  for (const line of lines) {
+    for (let i = line.blocks.length - 1; i >= 0; i--) {
+      if (line.blocks[i]) {
+        max = Math.max(max, i + 1);
+        break;
+      }
+    }
+  }
+  return max;
+}

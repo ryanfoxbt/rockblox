@@ -3,6 +3,7 @@ import { getDb } from "@/db";
 import { boards } from "@/db/schema";
 import { BoardSlotData, isReservedBoardName, isValidBoardName, normalizeBoardSlug } from "@/lib/board";
 import { StoredLine } from "@/lib/song";
+import { isValidCustomSamples } from "@/lib/customSamples";
 
 function isValidStoredLines(lines: unknown): lines is StoredLine[] {
   return (
@@ -19,7 +20,7 @@ function isValidStoredLines(lines: unknown): lines is StoredLine[] {
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as
-    | { name?: unknown; bpm?: unknown; lines?: unknown; kit?: unknown }
+    | { name?: unknown; bpm?: unknown; lines?: unknown; kit?: unknown; customSamples?: unknown }
     | null;
   const rawName = body && typeof body.name === "string" ? body.name : "";
   const name = rawName.trim();
@@ -42,9 +43,15 @@ export async function POST(request: NextRequest) {
     typeof body.bpm === "number" &&
     Number.isFinite(body.bpm) &&
     isValidStoredLines(body.lines) &&
-    body.lines.length > 0
+    body.lines.length > 0 &&
+    isValidCustomSamples(body.customSamples)
   ) {
-    slotA = { bpm: body.bpm, lines: body.lines, kit: typeof body.kit === "string" ? body.kit : undefined };
+    slotA = {
+      bpm: body.bpm,
+      lines: body.lines,
+      kit: typeof body.kit === "string" ? body.kit : undefined,
+      customSamples: body.customSamples,
+    };
   }
 
   const db = getDb();

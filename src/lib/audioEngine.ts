@@ -2,6 +2,7 @@ import { InstrumentId } from "./instruments";
 import { NOTE_FRACTION, RhythmTile } from "./rhythm";
 import { DEFAULT_KIT, sampleUrlsForKit } from "./drumKits";
 import { synthesizeFartBuffers } from "./fartKit";
+import { CustomSamples, base64ToArrayBuffer } from "./customSamples";
 
 export interface LineState {
   instrument: InstrumentId;
@@ -9,7 +10,7 @@ export interface LineState {
   volume: number; // 0-100
 }
 
-type BufferMap = Map<InstrumentId, AudioBuffer>;
+export type BufferMap = Map<InstrumentId, AudioBuffer>;
 
 // Decoded AudioBuffers aren't tied to the context that decoded them, so we
 // decode each kit's samples exactly once and reuse the same buffers for both
@@ -58,6 +59,41 @@ export function loadDrumBuffers(ctx: BaseAudioContext, kit: string): Promise<Buf
   return promise;
 }
 
+// User-recorded takes (from the "record your own fart" feature) only make
+// sense layered onto the Fart kit's slots — decode each one and overlay it
+// onto a copy of that kit's buffers, leaving the shared cache untouched.
+async function withCustomSamples(
+  ctx: BaseAudioContext,
+  buffers: BufferMap,
+  kit: string,
+  customSamples?: CustomSamples
+): Promise<BufferMap> {
+  if (kit !== "Fart" || !customSamples) return buffers;
+  const entries = Object.entries(customSamples) as [InstrumentId, string | undefined][];
+  const decoded = await Promise.all(
+    entries
+      .filter((entry): entry is [InstrumentId, string] => !!entry[1])
+      .map(async ([instrument, base64]) => {
+        const audioBuffer = await ctx.decodeAudioData(base64ToArrayBuffer(base64));
+        return [instrument, audioBuffer] as const;
+      })
+  );
+  if (decoded.length === 0) return buffers;
+  const merged: BufferMap = new Map(buffers);
+  for (const [instrument, audioBuffer] of decoded) merged.set(instrument, audioBuffer);
+  return merged;
+}
+
+/** A kit's buffers, with any recorded takes for it layered on top — the one entry point both single-slot and Stack Builder playback/rendering load buffers through. */
+export async function loadEffectiveBuffers(
+  ctx: BaseAudioContext,
+  kit: string,
+  customSamples?: CustomSamples
+): Promise<BufferMap> {
+  const base = await loadDrumBuffers(ctx, kit);
+  return withCustomSamples(ctx, base, kit, customSamples);
+}
+
 export function triggerInstrument(
   ctx: BaseAudioContext,
   dest: AudioNode,
@@ -65,18 +101,22 @@ export function triggerInstrument(
   instrument: InstrumentId,
   time: number,
   volume: number
-) {
+): AudioBufferSourceNode | undefined {
   const buffer = buffers.get(instrument);
-  if (!buffer) return;
+  if (!buffer) return undefined;
   const src = ctx.createBufferSource();
   src.buffer = buffer;
   const gain = ctx.createGain();
   gain.gain.value = volume / 100;
   src.connect(gain).connect(dest);
   src.start(time);
+  return src;
 }
 
-function scheduleLoopEvents(
+// Returns the source nodes it started, so callers that need to hard-stop a
+// still-playing arrangement mid-flight (Stack Builder) can track and stop
+// them individually — the main looping player ignores the return value.
+export function scheduleLoopEvents(
   ctx: BaseAudioContext,
   dest: AudioNode,
   buffers: BufferMap,
@@ -84,7 +124,8 @@ function scheduleLoopEvents(
   measureBeats: number,
   beatSeconds: number,
   loopStart: number
-) {
+): AudioBufferSourceNode[] {
+  const sources: AudioBufferSourceNode[] = [];
   for (let beatIndex = 0; beatIndex < measureBeats; beatIndex++) {
     for (const line of lines) {
       const t = line.blocks[beatIndex];
@@ -93,12 +134,14 @@ function scheduleLoopEvents(
       for (const h of t.hits) {
         if (h.type === "note") {
           const time = loopStart + beatIndex * beatSeconds + beatOffset * beatSeconds;
-          triggerInstrument(ctx, dest, buffers, line.instrument, time, line.volume);
+          const src = triggerInstrument(ctx, dest, buffers, line.instrument, time, line.volume);
+          if (src) sources.push(src);
         }
         beatOffset += NOTE_FRACTION[h.note];
       }
     }
   }
+  return sources;
 }
 
 const RENDER_TAIL_SECONDS = 2;
@@ -108,7 +151,8 @@ export async function renderSongToBuffer(
   bpm: number,
   measureBeats: number,
   loops: number,
-  kit: string
+  kit: string,
+  customSamples?: CustomSamples
 ): Promise<AudioBuffer> {
   const sampleRate = 44100;
   const beatSeconds = 60 / bpm;
@@ -120,11 +164,41 @@ export async function renderSongToBuffer(
   master.gain.value = 0.85;
   master.connect(offlineCtx.destination);
 
-  const buffers = await loadDrumBuffers(offlineCtx, kit);
+  const buffers = await loadEffectiveBuffers(offlineCtx, kit, customSamples);
 
   for (let loop = 0; loop < loops; loop++) {
     scheduleLoopEvents(offlineCtx, master, buffers, lines, measureBeats, beatSeconds, loop * loopDuration);
   }
+
+  return offlineCtx.startRendering();
+}
+
+// One entry per Stack Builder step, with that step's buffers already
+// resolved (see loadEffectiveBuffers) — callers preload per-slot buffers
+// once and reuse them across both live playback and this offline render, no
+// re-decoding either way.
+export interface StackStepPlayable {
+  lines: LineState[];
+  measureLength: number;
+  buffers: BufferMap;
+}
+
+export async function renderStackToBuffer(steps: StackStepPlayable[], bpm: number): Promise<AudioBuffer> {
+  const sampleRate = 44100;
+  const beatSeconds = 60 / bpm;
+  const stepDurations = steps.map((s) => beatSeconds * s.measureLength);
+  const totalSeconds = stepDurations.reduce((a, b) => a + b, 0) + RENDER_TAIL_SECONDS;
+  const offlineCtx = new OfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
+
+  const master = offlineCtx.createGain();
+  master.gain.value = 0.85;
+  master.connect(offlineCtx.destination);
+
+  let elapsed = 0;
+  steps.forEach((step, i) => {
+    scheduleLoopEvents(offlineCtx, master, step.buffers, step.lines, step.measureLength, beatSeconds, elapsed);
+    elapsed += stepDurations[i];
+  });
 
   return offlineCtx.startRendering();
 }
@@ -139,7 +213,9 @@ const LOOKAHEAD_SECONDS = 0.15;
 export class RockBloxPlayer {
   private ctx: AudioContext;
   private master: GainNode;
+  private baseBuffers: BufferMap | null = null;
   private buffers: BufferMap | null = null;
+  private customBuffers: Map<InstrumentId, AudioBuffer> = new Map();
   private kit: string;
   private readyPromise: Promise<void>;
   private lines: LineState[] = [];
@@ -159,8 +235,50 @@ export class RockBloxPlayer {
     this.master.connect(this.ctx.destination);
     this.kit = initialKit;
     this.readyPromise = loadDrumBuffers(this.ctx, initialKit).then((buffers) => {
-      this.buffers = buffers;
+      this.baseBuffers = buffers;
+      this.recomputeBuffers();
     });
+  }
+
+  // Layers any recorded takes (currently Fart-kit-only) onto the freshly
+  // loaded kit buffers, without touching the shared, cross-session cache in
+  // bufferCacheByKit.
+  private recomputeBuffers() {
+    if (!this.baseBuffers) return;
+    if (this.kit !== "Fart" || this.customBuffers.size === 0) {
+      this.buffers = this.baseBuffers;
+      return;
+    }
+    const merged: BufferMap = new Map(this.baseBuffers);
+    for (const [instrument, audioBuffer] of this.customBuffers) merged.set(instrument, audioBuffer);
+    this.buffers = merged;
+  }
+
+  /** Records a live mic take (see FartRecorder) into one kit slot for this session. */
+  async setCustomSample(instrument: InstrumentId, arrayBuffer: ArrayBuffer): Promise<void> {
+    const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+    this.customBuffers.set(instrument, audioBuffer);
+    this.recomputeBuffers();
+  }
+
+  /** Seeds previously-saved recordings (base64, from a board/pattern) back into this player. */
+  async loadCustomSamples(samples: CustomSamples): Promise<void> {
+    const entries = Object.entries(samples) as [InstrumentId, string | undefined][];
+    await Promise.all(
+      entries
+        .filter((entry): entry is [InstrumentId, string] => !!entry[1])
+        .map(async ([instrument, base64]) => {
+          const audioBuffer = await this.ctx.decodeAudioData(base64ToArrayBuffer(base64));
+          this.customBuffers.set(instrument, audioBuffer);
+        })
+    );
+    this.recomputeBuffers();
+  }
+
+  /** Discards this session's recorded takes (e.g. switching to a slot with none saved). */
+  clearCustomSamples(): void {
+    this.customBuffers.clear();
+    this.recomputeBuffers();
   }
 
   /** Resolves once the current kit's samples have been fetched and decoded. */
@@ -177,7 +295,8 @@ export class RockBloxPlayer {
     this.kit = kit;
     this.buffers = null;
     this.readyPromise = loadDrumBuffers(this.ctx, kit).then((buffers) => {
-      this.buffers = buffers;
+      this.baseBuffers = buffers;
+      this.recomputeBuffers();
     });
     return this.readyPromise;
   }

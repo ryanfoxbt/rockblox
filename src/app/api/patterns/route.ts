@@ -3,11 +3,13 @@ import { getDb } from "@/db";
 import { patterns } from "@/db/schema";
 import { generateSlug } from "@/lib/slug";
 import { StoredLine } from "@/lib/song";
+import { CustomSamples, isValidCustomSamples } from "@/lib/customSamples";
 
 interface SavePatternBody {
   bpm: number;
   lines: StoredLine[];
   kit?: string;
+  customSamples?: CustomSamples;
 }
 
 function isValidBody(body: unknown): body is SavePatternBody {
@@ -16,6 +18,7 @@ function isValidBody(body: unknown): body is SavePatternBody {
   if (typeof b.bpm !== "number" || !Number.isFinite(b.bpm)) return false;
   if (!Array.isArray(b.lines)) return false;
   if (b.kit !== undefined && typeof b.kit !== "string") return false;
+  if (!isValidCustomSamples(b.customSamples)) return false;
   return b.lines.every(
     (l) =>
       l &&
@@ -36,7 +39,9 @@ export async function POST(request: NextRequest) {
   for (let attempt = 0; attempt < 5; attempt++) {
     const slug = generateSlug();
     try {
-      await db.insert(patterns).values({ slug, bpm: body.bpm, lines: body.lines, kit: body.kit });
+      await db
+        .insert(patterns)
+        .values({ slug, bpm: body.bpm, lines: body.lines, kit: body.kit, customSamples: body.customSamples });
       return NextResponse.json({ slug }, { status: 201 });
     } catch (err) {
       const cause = err instanceof Error && err.cause instanceof Error ? err.cause.message : "";

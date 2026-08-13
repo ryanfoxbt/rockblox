@@ -2,17 +2,20 @@
 
 import { useState } from "react";
 import { LineData, computeMeasureLength, serializeLines } from "@/lib/song";
+import { CustomSamples } from "@/lib/customSamples";
 
 export function SaveShare({
   bpm,
   lines,
   kit,
+  customSamples,
   initialSlug,
   boardPath,
 }: {
   bpm: number;
   lines: LineData[];
   kit: string;
+  customSamples?: CustomSamples;
   initialSlug?: string;
   boardPath?: string;
 }) {
@@ -30,7 +33,7 @@ export function SaveShare({
       const res = await fetch("/api/patterns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bpm, lines: serializeLines(lines), kit }),
+        body: JSON.stringify({ bpm, lines: serializeLines(lines), kit, customSamples }),
       });
       if (!res.ok) throw new Error("Save failed");
       const data = (await res.json()) as { slug: string };

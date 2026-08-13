@@ -21,6 +21,7 @@ export default async function SharedPattern({
       initialBpm={pattern.bpm}
       initialLines={pattern.lines}
       initialKit={pattern.kit ?? undefined}
+      initialCustomSamples={pattern.customSamples ?? undefined}
       initialSlug={slug}
     />
   );

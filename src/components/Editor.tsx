@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   DndContext,
   DragEndEvent,
@@ -16,6 +17,7 @@ import { Transport } from "@/components/Transport";
 import { SaveShare } from "@/components/SaveShare";
 import { SheetMusicView } from "@/components/SheetMusicView";
 import { TileVisual } from "@/components/TileVisual";
+import { FartRecorder } from "@/components/FartRecorder";
 import { RhythmTile, toggleHitRest } from "@/lib/rhythm";
 import { InstrumentId } from "@/lib/instruments";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -32,18 +34,21 @@ import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine
 import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
 import { useHistoryState } from "@/lib/useHistoryState";
 import { BoardData, BoardSlotData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
+import { CustomSamples, arrayBufferToBase64 } from "@/lib/customSamples";
 import { ClaimUrlBox } from "@/components/ClaimUrlBox";
 
 export function Editor({
   initialBpm,
   initialLines,
   initialKit,
+  initialCustomSamples,
   initialSlug,
   board,
 }: {
   initialBpm?: number;
   initialLines?: StoredLine[];
   initialKit?: string;
+  initialCustomSamples?: CustomSamples;
   initialSlug?: string;
   board?: BoardData;
 }) {
@@ -86,6 +91,10 @@ export function Editor({
     if (board) return board.slots[activeSlot]?.kit ?? DEFAULT_KIT;
     return initialKit ?? DEFAULT_KIT;
   });
+  const [customSamples, setCustomSamples] = useState<CustomSamples>(() => {
+    if (board) return board.slots[activeSlot]?.customSamples ?? {};
+    return initialCustomSamples ?? {};
+  });
   const [samplesLoading, setSamplesLoading] = useState(true);
 
   const isMobile = useIsMobile();
@@ -108,7 +117,10 @@ export function Editor({
   // so they're already in memory by the time the user hits Play.
   useEffect(() => {
     if (!playerRef.current) playerRef.current = new RockBloxPlayer(kit);
-    playerRef.current.ready.then(() => setSamplesLoading(false));
+    playerRef.current.ready.then(() => {
+      setSamplesLoading(false);
+      if (Object.keys(customSamples).length > 0) playerRef.current?.loadCustomSamples(customSamples);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -117,6 +129,13 @@ export function Editor({
     setSamplesLoading(true);
     if (!playerRef.current) playerRef.current = new RockBloxPlayer(newKit);
     playerRef.current.setKit(newKit).then(() => setSamplesLoading(false));
+  }
+
+  async function handleCustomSampleRecorded(instrument: InstrumentId, arrayBuffer: ArrayBuffer) {
+    const base64 = arrayBufferToBase64(arrayBuffer);
+    setCustomSamples((prev) => ({ ...prev, [instrument]: base64 }));
+    if (!playerRef.current) playerRef.current = new RockBloxPlayer(kit);
+    await playerRef.current.setCustomSample(instrument, arrayBuffer);
   }
 
   useEffect(() => {
@@ -143,20 +162,30 @@ export function Editor({
     // Snapshot the outgoing slot's current state into our client-side copy
     // before leaving it, so switching back later reflects this session's
     // edits rather than the stale data the server sent on page load.
-    slotsRef.current[activeSlot] = { bpm, lines: serializeLines(lines), kit };
+    slotsRef.current[activeSlot] = { bpm, lines: serializeLines(lines), kit, customSamples };
 
     const data = slotsRef.current[slot];
     const nextLines = data && data.lines.length > 0 ? deserializeLines(data.lines) : [createLine(0)];
     const nextBpm = data?.bpm ?? 100;
     const nextKit = data?.kit ?? DEFAULT_KIT;
+    const nextCustomSamples = data?.customSamples ?? {};
     // Loading a slot's already-persisted data isn't an edit — set the
     // baseline now so the autosave effect below doesn't immediately re-save it.
-    lastSavedRef.current = JSON.stringify({ slot, bpm: nextBpm, lines: serializeLines(nextLines), kit: nextKit });
+    lastSavedRef.current = JSON.stringify({
+      slot,
+      bpm: nextBpm,
+      lines: serializeLines(nextLines),
+      kit: nextKit,
+      customSamples: nextCustomSamples,
+    });
     setActiveSlot(slot);
     setArmedTile(null);
     setMovingFrom(null);
     resetLines(nextLines);
     setBpm(nextBpm);
+    setCustomSamples(nextCustomSamples);
+    playerRef.current?.clearCustomSamples();
+    if (Object.keys(nextCustomSamples).length > 0) playerRef.current?.loadCustomSamples(nextCustomSamples);
     if (nextKit !== kit) applyKit(nextKit);
   }
 
@@ -165,7 +194,7 @@ export function Editor({
   // needing an explicit save action.
   useEffect(() => {
     if (!board) return;
-    const payload = JSON.stringify({ slot: activeSlot, bpm, lines: serializeLines(lines), kit });
+    const payload = JSON.stringify({ slot: activeSlot, bpm, lines: serializeLines(lines), kit, customSamples });
     if (lastSavedRef.current === null) {
       lastSavedRef.current = payload;
       return;
@@ -187,7 +216,7 @@ export function Editor({
       }
     }, 800);
     return () => clearTimeout(handle);
-  }, [lines, bpm, kit, activeSlot, board]);
+  }, [lines, bpm, kit, customSamples, activeSlot, board]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -222,7 +251,7 @@ export function Editor({
     const loopSeconds = (60 / bpm) * measureLength;
     const loops = Math.max(4, Math.ceil(12 / loopSeconds));
 
-    const buffer = await renderSongToBuffer(lineStates, bpm, measureLength, loops, kit);
+    const buffer = await renderSongToBuffer(lineStates, bpm, measureLength, loops, kit, customSamples);
     const { encodeAudioBufferToMp3 } = await import("@/lib/mp3Encoder");
     const blob = encodeAudioBufferToMp3(buffer);
 
@@ -375,7 +404,7 @@ export function Editor({
             </p>
           ) : (
             <div className="mt-2">
-              <ClaimUrlBox bpm={bpm} lines={lines} kit={kit} />
+              <ClaimUrlBox bpm={bpm} lines={lines} kit={kit} customSamples={customSamples} />
             </div>
           )}
         </div>
@@ -400,6 +429,13 @@ export function Editor({
                   </button>
                 ))}
               </div>
+              <Link
+                href={`/${board.displayName}/stack`}
+                title="Arrange your beats into a longer song"
+                className="shrink-0 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
+              >
+                🧱 Stack Builder
+              </Link>
               <span className="w-12 shrink-0 text-xs text-white/40">
                 {saveStatus === "saving"
                   ? "Saving…"
@@ -454,6 +490,7 @@ export function Editor({
             bpm={bpm}
             lines={lines}
             kit={kit}
+            customSamples={customSamples}
             initialSlug={initialSlug}
             boardPath={board ? `/${board.displayName}` : undefined}
           />
@@ -497,7 +534,9 @@ export function Editor({
               kit={kit}
               kits={DRUM_KITS}
               onKitChange={applyKit}
-            />
+            >
+              {kit === "Fart" && <FartRecorder onRecorded={handleCustomSampleRecorded} />}
+            </Transport>
 
             <div className="flex flex-col gap-3">
               {lines.map((line) => (
