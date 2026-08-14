@@ -46,3 +46,25 @@ export const complaints = pgTable("complaints", {
   url: text("url").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export type SongImportStatus = "uploaded" | "processing" | "done" | "error";
+
+// Tracks one "turn a song into a RockBlocks beat" job: an uploaded MP3 run
+// through the Inngest pipeline (Replicate/Demucs drum-stem separation, then
+// onset-detection transcription) down to a single representative one-bar
+// pattern the owner can drop into a slot on their board. Row-per-job rather
+// than storing the result directly on `boards` since a job is transient
+// working state, not a saved beat, until the owner explicitly imports it.
+export const songImports = pgTable("song_imports", {
+  id: text("id").primaryKey(),
+  boardSlug: text("board_slug").notNull(),
+  status: text("status").$type<SongImportStatus>().notNull().default("uploaded"),
+  originalFilename: text("original_filename").notNull(),
+  blobUrl: text("blob_url").notNull(),
+  errorMessage: text("error_message"),
+  bpm: integer("bpm"),
+  measureLength: integer("measure_length"),
+  pattern: jsonb("pattern").$type<StoredLine[]>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
