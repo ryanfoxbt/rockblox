@@ -121,6 +121,14 @@ export function Editor({
       setSamplesLoading(false);
       if (Object.keys(customSamples).length > 0) playerRef.current?.loadCustomSamples(customSamples);
     });
+    // Tears the player (and its AudioContext + loop timer) down when this
+    // page goes away — otherwise navigating to the Stack Builder (a
+    // client-side route change that unmounts this component but not the
+    // page) left the still-looping beat audible underneath the new page.
+    return () => {
+      playerRef.current?.destroy();
+      playerRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

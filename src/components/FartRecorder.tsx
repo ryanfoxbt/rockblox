@@ -69,6 +69,10 @@ export function FartRecorder({
   }
 
   async function startRecording() {
+    // Guards against a double-fire on mobile (some browsers still dispatch a
+    // synthetic click after touchend), which would otherwise spin up a
+    // second getUserMedia stream and orphan the first recorder mid-flight.
+    if (status === "requesting" || status === "recording") return;
     setErrorMessage(null);
     setStatus("requesting");
     try {
@@ -79,13 +83,30 @@ export function FartRecorder({
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
+      recorder.onerror = () => {
+        stopStream();
+        clearStopTimer();
+        setErrorMessage("Recording failed partway through — give it another try.");
+        setStatus("error");
+      };
       recorder.onstop = async () => {
         stopStream();
-        const rawBlob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
-        const trimmedBlob = await trimRecordedTake(rawBlob);
-        takeRef.current = await trimmedBlob.arrayBuffer();
-        setPreviewUrl(URL.createObjectURL(trimmedBlob));
-        setStatus("recorded");
+        try {
+          if (chunksRef.current.length === 0) throw new Error("no audio captured");
+          const rawBlob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+          if (rawBlob.size === 0) throw new Error("empty recording");
+          const trimmedBlob = await trimRecordedTake(rawBlob);
+          takeRef.current = await trimmedBlob.arrayBuffer();
+          setPreviewUrl(URL.createObjectURL(trimmedBlob));
+          setStatus("recorded");
+        } catch {
+          // Some mobile browsers deliver a corrupt/empty take (or a format
+          // decodeAudioData can't parse) — without this catch the status
+          // stayed stuck on "recording" forever with no feedback, which is
+          // what made it look like recording "just didn't work".
+          setErrorMessage("That recording didn't come through clearly — try again.");
+          setStatus("error");
+        }
       };
       recorderRef.current = recorder;
       recorder.start();
@@ -102,7 +123,7 @@ export function FartRecorder({
 
   function stopRecording() {
     clearStopTimer();
-    recorderRef.current?.stop();
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
   }
 
   function reRecord() {

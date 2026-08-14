@@ -6,7 +6,7 @@ import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSe
 import { BoardData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
 import { computeMeasureLength, deserializeLines } from "@/lib/song";
 import { CustomSamples } from "@/lib/customSamples";
-import { DEFAULT_KIT } from "@/lib/drumKits";
+import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
 import { LineState } from "@/lib/audioEngine";
 import { StackPlayer, StackSlotSource, StackStepSource } from "@/lib/stackPlayer";
 import {
@@ -20,6 +20,7 @@ import {
 import { useIsMobile } from "@/lib/useIsMobile";
 import { StackPaletteBlock } from "./StackPaletteBlock";
 import { StackStepChip } from "./StackStepChip";
+import { StackSheetMusicView } from "./StackSheetMusicView";
 
 interface SlotInfo {
   lineStates: LineState[];
@@ -90,6 +91,13 @@ export function StackBuilder({ board }: { board: BoardData }) {
   const [rendering, setRendering] = useState(false);
   const [armedSlot, setArmedSlot] = useState<SlotLetter | null>(null);
   const [movingFrom, setMovingFrom] = useState<{ index: number; step: StackStep } | null>(null);
+  // Auto-on by default so people can jam along with the beat right away.
+  const [loop, setLoop] = useState(true);
+  const [showSheet, setShowSheet] = useState(false);
+  // When set, every step plays/exports through this one kit instead of its
+  // own saved kit — a stack-only override, so switching it never touches
+  // the individual beats' own kits on their page.
+  const [kitOverride, setKitOverride] = useState<string | null>(() => board.stack?.kitOverride ?? null);
 
   const playerRef = useRef<StackPlayer | null>(null);
   const lastSavedRef = useRef<string | null>(null);
@@ -103,19 +111,27 @@ export function StackBuilder({ board }: { board: BoardData }) {
   useEffect(() => {
     const player = new StackPlayer();
     playerRef.current = player;
+    return () => player.destroy();
+  }, []);
+
+  // (Re)loads every referenced slot's buffers whenever the beats themselves
+  // change or the kit override is toggled/changed — kitOverride, when set,
+  // replaces every step's own saved kit for playback/export here only.
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player) return;
+    setSamplesLoading(true);
     const sources: StackSlotSource[] = SLOT_LETTERS.filter((l) => !slotInfo[l].empty).map((l) => ({
       slot: l,
-      kit: slotInfo[l].kit,
-      customSamples: slotInfo[l].customSamples,
+      kit: kitOverride ?? slotInfo[l].kit,
+      customSamples: kitOverride ? undefined : slotInfo[l].customSamples,
     }));
     player.loadSlots(sources).then(() => setSamplesLoading(false));
-    return () => player.destroy();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [slotInfo, kitOverride]);
 
   // Autosave, same debounced-PUT-on-change pattern as the main editor's board autosave.
   useEffect(() => {
-    const payload = JSON.stringify({ bpm, steps });
+    const payload = JSON.stringify({ bpm, steps, kitOverride });
     if (lastSavedRef.current === null) {
       lastSavedRef.current = payload;
       return;
@@ -142,7 +158,7 @@ export function StackBuilder({ board }: { board: BoardData }) {
       }
     }, 800);
     return () => clearTimeout(handle);
-  }, [bpm, steps, board.slug]);
+  }, [bpm, steps, kitOverride, board.slug]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -245,6 +261,16 @@ export function StackBuilder({ board }: { board: BoardData }) {
     return steps.map((s) => ({ slot: s.slot, lines: slotInfo[s.slot].lineStates, measureLength: slotInfo[s.slot].measureLength }));
   }
 
+  const sheetSteps = useMemo(
+    () =>
+      steps.map((s) => ({
+        slot: s.slot,
+        lines: slotInfo[s.slot].lineStates,
+        measureLength: slotInfo[s.slot].measureLength,
+      })),
+    [steps, slotInfo]
+  );
+
   async function togglePlay() {
     if (!playerRef.current) return;
     if (playerRef.current.isPlaying()) {
@@ -253,8 +279,13 @@ export function StackBuilder({ board }: { board: BoardData }) {
       setProgress(null);
       return;
     }
-    await playerRef.current.play(buildStepSources(), bpm);
+    await playerRef.current.play(buildStepSources(), bpm, loop);
     setIsPlaying(true);
+  }
+
+  function handleToggleLoop(next: boolean) {
+    setLoop(next);
+    playerRef.current?.setLoop(next);
   }
 
   async function handleDownloadMp3() {
@@ -273,6 +304,18 @@ export function StackBuilder({ board }: { board: BoardData }) {
     } finally {
       setRendering(false);
     }
+  }
+
+  async function handleDownloadMidi() {
+    if (steps.length === 0) return;
+    const { encodeStackToMidi } = await import("@/lib/midiEncoder");
+    const blob = encodeStackToMidi(buildStepSources(), bpm);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${board.displayName}-stack.mid`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   const playDisabled = samplesLoading || steps.length === 0;
@@ -297,6 +340,17 @@ export function StackBuilder({ board }: { board: BoardData }) {
           {saveStatus === "saving" ? "Saving…" : saveStatus === "error" ? "Error" : saveStatus === "saved" ? "Saved" : ""}
         </span>
       </header>
+
+      {showSheet && (
+        <StackSheetMusicView
+          steps={sheetSteps}
+          bpm={bpm}
+          isPlaying={isPlaying}
+          progress={progress}
+          onTogglePlay={togglePlay}
+          onClose={() => setShowSheet(false)}
+        />
+      )}
 
       <DndContext id="stack-dnd" sensors={sensors} onDragEnd={handleDragEnd}>
         <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -326,6 +380,54 @@ export function StackBuilder({ board }: { board: BoardData }) {
               <span className="w-16 text-sm text-white/80">{bpm} BPM</span>
             </div>
 
+            <label className="flex items-center gap-1.5 text-sm text-white/60">
+              <input
+                type="checkbox"
+                checked={loop}
+                onChange={(e) => handleToggleLoop(e.target.checked)}
+                className="accent-yellow-400"
+              />
+              Loop
+            </label>
+
+            <div className="flex items-center gap-2">
+              <label
+                className="flex items-center gap-1.5 text-sm text-white/60"
+                title="Plays and exports every beat through one kit here, without changing what each beat is saved with on its own page"
+              >
+                <input
+                  type="checkbox"
+                  checked={kitOverride !== null}
+                  onChange={(e) => setKitOverride(e.target.checked ? kitOverride ?? DEFAULT_KIT : null)}
+                  className="accent-yellow-400"
+                />
+                Same kit for all
+              </label>
+              {kitOverride !== null && (
+                <select
+                  value={kitOverride}
+                  onChange={(e) => setKitOverride(e.target.value)}
+                  className="rounded-md border border-white/10 bg-slate-800 px-2 py-1.5 text-sm text-white"
+                >
+                  {DRUM_KITS.map((k) => (
+                    <option key={k} value={k}>
+                      {k}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowSheet(true)}
+              disabled={playDisabled}
+              title="View sheet music"
+              className="rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+            >
+              🎼 Sheet music
+            </button>
+
             <button
               type="button"
               onClick={handleDownloadMp3}
@@ -333,6 +435,15 @@ export function StackBuilder({ board }: { board: BoardData }) {
               className="rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
             >
               {rendering ? "Rendering…" : "Download MP3"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadMidi}
+              disabled={playDisabled}
+              className="rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+            >
+              Download MIDI
             </button>
 
             <span className="text-sm text-white/50">

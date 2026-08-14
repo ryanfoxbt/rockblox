@@ -1,9 +1,17 @@
 import type * as VexflowModule from "vexflow";
 import { InstrumentId } from "./instruments";
-import { NoteName, NOTE_FRACTION } from "./rhythm";
-import { LineData } from "./song";
+import { NoteName, NOTE_FRACTION, RhythmTile } from "./rhythm";
 
 export type VF = typeof VexflowModule;
+
+// Structural rather than importing LineData directly, so callers can pass
+// either the editor's LineData (which carries an id) or a Stack Builder
+// slot's plain LineState — both shapes work here since only these two
+// fields are read.
+export interface NotationLine {
+  instrument: InstrumentId;
+  blocks: (RhythmTile | null)[];
+}
 
 interface StaffPosition {
   key: string;
@@ -88,21 +96,22 @@ interface Segment {
   instruments: InstrumentId[] | null;
 }
 
-export function renderNotation(
+// Draws one measure's worth of stave/voice/beams/tuplets at the given
+// vertical offset, and returns the per-beat X boundaries needed to position
+// a playhead highlight over it. Shared by the single-measure view
+// (renderNotation) and the Stack Builder's multi-measure view
+// (renderStackNotation), which draws one of these per song step, stacked
+// vertically, at one shared tempo.
+function drawStave(
   VF: VF,
-  container: HTMLDivElement,
-  lines: LineData[],
+  context: ReturnType<VF["Renderer"]["prototype"]["getContext"]>,
+  y: number,
+  lines: NotationLine[],
   measureLength: number,
   width: number
 ): NotationLayout {
-  container.innerHTML = "";
-
-  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
-  renderer.resize(width, CANVAS_HEIGHT);
-  const context = renderer.getContext();
-
   const staveWidth = Math.max(width - STAVE_MARGIN_X * 2, 200);
-  const stave = new VF.Stave(STAVE_MARGIN_X, STAVE_Y, staveWidth);
+  const stave = new VF.Stave(STAVE_MARGIN_X, y, staveWidth);
   stave.addClef("percussion");
   stave.addTimeSignature(`${measureLength}/4`);
   stave.setContext(context).draw();
@@ -253,7 +262,61 @@ export function renderNotation(
 
   return {
     beatBoundariesX,
-    staveTopY: STAVE_Y - 60,
-    staveBottomY: STAVE_Y + 60,
+    staveTopY: y - 60,
+    staveBottomY: y + 60,
   };
+}
+
+export function renderNotation(
+  VF: VF,
+  container: HTMLDivElement,
+  lines: NotationLine[],
+  measureLength: number,
+  width: number
+): NotationLayout {
+  container.innerHTML = "";
+  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+  renderer.resize(width, CANVAS_HEIGHT);
+  const context = renderer.getContext();
+  return drawStave(VF, context, STAVE_Y, lines, measureLength, width);
+}
+
+export interface StackNotationStep {
+  lines: NotationLine[];
+  measureLength: number;
+}
+
+export interface StackNotationLayout {
+  // One entry per step, in song order — each step's own beat boundaries
+  // (for playhead highlighting) plus the stave's Y band on the shared canvas.
+  steps: NotationLayout[];
+}
+
+// Exported so callers (Stack Builder's paginated sheet-music view) can work
+// out how many staves fit in a given pixel height before ever calling
+// renderStackNotation, instead of guessing and overflowing the page.
+export const STACK_STAVE_SPACING = CANVAS_HEIGHT - 60;
+
+// Draws every step's measure as its own stave, stacked vertically in song
+// order — Stack Builder plays steps sequentially rather than as one
+// combined measure, so the sheet music mirrors that instead of trying to
+// force mismatched time signatures into a single staff.
+export function renderStackNotation(
+  VF: VF,
+  container: HTMLDivElement,
+  steps: StackNotationStep[],
+  width: number
+): StackNotationLayout {
+  container.innerHTML = "";
+  const totalHeight = Math.max(1, steps.length) * STACK_STAVE_SPACING + 60;
+  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+  renderer.resize(width, totalHeight);
+  const context = renderer.getContext();
+
+  const layouts = steps.map((step, i) => {
+    const y = STAVE_Y + i * STACK_STAVE_SPACING;
+    return drawStave(VF, context, y, step.lines, step.measureLength, width);
+  });
+
+  return { steps: layouts };
 }

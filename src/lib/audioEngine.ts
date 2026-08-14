@@ -238,6 +238,51 @@ export class RockBloxPlayer {
       this.baseBuffers = buffers;
       this.recomputeBuffers();
     });
+    document.addEventListener("visibilitychange", this.handleVisibilityChange);
+  }
+
+  // Mobile browsers throttle or fully freeze this timer-driven lookahead
+  // scheduler while the tab/app is backgrounded (and may suspend the
+  // AudioContext outright). Left alone, the single pending setTimeout fires
+  // once execution resumes with `nextLoopTime` far in the past, which then
+  // schedules a burst of notes at/behind "now" and keeps re-firing near-
+  // instantly until it catches up — heard as a garbled flurry of hits. On
+  // returning to the foreground we instead resume the context and re-derive
+  // the next loop boundary from the real elapsed time, preserving the beat's
+  // original phase instead of replaying the backlog.
+  private handleVisibilityChange = () => {
+    if (document.visibilityState !== "visible" || !this.playing) return;
+    void this.resyncAfterGap();
+  };
+
+  private async resyncAfterGap() {
+    if (this.ctx.state === "suspended") {
+      try {
+        await this.ctx.resume();
+      } catch {
+        // Will retry resuming on the next play() or visibility change.
+      }
+    }
+    if (!this.playing) return;
+    if (this.timerId !== null) {
+      window.clearTimeout(this.timerId);
+      this.timerId = null;
+    }
+    if (this.currentLoopDuration > 0) {
+      const target = this.ctx.currentTime + LOOKAHEAD_SECONDS;
+      const loopsElapsed = Math.max(0, Math.ceil((target - this.currentLoopStart) / this.currentLoopDuration));
+      this.nextLoopTime = this.currentLoopStart + loopsElapsed * this.currentLoopDuration;
+    } else {
+      this.nextLoopTime = this.ctx.currentTime + 0.1;
+    }
+    this.scheduleLoopAndNext();
+  }
+
+  /** Stops playback and releases the AudioContext — call when this player will no longer be used (e.g. its owning component unmounts). */
+  destroy(): void {
+    this.stop();
+    document.removeEventListener("visibilitychange", this.handleVisibilityChange);
+    this.ctx.close().catch(() => {});
   }
 
   // Layers any recorded takes (currently Fart-kit-only) onto the freshly
