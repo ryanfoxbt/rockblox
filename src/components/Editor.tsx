@@ -18,7 +18,6 @@ import { SaveShare } from "@/components/SaveShare";
 import { SheetMusicView } from "@/components/SheetMusicView";
 import { TileVisual } from "@/components/TileVisual";
 import { FartRecorder } from "@/components/FartRecorder";
-import { SongImportButton } from "@/components/SongImportButton";
 import { RhythmTile, toggleHitRest } from "@/lib/rhythm";
 import { InstrumentId } from "@/lib/instruments";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -445,7 +444,8 @@ export function Editor({
               >
                 🧱 Stack Builder
               </Link>
-              <SongImportButton boardSlug={board.slug} boardDisplayName={board.displayName} />
+              {/* Song import is temporarily hidden from the UI — see SongImportButton.tsx; the
+                  upload/transcribe/import API routes are untouched, just not linked to from here. */}
               <span className="w-12 shrink-0 text-xs text-white/40">
                 {saveStatus === "saving"
                   ? "Saving…"
