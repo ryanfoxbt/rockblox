@@ -3,7 +3,7 @@ import { SAMPLE_URL as ACOUSTIC_SAMPLE_URL } from "./drumSamples";
 
 export const DRUM_KITS = ["Acoustic", "TR-808", "Casio-RZ1", "LM-2", "MFB-512", "Roland CR-8000", "Fart"] as const;
 export type DrumKit = (typeof DRUM_KITS)[number];
-export const DEFAULT_KIT: DrumKit = "Acoustic";
+export const DEFAULT_KIT: DrumKit = "MFB-512";
 
 // "Fart" isn't sample-backed at all — it's synthesized in audioEngine.ts —
 // so it's excluded from the sample-based machine kits below.
