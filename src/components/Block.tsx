@@ -87,6 +87,7 @@ export function Block({
           {!isMobile && (
             <button
               type="button"
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 onPickUp();
@@ -111,6 +112,7 @@ export function Block({
           )}
           <button
             type="button"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               onClear();

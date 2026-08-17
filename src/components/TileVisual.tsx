@@ -35,6 +35,13 @@ export function TileVisual({
           <button
             key={i}
             type="button"
+            // The parent Block is itself a dnd-kit draggable (see Block.tsx),
+            // with its drag listeners bound to pointerdown on the whole
+            // container — without stopping propagation here, a click on this
+            // button starts out as a pointerdown the drag sensor sees first,
+            // so it can hijack the click into a phantom drag-and-drop instead
+            // of a clean toggle of just this one hit.
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={() => onToggleHit(i)}
             title={isRest ? "Rest — tap to sound this hit" : "Tap to turn this hit into a rest"}
             className="h-full border-r border-black/20 transition last:border-r-0 hover:brightness-90"
