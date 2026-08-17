@@ -19,6 +19,7 @@ import { SheetMusicView } from "@/components/SheetMusicView";
 import { TileVisual } from "@/components/TileVisual";
 import { FartRecorder } from "@/components/FartRecorder";
 import { RhythmTile, toggleHitRest } from "@/lib/rhythm";
+import { generateRandomBeat } from "@/lib/randomBeat";
 import { InstrumentId } from "@/lib/instruments";
 import { useIsMobile } from "@/lib/useIsMobile";
 import {
@@ -386,6 +387,10 @@ export function Editor({
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, instrument } : l)));
   }
 
+  function randomizeBeat() {
+    setLines(generateRandomBeat());
+  }
+
   function clearBlock(id: string, index: number) {
     setLines((prev) =>
       prev.map((l) =>
@@ -480,6 +485,14 @@ export function Editor({
               <path d="m15 8 5 4-5 4" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M20 12H9a5 5 0 0 0 0 10h1" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
+          </button>
+          <button
+            type="button"
+            onClick={randomizeBeat}
+            title="Randomize this beat — new instruments, length, and rhythms"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-base text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+          >
+            🎲
           </button>
           <button
             type="button"
