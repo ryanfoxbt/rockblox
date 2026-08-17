@@ -194,7 +194,11 @@ export function transcribeDrums(wavBuffer: Buffer): TranscribedSong {
 
   const beatPoolIndices = interiorIndices.filter((i) => i !== fillIndex);
   const clusters = clusterBeatBars(bars, beatPoolIndices);
-  const fallbackCymbalHits = findFallbackCymbalHits(bars, beatPoolIndices);
+  const fallback: CoreFallbacks = {
+    kick: findFallbackHits(bars, beatPoolIndices, "kick"),
+    snare: findFallbackHits(bars, beatPoolIndices, "snare"),
+    cymbal: findFallbackCymbalHits(bars, beatPoolIndices),
+  };
 
   if (process.env.DEBUG_TRANSCRIBE) {
     debugDump({ mono, onsetTimes, features, bpm, gridOrigin, bars, interiorIndices, fillIndex, clusters, tomDecay });
@@ -204,7 +208,7 @@ export function transcribeDrums(wavBuffer: Buffer): TranscribedSong {
   clusters.sort((a, b) => a.medoidIndex - b.medoidIndex);
 
   const [patternA, patternB, patternC] = [0, 1, 2].map((i) =>
-    clusters[i] ? renderBeatPattern(bars, clusters[i], fallbackCymbalHits) : null
+    clusters[i] ? renderBeatPattern(bars, clusters[i], fallback) : null
   );
 
   const diagnostics: TranscribeDiagnostics = {
@@ -789,12 +793,49 @@ function clusterBeatBars(bars: BarHit[][], candidateIndices: number[], maxCluste
   return clusters;
 }
 
-// A cymbal slot only has to show up in this fraction of the cluster's repeats
-// to make it into the rendered pattern. Onset detection/classification is
-// noisy hit-to-hit, so trusting only the one medoid bar's own cymbal hits
-// routinely dropped a real, steady hi-hat pattern just because that specific
-// repeat happened to miss one or two hits that every other repeat has.
-const CYMBAL_SLOT_VOTE_FRACTION = 0.34;
+// A hit only has to show up in this fraction of a cluster's repeats to make
+// it into the rendered pattern. Onset detection/classification is noisy
+// hit-to-hit, so trusting only the one medoid bar's own hits — for kick/snare
+// just as much as cymbal — routinely dropped a real, steady part of the
+// groove just because that specific repeat happened to miss a hit every
+// other repeat has. Pooling across every repeat rather than one bar is also
+// what "listen to more of the song" means for this pipeline: there's no
+// per-pattern audio window to widen (a pattern is one bar by construction),
+// so more context comes from voting across all of that groove's occurrences
+// instead of trusting a single one.
+const HIT_SLOT_VOTE_FRACTION = 0.34;
+
+// Which sixteenth-note slots a given instrument plays on within a cluster,
+// pooled across every repeat rather than trusting just the medoid bar.
+function votedSlotsForInstrument(bars: BarHit[][], cluster: BeatCluster, instrument: InstrumentId): Set<number> {
+  const slotVotes = new Map<number, number>();
+  for (const idx of cluster.memberIndices) {
+    const slotsSeenInThisBar = new Set<number>();
+    for (const hit of bars[idx]) {
+      if (hit.instrument !== instrument) continue;
+      if (!slotsSeenInThisBar.has(hit.slot)) {
+        slotsSeenInThisBar.add(hit.slot);
+        slotVotes.set(hit.slot, (slotVotes.get(hit.slot) ?? 0) + 1);
+      }
+    }
+  }
+  const slotThreshold = Math.max(1, Math.ceil(cluster.memberIndices.length * HIT_SLOT_VOTE_FRACTION));
+  const slots = new Set<number>();
+  for (const [slot, count] of slotVotes) {
+    if (count >= slotThreshold) slots.add(slot);
+  }
+  return slots;
+}
+
+// Kick or snare's voted slots for a cluster, falling back to the medoid
+// bar's own hits (unthresholded) if voting leaves nothing — e.g. a short
+// cluster where repeats disagree enough that no slot clears the threshold.
+// Never drops the instrument outright just because voting was strict.
+function coreHitsForCluster(bars: BarHit[][], cluster: BeatCluster, instrument: InstrumentId): BarHit[] {
+  const voted = votedSlotsForInstrument(bars, cluster, instrument);
+  if (voted.size > 0) return [...voted].map((slot) => ({ slot, instrument }));
+  return bars[cluster.medoidIndex].filter((h) => h.instrument === instrument);
+}
 
 // Which single cymbal voice a cluster favors, and which sixteenth-note slots
 // it plays on — pooled across every repeat rather than trusting just the
@@ -803,16 +844,10 @@ const CYMBAL_SLOT_VOTE_FRACTION = 0.34;
 // covers that case).
 function cymbalHitsForCluster(bars: BarHit[][], cluster: BeatCluster): BarHit[] | null {
   const instrumentVotes = new Map<InstrumentId, number>();
-  const slotVotes = new Map<number, number>();
   for (const idx of cluster.memberIndices) {
-    const slotsSeenInThisBar = new Set<number>();
     for (const hit of bars[idx]) {
       if (!CYMBAL_VOICES.includes(hit.instrument)) continue;
       instrumentVotes.set(hit.instrument, (instrumentVotes.get(hit.instrument) ?? 0) + 1);
-      if (!slotsSeenInThisBar.has(hit.slot)) {
-        slotsSeenInThisBar.add(hit.slot);
-        slotVotes.set(hit.slot, (slotVotes.get(hit.slot) ?? 0) + 1);
-      }
     }
   }
   if (instrumentVotes.size === 0) return null;
@@ -829,12 +864,8 @@ function cymbalHitsForCluster(bars: BarHit[][], cluster: BeatCluster): BarHit[] 
     }
   }
 
-  const slotThreshold = Math.max(1, Math.ceil(cluster.memberIndices.length * CYMBAL_SLOT_VOTE_FRACTION));
-  const cymbalHits: BarHit[] = [];
-  for (const [slot, count] of slotVotes) {
-    if (count >= slotThreshold) cymbalHits.push({ slot, instrument: cymbalVoice });
-  }
-  return cymbalHits;
+  const slots = votedSlotsForInstrument(bars, cluster, cymbalVoice);
+  return [...slots].map((slot) => ({ slot, instrument: cymbalVoice }));
 }
 
 // The default cymbal voice for a main beat that has no cymbal-family hits
@@ -843,6 +874,20 @@ function cymbalHitsForCluster(bars: BarHit[][], cluster: BeatCluster): BarHit[] 
 // keep time with rather than being left with just kick+snare.
 function defaultCymbalHits(): BarHit[] {
   return [0, 4, 8, 12].map((slot) => ({ slot, instrument: "hihatClosed" as InstrumentId }));
+}
+
+// A whole-song fallback pattern for kick or snare — the most consistent
+// recurring bar elsewhere in the song that actually has this instrument —
+// for any main beat whose own cluster has none at all. Unlike the cymbal
+// fallback above, this has no synthetic last resort: a groove missing kick
+// or snare entirely is often a real musical choice (a stripped-down section,
+// a breakdown), not just a detection gap, so if nothing in the whole song
+// has this instrument either, it's left out rather than invented.
+function findFallbackHits(bars: BarHit[][], candidateIndices: number[], instrument: InstrumentId): BarHit[] {
+  const candidates = candidateIndices.filter((i) => bars[i].some((h) => h.instrument === instrument));
+  if (candidates.length === 0) return [];
+  const [cluster] = clusterBeatBars(bars, candidates, 1);
+  return cluster ? coreHitsForCluster(bars, cluster, instrument) : [];
 }
 
 // A whole-song fallback cymbal voice+pattern, for any main beat whose own
@@ -866,17 +911,23 @@ function findFallbackCymbalHits(bars: BarHit[][], candidateIndices: number[]): B
   return defaultCymbalHits();
 }
 
-function renderBeatPattern(bars: BarHit[][], cluster: BeatCluster, fallbackCymbalHits: BarHit[]): StoredLine[] {
+interface CoreFallbacks {
+  kick: BarHit[];
+  snare: BarHit[];
+  cymbal: BarHit[];
+}
+
+function renderBeatPattern(bars: BarHit[][], cluster: BeatCluster, fallback: CoreFallbacks): StoredLine[] {
   const ownCymbalHits = cymbalHitsForCluster(bars, cluster);
-  const cymbalHits = ownCymbalHits && ownCymbalHits.length > 0 ? ownCymbalHits : fallbackCymbalHits;
+  const cymbalHits = ownCymbalHits && ownCymbalHits.length > 0 ? ownCymbalHits : fallback.cymbal;
 
-  // Kick/snare rhythm still comes from the medoid bar — that's the single
-  // repeat most representative of the groove as a whole.
-  const nonCymbalHits = bars[cluster.medoidIndex].filter(
-    (hit) => BEAT_INSTRUMENTS.includes(hit.instrument) && !CYMBAL_VOICES.includes(hit.instrument)
-  );
+  const ownKickHits = coreHitsForCluster(bars, cluster, "kick");
+  const kickHits = ownKickHits.length > 0 ? ownKickHits : fallback.kick;
 
-  return barToStoredLines([...nonCymbalHits, ...cymbalHits], BEAT_INSTRUMENT_ORDER);
+  const ownSnareHits = coreHitsForCluster(bars, cluster, "snare");
+  const snareHits = ownSnareHits.length > 0 ? ownSnareHits : fallback.snare;
+
+  return barToStoredLines([...kickHits, ...snareHits, ...cymbalHits], BEAT_INSTRUMENT_ORDER);
 }
 
 function barToStoredLines(bar: BarHit[], instrumentOrder: InstrumentId[]): StoredLine[] {
