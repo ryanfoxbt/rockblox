@@ -19,6 +19,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     errorMessage: row.errorMessage,
     bpm: row.bpm,
     measureLength: row.measureLength,
-    pattern: row.pattern,
+    patternA: row.patternA,
+    patternB: row.patternB,
+    patternC: row.patternC,
+    patternD: row.patternD,
   });
 }

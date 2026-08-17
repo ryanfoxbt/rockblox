@@ -2,6 +2,7 @@ import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import type { BoardSlotData } from "@/lib/board";
 import type { CustomSamples } from "@/lib/customSamples";
 import type { StackArrangement } from "@/lib/stack";
+import type { TranscribeDiagnostics } from "@/lib/transcribeDrums";
 
 export interface StoredLine {
   instrument: string;
@@ -51,10 +52,11 @@ export type SongImportStatus = "uploaded" | "processing" | "done" | "error";
 
 // Tracks one "turn a song into a RockBlocks beat" job: an uploaded MP3 run
 // through the Inngest pipeline (Replicate/Demucs drum-stem separation, then
-// onset-detection transcription) down to a single representative one-bar
-// pattern the owner can drop into a slot on their board. Row-per-job rather
-// than storing the result directly on `boards` since a job is transient
-// working state, not a saved beat, until the owner explicitly imports it.
+// onset-detection transcription) down to up to four patterns the owner can
+// drop into their board's slots — three main grooves (patternA/B/C) plus one
+// fill (patternD). Row-per-job rather than storing the result directly on
+// `boards` since a job is transient working state, not a saved beat, until
+// the owner explicitly imports it.
 export const songImports = pgTable("song_imports", {
   id: text("id").primaryKey(),
   boardSlug: text("board_slug").notNull(),
@@ -64,7 +66,15 @@ export const songImports = pgTable("song_imports", {
   errorMessage: text("error_message"),
   bpm: integer("bpm"),
   measureLength: integer("measure_length"),
-  pattern: jsonb("pattern").$type<StoredLine[]>(),
+  patternA: jsonb("pattern_a").$type<StoredLine[]>(),
+  patternB: jsonb("pattern_b").$type<StoredLine[]>(),
+  patternC: jsonb("pattern_c").$type<StoredLine[]>(),
+  patternD: jsonb("pattern_d").$type<StoredLine[]>(),
+  // Per-pattern source timestamp (seconds into the song) and instrument list
+  // — while the transcription pipeline is still being tuned, this is what
+  // lets a human jump to the exact part of the song each pattern came from
+  // and judge accuracy by ear, without digging through logs.
+  diagnostics: jsonb("diagnostics").$type<TranscribeDiagnostics>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

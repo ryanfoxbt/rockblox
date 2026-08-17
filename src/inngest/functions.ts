@@ -8,10 +8,10 @@ import { transcribeDrums } from "@/lib/transcribeDrums";
 import { SongImportRequestedData, inngest } from "./client";
 
 // One durable job: fetch the uploaded song, isolate its drums (Replicate/
-// Demucs), transcribe a representative bar, and save the result — each step
-// retried independently by Inngest rather than the whole pipeline re-running
-// on a transient blip. See lib/transcribeDrums.ts for why this is a
-// best-effort heuristic pipeline rather than a trained model.
+// Demucs), transcribe up to three main grooves plus a fill, and save the
+// result — each step retried independently by Inngest rather than the whole
+// pipeline re-running on a transient blip. See lib/transcribeDrums.ts for why
+// this is a best-effort heuristic pipeline rather than a trained model.
 export const importSong = inngest.createFunction(
   { id: "song-import", retries: 1, triggers: [{ event: "song/import.requested" }] },
   async ({ event, step }) => {
@@ -42,6 +42,17 @@ export const importSong = inngest.createFunction(
         return transcribeDrums(drumsWav);
       });
 
+      // While the transcription pipeline is still being tuned: log what each
+      // real upload actually produced, including where in the song (seconds)
+      // each detected pattern came from, so it can be checked against the
+      // original song by ear without re-running anything locally. Wrapped in
+      // its own step so it logs exactly once rather than on every replay.
+      await step.run("log-diagnostics", async () => {
+        console.log(
+          `[song-import] "${row.originalFilename}" -> ${JSON.stringify({ bpm: result.bpm, ...result.diagnostics })}`
+        );
+      });
+
       await step.run("save-result", async () => {
         const db = getDb();
         await db
@@ -50,7 +61,11 @@ export const importSong = inngest.createFunction(
             status: "done",
             bpm: result.bpm,
             measureLength: result.measureLength,
-            pattern: result.lines,
+            patternA: result.patternA,
+            patternB: result.patternB,
+            patternC: result.patternC,
+            patternD: result.patternD,
+            diagnostics: result.diagnostics,
             updatedAt: new Date(),
           })
           .where(eq(songImports.id, importId));

@@ -13,6 +13,10 @@
 # testing
 /coverage
 
+# local test audio (not for the repo)
+/mp3s
+/mp3s-analysis
+
 # next.js
 /.next/
 /out/

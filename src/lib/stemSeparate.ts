@@ -19,9 +19,9 @@ export async function separateDrumStem(audio: Buffer): Promise<Buffer> {
     },
   });
 
-  // With `stem` set, the model returns a single file rather than the
-  // four-stem object it'd return with `stem: "none"`.
-  const file = Array.isArray(output) ? output[0] : output;
+  // Even with `stem: "drums"` set, the model returns a `{ drums, no_drums }`
+  // object (not a bare file) — the isolated stem we want is `drums`.
+  const file = (output as { drums?: unknown } | null)?.drums;
   if (!file || typeof (file as { blob?: unknown }).blob !== "function") {
     throw new Error("Unexpected Demucs output shape from Replicate");
   }

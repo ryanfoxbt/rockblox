@@ -6,22 +6,32 @@ import { DEFAULT_KIT } from "@/lib/drumKits";
 
 type Phase = "idle" | "uploading" | "processing" | "done" | "error";
 
+type DetectedPattern = { instrument: string; blocks: (string | null)[]; volume?: number }[];
+
 interface ImportStatus {
   status: "uploaded" | "processing" | "done" | "error";
   errorMessage: string | null;
   bpm: number | null;
   measureLength: number | null;
-  pattern: { instrument: string; blocks: (string | null)[]; volume?: number }[] | null;
+  patternA: DetectedPattern | null;
+  patternB: DetectedPattern | null;
+  patternC: DetectedPattern | null;
+  patternD: DetectedPattern | null;
 }
 
 const POLL_INTERVAL_MS = 3000;
 
-// Stage 1 of "turn a song into a beat": upload an MP3, run it through the
-// Replicate/Demucs + heuristic-transcription pipeline (see
-// src/inngest/functions.ts), and land the one representative pattern it
-// finds straight into Slot A. Picking which slot, reviewing multiple
-// detected sections, etc. is deliberately out of scope until this core
-// pipeline's transcription quality has been validated on real songs.
+const SLOTS: { key: "patternA" | "patternB" | "patternC" | "patternD"; slot: "A" | "B" | "C" | "D"; label: string }[] = [
+  { key: "patternA", slot: "A", label: "Main beat 1" },
+  { key: "patternB", slot: "B", label: "Main beat 2" },
+  { key: "patternC", slot: "C", label: "Main beat 3" },
+  { key: "patternD", slot: "D", label: "Fill" },
+];
+
+// Upload an MP3, run it through the Replicate/Demucs + heuristic-
+// transcription pipeline (see src/inngest/functions.ts), and land what it
+// finds into Slots A-D: three main grooves (built from kick/snare/hi-hat/ride
+// only, one steady cymbal voice per groove) plus one fill (whole kit).
 export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: string; boardDisplayName: string }) {
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -105,15 +115,21 @@ export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: s
 
   useEffect(() => clearPoll, []);
 
-  async function saveToSlotA() {
-    if (!result?.pattern || result.bpm == null) return;
-    const res = await fetch(`/api/boards/${boardSlug}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slot: "A", bpm: result.bpm, lines: result.pattern, kit: DEFAULT_KIT }),
-    });
-    if (res.ok) setSaved(true);
-    else setErrorMessage("Couldn't save the pattern to Slot A — try again.");
+  async function saveAll() {
+    if (!result || result.bpm == null) return;
+    const toSave = SLOTS.filter((s) => result[s.key]);
+    if (toSave.length === 0) return;
+    const responses = await Promise.all(
+      toSave.map((s) =>
+        fetch(`/api/boards/${boardSlug}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slot: s.slot, bpm: result.bpm, lines: result[s.key], kit: DEFAULT_KIT }),
+        })
+      )
+    );
+    if (responses.every((r) => r.ok)) setSaved(true);
+    else setErrorMessage("Couldn't save one or more slots — try again.");
   }
 
   return (
@@ -121,7 +137,7 @@ export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: s
       <button
         type="button"
         onClick={() => setOpen(true)}
-        title="Transcribe a song's drums into a beat"
+        title="Transcribe a song's drums into 3 main beats + a fill"
         className="shrink-0 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
       >
         🎧 Import a song
@@ -146,10 +162,11 @@ export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: s
             </div>
 
             <p className="mb-3 text-xs text-white/50">
-              Upload an MP3 and I&apos;ll isolate the drums, transcribe a representative bar, and drop it into{" "}
-              <span className="font-mono text-yellow-400">Slot A</span> on <span className="font-mono">/{boardDisplayName}</span>.
-              This is a best-effort auto-transcription — expect to touch it up in the editor afterward, especially on busy
-              fills or heavily processed kits. Saving overwrites whatever is currently in Slot A.
+              Upload an MP3 and I&apos;ll isolate the drums, find its 3 main grooves (kick/snare/hi-hat/ride) and one
+              fill (whole kit), and drop them into <span className="font-mono text-yellow-400">Slots A-D</span> on{" "}
+              <span className="font-mono">/{boardDisplayName}</span>. This is a best-effort auto-transcription — expect
+              to touch it up in the editor afterward, especially on busy fills or heavily processed kits. Saving
+              overwrites whatever is currently in those slots.
             </p>
 
             {phase === "idle" && (
@@ -187,7 +204,7 @@ export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: s
               <div className="flex flex-col items-center gap-2 py-6">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-yellow-400" />
                 <p className="text-xs text-white/50">
-                  Separating drums and transcribing a pattern — this usually takes under a minute…
+                  Separating drums and finding the main beats and fill — this usually takes under a minute…
                 </p>
               </div>
             )}
@@ -211,13 +228,31 @@ export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: s
             {phase === "done" && result && (
               <div className="flex flex-col gap-3 py-2">
                 <p className="text-sm text-white/80">
-                  Detected ~<span className="font-bold text-yellow-400">{result.bpm} BPM</span>,{" "}
-                  {result.pattern?.length ?? 0} instrument{result.pattern?.length === 1 ? "" : "s"} in the
-                  representative bar.
+                  Detected ~<span className="font-bold text-yellow-400">{result.bpm} BPM</span>.
                 </p>
+                <ul className="flex flex-col gap-1.5">
+                  {SLOTS.map(({ key, slot, label }) => {
+                    const pattern = result[key];
+                    return (
+                      <li
+                        key={slot}
+                        className="flex items-center justify-between rounded-md border border-white/10 px-3 py-1.5 text-sm"
+                      >
+                        <span className="text-white/80">
+                          <span className="font-mono text-yellow-400">Slot {slot}</span> — {label}
+                        </span>
+                        <span className="text-white/50">
+                          {pattern
+                            ? `${pattern.length} instrument${pattern.length === 1 ? "" : "s"}`
+                            : "not detected"}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
                 {saved ? (
                   <div className="flex flex-col gap-2">
-                    <p className="text-sm text-yellow-400">Saved to Slot A.</p>
+                    <p className="text-sm text-yellow-400">Saved.</p>
                     <button
                       type="button"
                       onClick={() => window.location.reload()}
@@ -229,10 +264,10 @@ export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: s
                 ) : (
                   <button
                     type="button"
-                    onClick={saveToSlotA}
+                    onClick={saveAll}
                     className="self-start rounded-full bg-yellow-400 px-4 py-1.5 text-sm font-bold text-slate-900 transition hover:bg-yellow-300"
                   >
-                    Save to Slot A
+                    Save to Slots A-D
                   </button>
                 )}
               </div>
