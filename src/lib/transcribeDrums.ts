@@ -1,13 +1,16 @@
 // Turns an isolated drums-stem WAV (from Replicate/Demucs, see stemSeparate.ts)
-// into up to four RockBlocks patterns: three main grooves (the recurring
-// beats a song is built from) and one fill (the off-the-groove bar that
-// breaks up a section, usually on toms and/or a crash).
+// into up to four RockBlocks patterns filling Slots A-D: as many *real*,
+// recurring main grooves as the song actually has (1-3 — never padded out to
+// a fixed number), plus fills in whatever slots are left over. A song with
+// one steady beat gets one groove and up to three fills; a song that
+// genuinely alternates between three distinct grooves gets three and one
+// fill, same as before.
 //
 // There's no off-the-shelf hosted "audio -> drum notes" API, so this is a
 // hand-rolled, best-effort pipeline: spectral-flux onset detection, tempo by
 // autocorrelating the onset train, a frequency-band + decay-shape heuristic
 // to classify each hit, then bar-grouping + clustering to separate "the
-// groove(s)" from "the fill." It'll nail simple, punchy songs and struggle
+// groove(s)" from "the fill(s)." It'll nail simple, punchy songs and struggle
 // with busy fills, ghost notes, or heavily processed kits — expected to be
 // reviewed and touched up in the Editor afterward, not treated as exact.
 import FFT from "fft.js";
@@ -38,10 +41,15 @@ export interface TranscribeDiagnostics {
 export interface TranscribedSong {
   bpm: number;
   measureLength: number;
-  patternA: StoredLine[] | null; // main beat 1
-  patternB: StoredLine[] | null; // main beat 2
-  patternC: StoredLine[] | null; // main beat 3
-  patternD: StoredLine[] | null; // fill
+  // How many of patternA/B/C/D (starting from A) are real recurring main
+  // grooves, in order of first appearance — the rest, through D, are fills.
+  // 1-3: never 0 (a song with too little to find even one groove throws
+  // earlier) and never fabricated up to a fixed count.
+  mainBeatCount: number;
+  patternA: StoredLine[] | null; // main beat, or a fill once mainBeatCount is exceeded
+  patternB: StoredLine[] | null;
+  patternC: StoredLine[] | null;
+  patternD: StoredLine[] | null;
   diagnostics: TranscribeDiagnostics;
 }
 
@@ -130,12 +138,26 @@ const FILL_INSTRUMENT_ORDER: InstrumentId[] = [
 // for songs whose fills don't happen to use toms or a crash.
 const OFF_KIT_FILL_INSTRUMENTS = new Set<InstrumentId>(["crash", "lowTom", "midTom", "highTom"]);
 
+const TOTAL_SLOTS = 4; // Slots A-D on a board — the hard ceiling on grooves + fills combined
 const MAX_MAIN_BEATS = 3;
 // How similar (Jaccard, on core-kit hits only) another bar has to be to a
 // cluster's medoid to count as "the same groove" for that cluster's cymbal
 // vote — not so high that near-identical repeats with one dropped ghost note
 // get excluded, not so low that two genuinely different grooves merge.
 const CLUSTER_MEMBER_SIMILARITY = 0.55;
+// A candidate groove needs at least this many repeats before it's trusted as
+// a real, distinct main beat rather than a one-off bar (a bridge fragment, a
+// transition, or plain misclassification noise) that happened to not look
+// like anything else. The one exception is the very first groove found: a
+// song still needs *a* main beat even if nothing in it repeats twice.
+const MIN_CLUSTER_REPEATS = 2;
+// A new candidate medoid this similar to an *already-accepted* groove's
+// medoid is almost certainly the same groove, just not similar enough
+// (< CLUSTER_MEMBER_SIMILARITY) to have auto-joined it as a member — merge it
+// in rather than spinning up a second "distinct" groove that's really just a
+// noisier repeat of the first. This is what keeps a song with one real beat
+// from getting artificially split into two or three fake variations.
+const SAME_GROOVE_MERGE_SIMILARITY = 0.4;
 
 export function transcribeDrums(wavBuffer: Buffer): TranscribedSong {
   const wav = parseWav(wavBuffer);
@@ -187,17 +209,40 @@ export function transcribeDrums(wavBuffer: Buffer): TranscribedSong {
   // sparse intro/outro rather than real song material.
   const interiorIndices = bars.length > 4 ? bars.map((_, i) => i).slice(1, -1) : bars.map((_, i) => i);
 
-  const fillIndex = pickFillBar(bars, interiorIndices);
-  const patternD =
-    fillIndex !== null ? barToStoredLines(bars[fillIndex], FILL_INSTRUMENT_ORDER, beatsPerBar) : null;
+  // Cluster first, over every interior bar — not just a pre-guessed "beat
+  // pool" with a fill already carved out. A real fill naturally fails to
+  // repeat and falls out of clustering on its own (see MIN_CLUSTER_REPEATS),
+  // so "which bars are left unclaimed by any real groove" turns out to be a
+  // better fill-candidate pool than guessing a fill index up front ever was.
+  const clusters = clusterBeatBars(bars, interiorIndices);
 
-  const beatPoolIndices = interiorIndices.filter((i) => i !== fillIndex);
-  const clusters = clusterBeatBars(bars, beatPoolIndices);
-  const fallback: CoreFallbacks = {
-    kick: findFallbackHits(bars, beatPoolIndices, "kick"),
-    snare: findFallbackHits(bars, beatPoolIndices, "snare"),
-    cymbal: findFallbackCymbalHits(bars, beatPoolIndices),
-  };
+  // The song's backbone groove — whichever accepted cluster actually repeats
+  // the most — is what a missing kick/snare/cymbal in another groove borrows
+  // from (see CoreFallbacks below). Never the whole song searched at large:
+  // borrowing from some unrelated, arbitrary "most self-consistent" section
+  // is exactly what made grooves feel stitched together from different parts
+  // of the song.
+  const dominantCluster =
+    clusters.length > 0
+      ? clusters.reduce((best, c) => (c.memberIndices.length > best.memberIndices.length ? c : best))
+      : null;
+  const fallback: CoreFallbacks = dominantCluster
+    ? {
+        kick: coreHitsForCluster(bars, dominantCluster, "kick"),
+        snare: coreHitsForCluster(bars, dominantCluster, "snare"),
+        cymbal: cymbalHitsForCluster(bars, dominantCluster) ?? defaultCymbalHits(),
+      }
+    : { kick: [], snare: [], cymbal: defaultCymbalHits() };
+
+  // Order by first appearance in the song — A is whichever distinct groove
+  // shows up earliest (typically a verse), later ones typically chorus/bridge.
+  clusters.sort((a, b) => Math.min(...a.memberIndices) - Math.min(...b.memberIndices));
+
+  const mainBeatCount = clusters.length;
+  const claimed = new Set(clusters.flatMap((c) => c.memberIndices));
+  const fillCandidateIndices = interiorIndices.filter((i) => !claimed.has(i));
+  const fillSlotCount = Math.max(0, TOTAL_SLOTS - mainBeatCount);
+  const fillIndices = pickFillBars(bars, fillCandidateIndices, fillSlotCount);
 
   if (process.env.DEBUG_TRANSCRIBE) {
     debugDump({
@@ -209,38 +254,35 @@ export function transcribeDrums(wavBuffer: Buffer): TranscribedSong {
       beatsPerBar,
       bars,
       interiorIndices,
-      fillIndex,
+      fillIndices,
       clusters,
       tomDecay,
     });
   }
-  // Order by first appearance in the song — A is whichever distinct groove
-  // shows up earliest (typically a verse), later ones typically chorus/bridge.
-  clusters.sort((a, b) => a.medoidIndex - b.medoidIndex);
 
-  const [patternA, patternB, patternC] = [0, 1, 2].map((i) =>
-    clusters[i] ? renderBeatPattern(bars, clusters[i], fallback, beatsPerBar) : null
-  );
+  const grooves = clusters.map((c) => renderBeatPattern(bars, c, fallback, beatsPerBar));
+  const fills = fillIndices.map((i) => barToStoredLines(bars[i], FILL_INSTRUMENT_ORDER, beatsPerBar));
+  const slotPatterns: (StoredLine[] | null)[] = [...grooves, ...fills];
+  while (slotPatterns.length < TOTAL_SLOTS) slotPatterns.push(null);
+  const [patternA, patternB, patternC, patternD] = slotPatterns;
+
+  const slotIndices: (number[] | null)[] = [...clusters.map((c) => c.memberIndices), ...fillIndices.map((i) => [i])];
+  while (slotIndices.length < TOTAL_SLOTS) slotIndices.push(null);
 
   const diagnostics: TranscribeDiagnostics = {
     durationSeconds: round1(totalDurationSeconds),
     onsetCount: onsetTimes.length,
     barCount: bars.length,
-    patternA: patternDiagnostics(patternA, clusters[0]?.memberIndices ?? null, gridOrigin, beatSeconds, beatsPerBar),
-    patternB: patternDiagnostics(patternB, clusters[1]?.memberIndices ?? null, gridOrigin, beatSeconds, beatsPerBar),
-    patternC: patternDiagnostics(patternC, clusters[2]?.memberIndices ?? null, gridOrigin, beatSeconds, beatsPerBar),
-    patternD: patternDiagnostics(
-      patternD,
-      fillIndex !== null ? [fillIndex] : null,
-      gridOrigin,
-      beatSeconds,
-      beatsPerBar
-    ),
+    patternA: patternDiagnostics(patternA, slotIndices[0], gridOrigin, beatSeconds, beatsPerBar),
+    patternB: patternDiagnostics(patternB, slotIndices[1], gridOrigin, beatSeconds, beatsPerBar),
+    patternC: patternDiagnostics(patternC, slotIndices[2], gridOrigin, beatSeconds, beatsPerBar),
+    patternD: patternDiagnostics(patternD, slotIndices[3], gridOrigin, beatSeconds, beatsPerBar),
   };
 
   return {
     bpm: Math.round(bpm),
     measureLength: beatsPerBar,
+    mainBeatCount,
     patternA,
     patternB,
     patternC,
@@ -809,23 +851,66 @@ function estimateBeatsPerBar(
   return best;
 }
 
-function fillScore(bar: BarHit[]): number {
-  const offKitCount = bar.filter((h) => OFF_KIT_FILL_INSTRUMENTS.has(h.instrument)).length;
-  return offKitCount * 3 + bar.length;
+// How much a bar breaks from the material immediately around it, on core-kit
+// hits only (off-kit content is already scored separately below) — a real
+// fill is a bar that interrupts the steady pattern, not just a bar that
+// happens to have a tom on it. Bars at the very edge of the song (no
+// neighbor on one side) compare against silence, which reads as maximally
+// different — appropriate, since an intro/outro edge bar is exactly the kind
+// of already-atypical material a fill pick should be cautious around anyway.
+const TRANSITION_BONUS_WEIGHT = 4;
+
+function transitionBonus(bars: BarHit[][], i: number): number {
+  const cur = flattenForSimilarity(bars[i]);
+  const prev = bars[i - 1] ? flattenForSimilarity(bars[i - 1]) : new Set<string>();
+  const next = bars[i + 1] ? flattenForSimilarity(bars[i + 1]) : new Set<string>();
+  return 1 - (jaccardSimilarity(cur, prev) + jaccardSimilarity(cur, next)) / 2;
 }
 
-function pickFillBar(bars: BarHit[][], candidateIndices: number[]): number | null {
-  let best: number | null = null;
-  let bestScore = -Infinity;
-  for (const i of candidateIndices) {
-    if (bars[i].length === 0) continue;
-    const score = fillScore(bars[i]);
-    if (score > bestScore) {
-      bestScore = score;
-      best = i;
+function fillScore(bars: BarHit[][], i: number): number {
+  const bar = bars[i];
+  const offKitCount = bar.filter((h) => OFF_KIT_FILL_INSTRUMENTS.has(h.instrument)).length;
+  return offKitCount * 3 + bar.length + transitionBonus(bars, i) * TRANSITION_BONUS_WEIGHT;
+}
+
+// Full-kit hit set (unlike flattenForSimilarity, which is core-kit only) —
+// what actually distinguishes one fill from another is exactly the off-kit
+// content that flattenForSimilarity deliberately excludes.
+function flattenFullKit(bar: BarHit[]): Set<string> {
+  const flat = new Set<string>();
+  for (const hit of bar) flat.add(`${hit.instrument}:${hit.slot}`);
+  return flat;
+}
+
+// A second (or third) fill only earns its slot if it's a real, distinct fill
+// — not a near-duplicate of one already picked, and not just a bar with a
+// bit of extra note density but no actual off-kit content. Better to leave a
+// slot empty than fill it with something that doesn't read as "a fill."
+const FILL_SIMILARITY_MAX = 0.6;
+
+function pickFillBars(bars: BarHit[][], candidateIndices: number[], count: number): number[] {
+  const scored = candidateIndices
+    .filter((i) => bars[i].length > 0)
+    .map((i) => ({ i, score: fillScore(bars, i) }))
+    .sort((a, b) => b.score - a.score);
+
+  const chosen: number[] = [];
+  const chosenFlats: Set<string>[] = [];
+  for (const { i } of scored) {
+    if (chosen.length >= count) break;
+    if (chosen.length > 0) {
+      const hasOffKit = bars[i].some((h) => OFF_KIT_FILL_INSTRUMENTS.has(h.instrument));
+      if (!hasOffKit) continue;
+      const flat = flattenFullKit(bars[i]);
+      if (chosenFlats.some((f) => jaccardSimilarity(f, flat) > FILL_SIMILARITY_MAX)) continue;
+      chosen.push(i);
+      chosenFlats.push(flat);
+    } else {
+      chosen.push(i);
+      chosenFlats.push(flattenFullKit(bars[i]));
     }
   }
-  return best;
+  return chosen;
 }
 
 // Restricted to core-kit hits, with the three cymbal voices generalized into
@@ -856,10 +941,18 @@ interface BeatCluster {
   memberIndices: number[];
 }
 
-// Greedy k-medoids (k=3): repeatedly pick whichever remaining bar is, on
-// average, most similar to the rest of the remaining pool — that's the next
-// groove's representative — then peel off everything close enough to it
-// (the rest of that groove's repeats) before looking for the next one.
+// Greedy k-medoids, up to k=3, but never padded out to a fixed count: a song
+// with one real steady beat gets exactly one groove, freeing the other three
+// slots for fills instead of two fabricated "distinct" grooves that are
+// really just noisier repeats of the same thing. Repeatedly pick whichever
+// remaining bar is, on average, most similar to the rest of the remaining
+// pool — that's the next groove's representative — then peel off everything
+// close enough to it (the rest of that groove's repeats) before looking for
+// the next one. A candidate only becomes its own accepted groove if it
+// repeats enough to trust (MIN_CLUSTER_REPEATS) and isn't just a looser
+// repeat of a groove already accepted (SAME_GROOVE_MERGE_SIMILARITY) —
+// otherwise its bars are dropped from the beat pool entirely (they become
+// fill candidates instead, see the caller).
 function clusterBeatBars(bars: BarHit[][], candidateIndices: number[], maxClusters: number = MAX_MAIN_BEATS): BeatCluster[] {
   const flattened = new Map<number, Set<string>>();
   for (const i of candidateIndices) {
@@ -869,6 +962,14 @@ function clusterBeatBars(bars: BarHit[][], candidateIndices: number[], maxCluste
 
   const pool = new Set(flattened.keys());
   const clusters: BeatCluster[] = [];
+  // The single best-scoring candidate that never reached MIN_CLUSTER_REPEATS
+  // by the time the pool was exhausted — used only as a last resort (see
+  // below) so a song that genuinely has nothing repeating twice still gets
+  // *a* main beat, without letting an early greedy pick that happens to be a
+  // one-off bar claim slot A while a real recurring groove sits later in the
+  // same pool (the greedy "most similar to the rest of the pool" step can
+  // land on a centroid-ish bar before it lands on the actual densest cluster).
+  let bestRejected: BeatCluster | null = null;
 
   while (clusters.length < maxClusters && pool.size > 0) {
     let best = -1;
@@ -891,17 +992,26 @@ function clusterBeatBars(bars: BarHit[][], candidateIndices: number[], maxCluste
     const members = [...pool].filter(
       (i) => i === best || jaccardSimilarity(flattened.get(i)!, flattened.get(best)!) >= CLUSTER_MEMBER_SIMILARITY
     );
-    clusters.push({ medoidIndex: best, memberIndices: members });
+
+    const duplicateOf = clusters.find(
+      (c) => jaccardSimilarity(flattened.get(c.medoidIndex)!, flattened.get(best)!) >= SAME_GROOVE_MERGE_SIMILARITY
+    );
+    if (duplicateOf) {
+      for (const m of members) if (!duplicateOf.memberIndices.includes(m)) duplicateOf.memberIndices.push(m);
+    } else if (members.length >= MIN_CLUSTER_REPEATS) {
+      clusters.push({ medoidIndex: best, memberIndices: members });
+    } else if (!bestRejected || members.length > bestRejected.memberIndices.length) {
+      bestRejected = { medoidIndex: best, memberIndices: members };
+    }
+    // Otherwise: not enough repeats to trust as a distinct groove, and not
+    // similar enough to merge into one already accepted — discard rather
+    // than force a fake groove into a slot.
     for (const m of members) pool.delete(m);
   }
 
-  // A short or very repetitive song might not have three distinct grooves —
-  // pad with the strongest cluster(s) already found rather than leaving a
-  // slot empty.
-  const found = clusters.length;
-  for (let i = 0; found > 0 && clusters.length < maxClusters; i++) {
-    clusters.push(clusters[i % found]);
-  }
+  // Only fall back to a one-off bar if nothing in the whole pool ever
+  // repeated twice — never as a stand-in for "the greedy pick went first."
+  if (clusters.length === 0 && bestRejected) clusters.push(bestRejected);
 
   return clusters;
 }
@@ -981,47 +1091,13 @@ function cymbalHitsForCluster(bars: BarHit[][], cluster: BeatCluster): BarHit[] 
   return [...slots].map((slot) => ({ slot, instrument: cymbalVoice }));
 }
 
-// The default cymbal voice for a main beat that has no cymbal-family hits
-// anywhere nearby to borrow (see findFallbackCymbalHits) — a plain
-// quarter-note closed hi-hat, since a cover drummer needs *something* to
-// keep time with rather than being left with just kick+snare.
+// The default cymbal voice for a main beat that has no cymbal-family hits of
+// its own and no dominant-groove fallback to borrow either (see
+// CoreFallbacks) — a plain quarter-note closed hi-hat, since a cover drummer
+// needs *something* to keep time with rather than being left with just
+// kick+snare.
 function defaultCymbalHits(): BarHit[] {
   return [0, 4, 8, 12].map((slot) => ({ slot, instrument: "hihatClosed" as InstrumentId }));
-}
-
-// A whole-song fallback pattern for kick or snare — the most consistent
-// recurring bar elsewhere in the song that actually has this instrument —
-// for any main beat whose own cluster has none at all. Unlike the cymbal
-// fallback above, this has no synthetic last resort: a groove missing kick
-// or snare entirely is often a real musical choice (a stripped-down section,
-// a breakdown), not just a detection gap, so if nothing in the whole song
-// has this instrument either, it's left out rather than invented.
-function findFallbackHits(bars: BarHit[][], candidateIndices: number[], instrument: InstrumentId): BarHit[] {
-  const candidates = candidateIndices.filter((i) => bars[i].some((h) => h.instrument === instrument));
-  if (candidates.length === 0) return [];
-  const [cluster] = clusterBeatBars(bars, candidates, 1);
-  return cluster ? coreHitsForCluster(bars, cluster, instrument) : [];
-}
-
-// A whole-song fallback cymbal voice+pattern, for any main beat whose own
-// medoid/repeats happen to have no cymbal hits — plausible when a groove's
-// hi-hat sits quiet enough in the mix to miss onset detection in that
-// stretch, or a section genuinely plays without one. Picked the same way a
-// single cluster's cymbal voice is (the most consistent recurring
-// voice+slots), just searched across every candidate bar in the song rather
-// than one cluster's own members, so every main beat still ends up with a
-// steady cymbal a drummer could actually cover the song with, rather than
-// shipping bare kick+snare just because this specific repeat's hi-hat missed
-// onset detection.
-function findFallbackCymbalHits(bars: BarHit[][], candidateIndices: number[]): BarHit[] {
-  const barHasCymbal = (i: number) => bars[i].some((h) => CYMBAL_VOICES.includes(h.instrument));
-  const cymbalCandidates = candidateIndices.filter(barHasCymbal);
-  if (cymbalCandidates.length > 0) {
-    const [cluster] = clusterBeatBars(bars, cymbalCandidates, 1);
-    const hits = cluster ? cymbalHitsForCluster(bars, cluster) : null;
-    if (hits && hits.length > 0) return hits;
-  }
-  return defaultCymbalHits();
 }
 
 interface CoreFallbacks {
@@ -1094,11 +1170,11 @@ function debugDump(ctx: {
   beatsPerBar: number;
   bars: BarHit[][];
   interiorIndices: number[];
-  fillIndex: number | null;
+  fillIndices: number[];
   clusters: BeatCluster[];
   tomDecay: TomDecayThresholds;
 }) {
-  const { mono, onsetTimes, features, bpm, gridOrigin, beatsPerBar, bars, interiorIndices, fillIndex, clusters, tomDecay } =
+  const { mono, onsetTimes, features, bpm, gridOrigin, beatsPerBar, bars, interiorIndices, fillIndices, clusters, tomDecay } =
     ctx;
   const durationSeconds = mono.samples.length / mono.sampleRate;
   console.error(
@@ -1156,12 +1232,12 @@ function debugDump(ctx: {
   console.error("median peak rms:", median(features.map((f) => f.peakRms)).toFixed(4));
 
   for (let i = 0; i < bars.length; i++) {
-    const marker = i === fillIndex ? " <-- FILL" : !interiorIndices.includes(i) ? " (edge, excluded)" : "";
+    const marker = fillIndices.includes(i) ? " <-- FILL" : !interiorIndices.includes(i) ? " (edge, excluded)" : "";
     const hits = [...bars[i]]
       .sort((a, b) => a.slot - b.slot)
       .map((h) => `${h.instrument}@${h.slot}`)
       .join(" ");
-    console.error(`bar ${String(i).padStart(3)} [score ${fillScore(bars[i])}]: ${hits}${marker}`);
+    console.error(`bar ${String(i).padStart(3)} [score ${fillScore(bars, i).toFixed(1)}]: ${hits}${marker}`);
   }
 
   console.error(

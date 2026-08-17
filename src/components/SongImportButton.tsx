@@ -13,6 +13,7 @@ interface ImportStatus {
   errorMessage: string | null;
   bpm: number | null;
   measureLength: number | null;
+  mainBeatCount: number | null;
   patternA: DetectedPattern | null;
   patternB: DetectedPattern | null;
   patternC: DetectedPattern | null;
@@ -21,17 +22,27 @@ interface ImportStatus {
 
 const POLL_INTERVAL_MS = 3000;
 
-const SLOTS: { key: "patternA" | "patternB" | "patternC" | "patternD"; slot: "A" | "B" | "C" | "D"; label: string }[] = [
-  { key: "patternA", slot: "A", label: "Main beat 1" },
-  { key: "patternB", slot: "B", label: "Main beat 2" },
-  { key: "patternC", slot: "C", label: "Main beat 3" },
-  { key: "patternD", slot: "D", label: "Fill" },
+const SLOT_KEYS: { key: "patternA" | "patternB" | "patternC" | "patternD"; slot: "A" | "B" | "C" | "D" }[] = [
+  { key: "patternA", slot: "A" },
+  { key: "patternB", slot: "B" },
+  { key: "patternC", slot: "C" },
+  { key: "patternD", slot: "D" },
 ];
+
+// The first `mainBeatCount` slots are real recurring main grooves; the rest
+// are fills. Labeled dynamically since a song might yield just one main beat
+// and three fills, or three main beats and one fill — never a fixed split.
+function slotLabel(index: number, mainBeatCount: number, fillCount: number): string {
+  if (index < mainBeatCount) return mainBeatCount === 1 ? "Main beat" : `Main beat ${index + 1}`;
+  const fillNumber = index - mainBeatCount + 1;
+  return fillCount === 1 ? "Fill" : `Fill ${fillNumber}`;
+}
 
 // Upload an MP3, run it through the Replicate/Demucs + heuristic-
 // transcription pipeline (see src/inngest/functions.ts), and land what it
-// finds into Slots A-D: three main grooves (built from kick/snare/hi-hat/ride
-// only, one steady cymbal voice per groove) plus one fill (whole kit).
+// finds into Slots A-D: as many real recurring main grooves as the song
+// actually has (built from kick/snare/hi-hat/ride only, one steady cymbal
+// voice per groove) plus fills (whole kit) filling whatever slots are left.
 export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: string; boardDisplayName: string }) {
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -117,7 +128,7 @@ export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: s
 
   async function saveAll() {
     if (!result || result.bpm == null) return;
-    const toSave = SLOTS.filter((s) => result[s.key]);
+    const toSave = SLOT_KEYS.filter((s) => result[s.key]);
     if (toSave.length === 0) return;
     const responses = await Promise.all(
       toSave.map((s) =>
@@ -137,7 +148,7 @@ export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: s
       <button
         type="button"
         onClick={() => setOpen(true)}
-        title="Transcribe a song's drums into 3 main beats + a fill"
+        title="Transcribe a song's drums into its main beat(s) + fills"
         className="shrink-0 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
       >
         🎧 Import a song
@@ -162,8 +173,9 @@ export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: s
             </div>
 
             <p className="mb-3 text-xs text-white/50">
-              Upload an MP3 and I&apos;ll isolate the drums, find its 3 main grooves (kick/snare/hi-hat/ride) and one
-              fill (whole kit), and drop them into <span className="font-mono text-yellow-400">Slots A-D</span> on{" "}
+              Upload an MP3 and I&apos;ll isolate the drums, find as many real recurring main grooves as the song
+              actually has (kick/snare/hi-hat/ride, up to 3) plus fills (whole kit) to round out the rest, and drop
+              them into <span className="font-mono text-yellow-400">Slots A-D</span> on{" "}
               <span className="font-mono">/{boardDisplayName}</span>. This is a best-effort auto-transcription — expect
               to touch it up in the editor afterward, especially on busy fills or heavily processed kits. Saving
               overwrites whatever is currently in those slots.
@@ -231,8 +243,11 @@ export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: s
                   Detected ~<span className="font-bold text-yellow-400">{result.bpm} BPM</span>.
                 </p>
                 <ul className="flex flex-col gap-1.5">
-                  {SLOTS.map(({ key, slot, label }) => {
+                  {SLOT_KEYS.map(({ key, slot }, index) => {
                     const pattern = result[key];
+                    const mainBeatCount = result.mainBeatCount ?? 0;
+                    const fillCount = SLOT_KEYS.length - mainBeatCount;
+                    const label = slotLabel(index, mainBeatCount, fillCount);
                     return (
                       <li
                         key={slot}

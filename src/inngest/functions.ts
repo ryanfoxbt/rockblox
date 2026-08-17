@@ -61,6 +61,7 @@ export const importSong = inngest.createFunction(
             status: "done",
             bpm: result.bpm,
             measureLength: result.measureLength,
+            mainBeatCount: result.mainBeatCount,
             patternA: result.patternA,
             patternB: result.patternB,
             patternC: result.patternC,

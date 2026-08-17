@@ -5,12 +5,14 @@
 //
 // For each song it writes, under mp3s-analysis/<song>/:
 //   - drums-full.mp3        the entire isolated drum stem
-//   - pattern-A/B/C.mp3     every repeat of that main groove's audio,
-//                            concatenated back to back (see PatternDiagnostics
-//                            in transcribeDrums.ts) — not the whole stretch of
-//                            song between its first and last repeat, which
-//                            would pull in unrelated sections in between
-//   - pattern-D-fill.mp3    same, for the fill (a single repeat)
+//   - pattern-A/B/C/D.mp3   every repeat of that slot's audio, concatenated
+//                            back to back (see PatternDiagnostics in
+//                            transcribeDrums.ts) — not the whole stretch of
+//                            song between first and last repeat, which would
+//                            pull in unrelated sections in between. A main
+//                            groove has multiple repeats; a fill is just one.
+//                            Which slots are grooves vs. fills is dynamic per
+//                            song (report.md's label says which is which).
 // plus a top-level mp3s-analysis/report.md summarizing bpm, bar/onset counts,
 // which instruments each pattern used, and the exact time range analyzed —
 // so results can be checked against the original songs by ear without
@@ -79,12 +81,20 @@ const SONGS_DIR = join(REPO_ROOT, "mp3s");
 const OUT_DIR = join(REPO_ROOT, "mp3s-analysis");
 const CACHE_DIR = join(OUT_DIR, ".cache");
 
-const PATTERN_SLOTS: { key: "patternA" | "patternB" | "patternC" | "patternD"; label: string; clipName: string }[] = [
-  { key: "patternA", label: "Main beat 1", clipName: "pattern-A.mp3" },
-  { key: "patternB", label: "Main beat 2", clipName: "pattern-B.mp3" },
-  { key: "patternC", label: "Main beat 3", clipName: "pattern-C.mp3" },
-  { key: "patternD", label: "Fill", clipName: "pattern-D-fill.mp3" },
+const PATTERN_SLOTS: { key: "patternA" | "patternB" | "patternC" | "patternD"; clipName: string }[] = [
+  { key: "patternA", clipName: "pattern-A.mp3" },
+  { key: "patternB", clipName: "pattern-B.mp3" },
+  { key: "patternC", clipName: "pattern-C.mp3" },
+  { key: "patternD", clipName: "pattern-D.mp3" },
 ];
+
+// The first `mainBeatCount` slots are real recurring main grooves; the rest
+// are fills — dynamic per song now, not a fixed 3-grooves-plus-1-fill split.
+function slotLabel(index: number, mainBeatCount: number, fillCount: number): string {
+  if (index < mainBeatCount) return mainBeatCount === 1 ? "Main beat" : `Main beat ${index + 1}`;
+  const fillNumber = index - mainBeatCount + 1;
+  return fillCount === 1 ? "Fill" : `Fill ${fillNumber}`;
+}
 
 function slugify(name: string): string {
   return name
@@ -222,19 +232,22 @@ async function analyzeSong(filename: string): Promise<SongReport> {
   const fullMp3 = wavToMp3(wav);
   writeFileSync(join(songOutDir, "drums-full.mp3"), fullMp3);
 
+  const mainBeatCount = result.mainBeatCount;
+  const fillCount = PATTERN_SLOTS.length - mainBeatCount;
   const patterns: SongReport["patterns"] = [];
-  for (const slot of PATTERN_SLOTS) {
+  for (const [index, slot] of PATTERN_SLOTS.entries()) {
+    const label = slotLabel(index, mainBeatCount, fillCount);
     const pattern = result[slot.key];
     const diagnostics = result.diagnostics[slot.key] as PatternDiagnostics | null;
     if (!pattern || !diagnostics || diagnostics.sourceRanges.length === 0) {
-      patterns.push({ label: slot.label, instruments: [], ranges: [], clip: null });
+      patterns.push({ label, instruments: [], ranges: [], clip: null });
       continue;
     }
-    console.log(`  clipping ${slot.label}...`);
+    console.log(`  clipping ${label}...`);
     const clipMp3 = rangesToMp3(wav, diagnostics.sourceRanges);
     writeFileSync(join(songOutDir, slot.clipName), clipMp3);
     patterns.push({
-      label: slot.label,
+      label,
       instruments: diagnostics.instruments,
       ranges: diagnostics.sourceRanges,
       clip: `${slug}/${slot.clipName}`,

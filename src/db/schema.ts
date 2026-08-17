@@ -53,8 +53,10 @@ export type SongImportStatus = "uploaded" | "processing" | "done" | "error";
 // Tracks one "turn a song into a RockBlocks beat" job: an uploaded MP3 run
 // through the Inngest pipeline (Replicate/Demucs drum-stem separation, then
 // onset-detection transcription) down to up to four patterns the owner can
-// drop into their board's slots — three main grooves (patternA/B/C) plus one
-// fill (patternD). Row-per-job rather than storing the result directly on
+// drop into their board's slots — as many real recurring main grooves as the
+// song has (mainBeatCount, 1-3, filling patternA/B/C... in order) plus fills
+// in whatever slots are left over. Row-per-job rather than storing the
+// result directly on
 // `boards` since a job is transient working state, not a saved beat, until
 // the owner explicitly imports it.
 export const songImports = pgTable("song_imports", {
@@ -66,6 +68,9 @@ export const songImports = pgTable("song_imports", {
   errorMessage: text("error_message"),
   bpm: integer("bpm"),
   measureLength: integer("measure_length"),
+  // How many of patternA/B/C/D (from A) are real recurring main grooves —
+  // the rest, through D, are fills. See transcribeDrums.ts.
+  mainBeatCount: integer("main_beat_count"),
   patternA: jsonb("pattern_a").$type<StoredLine[]>(),
   patternB: jsonb("pattern_b").$type<StoredLine[]>(),
   patternC: jsonb("pattern_c").$type<StoredLine[]>(),
