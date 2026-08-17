@@ -45,9 +45,6 @@ export interface TranscribedSong {
   diagnostics: TranscribeDiagnostics;
 }
 
-const BEATS_PER_BAR = 4;
-const SLOTS_PER_BAR = BEATS_PER_BAR * 4; // 4 sixteenth-note slots per beat
-
 const ONSET_FFT_SIZE = 2048;
 const ONSET_HOP_SIZE = 512;
 const ONSET_THRESHOLD_FACTOR = 1.6; // local mean + this * local std
@@ -183,14 +180,16 @@ export function transcribeDrums(wavBuffer: Buffer): TranscribedSong {
     instrument: classifyOnset(features[i], medianPeak, tomDecay),
   }));
 
-  const bars = groupIntoBars(classified, gridOrigin, beatSeconds);
+  const beatsPerBar = estimateBeatsPerBar(classified, gridOrigin, beatSeconds);
+  const bars = groupIntoBars(classified, gridOrigin, beatSeconds, beatsPerBar);
   // Skip the very first/last bar when there's enough material, same as the
   // single-pattern pipeline did — they're disproportionately likely to be a
   // sparse intro/outro rather than real song material.
   const interiorIndices = bars.length > 4 ? bars.map((_, i) => i).slice(1, -1) : bars.map((_, i) => i);
 
   const fillIndex = pickFillBar(bars, interiorIndices);
-  const patternD = fillIndex !== null ? barToStoredLines(bars[fillIndex], FILL_INSTRUMENT_ORDER) : null;
+  const patternD =
+    fillIndex !== null ? barToStoredLines(bars[fillIndex], FILL_INSTRUMENT_ORDER, beatsPerBar) : null;
 
   const beatPoolIndices = interiorIndices.filter((i) => i !== fillIndex);
   const clusters = clusterBeatBars(bars, beatPoolIndices);
@@ -201,29 +200,47 @@ export function transcribeDrums(wavBuffer: Buffer): TranscribedSong {
   };
 
   if (process.env.DEBUG_TRANSCRIBE) {
-    debugDump({ mono, onsetTimes, features, bpm, gridOrigin, bars, interiorIndices, fillIndex, clusters, tomDecay });
+    debugDump({
+      mono,
+      onsetTimes,
+      features,
+      bpm,
+      gridOrigin,
+      beatsPerBar,
+      bars,
+      interiorIndices,
+      fillIndex,
+      clusters,
+      tomDecay,
+    });
   }
   // Order by first appearance in the song — A is whichever distinct groove
   // shows up earliest (typically a verse), later ones typically chorus/bridge.
   clusters.sort((a, b) => a.medoidIndex - b.medoidIndex);
 
   const [patternA, patternB, patternC] = [0, 1, 2].map((i) =>
-    clusters[i] ? renderBeatPattern(bars, clusters[i], fallback) : null
+    clusters[i] ? renderBeatPattern(bars, clusters[i], fallback, beatsPerBar) : null
   );
 
   const diagnostics: TranscribeDiagnostics = {
     durationSeconds: round1(totalDurationSeconds),
     onsetCount: onsetTimes.length,
     barCount: bars.length,
-    patternA: patternDiagnostics(patternA, clusters[0]?.memberIndices ?? null, gridOrigin, beatSeconds),
-    patternB: patternDiagnostics(patternB, clusters[1]?.memberIndices ?? null, gridOrigin, beatSeconds),
-    patternC: patternDiagnostics(patternC, clusters[2]?.memberIndices ?? null, gridOrigin, beatSeconds),
-    patternD: patternDiagnostics(patternD, fillIndex !== null ? [fillIndex] : null, gridOrigin, beatSeconds),
+    patternA: patternDiagnostics(patternA, clusters[0]?.memberIndices ?? null, gridOrigin, beatSeconds, beatsPerBar),
+    patternB: patternDiagnostics(patternB, clusters[1]?.memberIndices ?? null, gridOrigin, beatSeconds, beatsPerBar),
+    patternC: patternDiagnostics(patternC, clusters[2]?.memberIndices ?? null, gridOrigin, beatSeconds, beatsPerBar),
+    patternD: patternDiagnostics(
+      patternD,
+      fillIndex !== null ? [fillIndex] : null,
+      gridOrigin,
+      beatSeconds,
+      beatsPerBar
+    ),
   };
 
   return {
     bpm: Math.round(bpm),
-    measureLength: BEATS_PER_BAR,
+    measureLength: beatsPerBar,
     patternA,
     patternB,
     patternC,
@@ -243,10 +260,11 @@ function patternDiagnostics(
   pattern: StoredLine[] | null,
   barIndices: number[] | null,
   gridOrigin: number,
-  beatSeconds: number
+  beatSeconds: number,
+  beatsPerBar: number
 ): PatternDiagnostics | null {
   if (pattern === null || barIndices === null || barIndices.length === 0) return null;
-  const barSeconds = BEATS_PER_BAR * beatSeconds;
+  const barSeconds = beatsPerBar * beatSeconds;
   const sourceRanges: [number, number][] = [...barIndices]
     .sort((a, b) => a - b)
     .map((i) => {
@@ -681,19 +699,114 @@ interface BarHit {
 function groupIntoBars(
   onsets: { time: number; instrument: InstrumentId }[],
   gridOrigin: number,
-  beatSeconds: number
+  beatSeconds: number,
+  beatsPerBar: number
 ): BarHit[][] {
   const sixteenthSeconds = beatSeconds / 4;
+  const slotsPerBar = beatsPerBar * 4;
   const bars: BarHit[][] = [];
   for (const onset of onsets) {
     const slotIndex = Math.round((onset.time - gridOrigin) / sixteenthSeconds);
     if (slotIndex < 0) continue; // before the grid origin — pre-roll noise, not part of the groove
-    const barIndex = Math.floor(slotIndex / SLOTS_PER_BAR);
-    const slotInBar = slotIndex - barIndex * SLOTS_PER_BAR;
+    const barIndex = Math.floor(slotIndex / slotsPerBar);
+    const slotInBar = slotIndex - barIndex * slotsPerBar;
     while (bars.length <= barIndex) bars.push([]);
     bars[barIndex].push({ slot: slotInBar, instrument: onset.instrument });
   }
   return bars;
+}
+
+const MIN_BEATS_PER_BAR = 2;
+// MAX_BEATS is the app's own hard cap on beats per pattern (see song.ts) —
+// no point detecting a repeat cycle longer than a pattern could ever hold.
+const MAX_BEATS_PER_BAR = MAX_BEATS;
+// A candidate N only overrides the 4/4 default if its score comes within
+// this fraction of 4's own score. Calibrated against a real 21-song batch:
+// even ordinary 4/4 songs routinely show a next-best candidate at 75-81% of
+// 4's score (generic kick+snare backbones partially resemble themselves at
+// almost any grouping), while the one confirmed 7/4 song in that batch hit
+// 96%. Comparing directly against 4 (not the global max across all
+// candidates) matters — a broad, noisy field of similarly-mediocre scores
+// otherwise lets whichever one happens to be checked first win by default,
+// which is what produced false positives on ordinary songs during tuning.
+const TIME_SIGNATURE_OVERRIDE_THRESHOLD = 0.88;
+
+// How many beats make up one repeating bar — detected from the audio rather
+// than assumed to be 4. A hardcoded 4-beat bar silently breaks any song that
+// isn't 4/4 (a 7/4 song, say): bar boundaries end up out of phase with
+// wherever the music's real cycle repeats, so nothing ever clusters into a
+// clean recurring groove. This works one level below "bars": it folds the
+// song into a sequence of per-beat fingerprints (which instrument hit which
+// of that beat's 4 sixteenth-note slots — reusing groupIntoBars with
+// beatsPerBar=1, then flattenForSimilarity), then scores each candidate bar
+// length N by how much fingerprint[i] and fingerprint[i+N] agree, averaged
+// across the whole song. Restricted to core beat instruments (via
+// flattenForSimilarity) rather than the whole kit, since fills/tom runs
+// exist specifically to break the steady pattern and would only add noise.
+//
+// A groove that alternates between two different bars every other repeat
+// (very common — that's exactly what Main beat 1 vs 2 are for) won't score
+// well at its own true length N, only at 2N (comparing a bar to its next
+// *matching* repeat, one full alternation later) — so each candidate N is
+// credited with the better of its own score and its doubled length's score
+// before comparing, and candidates are checked largest-first so a genuine
+// bigger meter wins over an incidental smaller sub-pattern once it clears
+// the bar, rather than always chasing whichever raw score is highest.
+function estimateBeatsPerBar(
+  onsets: { time: number; instrument: InstrumentId }[],
+  gridOrigin: number,
+  beatSeconds: number
+): number {
+  const beatFingerprints = groupIntoBars(onsets, gridOrigin, beatSeconds, 1).map(flattenForSimilarity);
+  if (beatFingerprints.length < MIN_BEATS_PER_BAR * 2) return 4;
+
+  const maxPeriod = Math.min(MAX_BEATS_PER_BAR * 2, Math.floor(beatFingerprints.length / 2));
+  const scores = new Map<number, number>();
+  for (let period = MIN_BEATS_PER_BAR; period <= maxPeriod; period++) {
+    let total = 0;
+    let count = 0;
+    for (let i = 0; i + period < beatFingerprints.length; i++) {
+      const a = beatFingerprints[i];
+      const b = beatFingerprints[i + period];
+      if (a.size === 0 && b.size === 0) continue; // silence agreeing with silence says nothing about periodicity
+      total += jaccardSimilarity(a, b);
+      count++;
+    }
+    if (count > 0) scores.set(period, total / count);
+  }
+
+  const effectiveScores = new Map<number, number>();
+  for (let n = MIN_BEATS_PER_BAR; n <= MAX_BEATS_PER_BAR; n++) {
+    effectiveScores.set(n, Math.max(scores.get(n) ?? 0, scores.get(n * 2) ?? 0));
+  }
+
+  // 4 is the default and the baseline every other candidate is measured
+  // against. 2 is excluded from ever overriding it: it's the shortest,
+  // most generic possible grouping (does beat 0 look like beat 2), and even
+  // clearly-4/4 songs in testing showed 2 scoring as high as or higher than
+  // their own true length — it's noise, not signal, for this purpose.
+  const fourScore = effectiveScores.get(4) ?? 0;
+  let best = 4;
+  for (let n = MAX_BEATS_PER_BAR; n >= 3; n--) {
+    if (n === 4) continue;
+    const score = effectiveScores.get(n) ?? 0;
+    if (score > 0 && score >= fourScore * TIME_SIGNATURE_OVERRIDE_THRESHOLD) {
+      best = n;
+      break;
+    }
+  }
+
+  if (process.env.DEBUG_TRANSCRIBE) {
+    console.error(
+      "beatsPerBar scores:",
+      [...scores.entries()].map(([p, s]) => `${p}=${s.toFixed(3)}`).join(" "),
+      "| effective:",
+      [...effectiveScores.entries()].map(([p, s]) => `${p}=${s.toFixed(3)}`).join(" "),
+      "-> chose",
+      best
+    );
+  }
+  return best;
 }
 
 function fillScore(bar: BarHit[]): number {
@@ -917,7 +1030,12 @@ interface CoreFallbacks {
   cymbal: BarHit[];
 }
 
-function renderBeatPattern(bars: BarHit[][], cluster: BeatCluster, fallback: CoreFallbacks): StoredLine[] {
+function renderBeatPattern(
+  bars: BarHit[][],
+  cluster: BeatCluster,
+  fallback: CoreFallbacks,
+  beatsPerBar: number
+): StoredLine[] {
   const ownCymbalHits = cymbalHitsForCluster(bars, cluster);
   const cymbalHits = ownCymbalHits && ownCymbalHits.length > 0 ? ownCymbalHits : fallback.cymbal;
 
@@ -927,10 +1045,10 @@ function renderBeatPattern(bars: BarHit[][], cluster: BeatCluster, fallback: Cor
   const ownSnareHits = coreHitsForCluster(bars, cluster, "snare");
   const snareHits = ownSnareHits.length > 0 ? ownSnareHits : fallback.snare;
 
-  return barToStoredLines([...kickHits, ...snareHits, ...cymbalHits], BEAT_INSTRUMENT_ORDER);
+  return barToStoredLines([...kickHits, ...snareHits, ...cymbalHits], BEAT_INSTRUMENT_ORDER, beatsPerBar);
 }
 
-function barToStoredLines(bar: BarHit[], instrumentOrder: InstrumentId[]): StoredLine[] {
+function barToStoredLines(bar: BarHit[], instrumentOrder: InstrumentId[], beatsPerBar: number): StoredLine[] {
   const slotsByInstrument = new Map<InstrumentId, Set<number>>();
   for (const hit of bar) {
     if (!slotsByInstrument.has(hit.instrument)) slotsByInstrument.set(hit.instrument, new Set());
@@ -943,7 +1061,7 @@ function barToStoredLines(bar: BarHit[], instrumentOrder: InstrumentId[]): Store
     if (!slots || slots.size === 0) continue;
 
     const blocks: (string | null)[] = new Array(MAX_BEATS).fill(null);
-    for (let beat = 0; beat < BEATS_PER_BAR; beat++) {
+    for (let beat = 0; beat < beatsPerBar; beat++) {
       const hits: RhythmHit[] = [];
       for (let k = 0; k < 4; k++) {
         const globalSlot = beat * 4 + k;
@@ -973,16 +1091,18 @@ function debugDump(ctx: {
   features: OnsetFeatures[];
   bpm: number;
   gridOrigin: number;
+  beatsPerBar: number;
   bars: BarHit[][];
   interiorIndices: number[];
   fillIndex: number | null;
   clusters: BeatCluster[];
   tomDecay: TomDecayThresholds;
 }) {
-  const { mono, onsetTimes, features, bpm, gridOrigin, bars, interiorIndices, fillIndex, clusters, tomDecay } = ctx;
+  const { mono, onsetTimes, features, bpm, gridOrigin, beatsPerBar, bars, interiorIndices, fillIndex, clusters, tomDecay } =
+    ctx;
   const durationSeconds = mono.samples.length / mono.sampleRate;
   console.error(
-    `\n=== duration ${durationSeconds.toFixed(1)}s | onsets ${onsetTimes.length} | bpm ${bpm.toFixed(1)} | gridOrigin ${gridOrigin.toFixed(3)}s | bars ${bars.length} | tomDecay low=${tomDecay.low.toFixed(3)} mid=${tomDecay.mid.toFixed(3)} ===`
+    `\n=== duration ${durationSeconds.toFixed(1)}s | onsets ${onsetTimes.length} | bpm ${bpm.toFixed(1)} | gridOrigin ${gridOrigin.toFixed(3)}s | beatsPerBar ${beatsPerBar} | bars ${bars.length} | tomDecay low=${tomDecay.low.toFixed(3)} mid=${tomDecay.mid.toFixed(3)} ===`
   );
 
   const lowDominant = features.filter((f) => f.lowRatio > KICK_LOW_RATIO);

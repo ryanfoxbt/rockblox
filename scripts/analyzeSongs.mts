@@ -183,6 +183,7 @@ interface SongReport {
   ok: boolean;
   error?: string;
   bpm?: number;
+  measureLength?: number;
   durationSeconds?: number;
   onsetCount?: number;
   barCount?: number;
@@ -244,6 +245,7 @@ async function analyzeSong(filename: string): Promise<SongReport> {
     filename,
     ok: true,
     bpm: result.bpm,
+    measureLength: result.measureLength,
     durationSeconds: result.diagnostics.durationSeconds,
     onsetCount: result.diagnostics.onsetCount,
     barCount: result.diagnostics.barCount,
@@ -296,7 +298,9 @@ function writeReport(freshReports: SongReport[]) {
       lines.push("");
       continue;
     }
-    lines.push(`- BPM: ${r.bpm} | duration: ${formatTime(r.durationSeconds ?? 0)} | onsets: ${r.onsetCount} | bars: ${r.barCount}`);
+    lines.push(
+      `- BPM: ${r.bpm} | time signature: ${r.measureLength}/4 | duration: ${formatTime(r.durationSeconds ?? 0)} | onsets: ${r.onsetCount} | bars: ${r.barCount}`
+    );
     lines.push(`- Full extracted drum track: \`${r.fullClip}\``);
     lines.push("");
     lines.push(`| Pattern | Instruments | Time range analyzed | Clip |`);
