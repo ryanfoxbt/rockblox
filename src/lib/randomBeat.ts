@@ -1,21 +1,23 @@
-// Generates a RockBlocks beat: a random subset of instruments, a random
-// measure length, and random rhythm tiles (including tiles with some hits
-// toggled to rests) filling each beat.
+// Generates a RockBlocks beat for a fixed, simple kit — bass drum, snare,
+// and closed hi-hat — with a random measure length and random rhythm tiles
+// (including tiles with some hits toggled to rests) filling each beat.
 //
-// The first instrument picked is the anchor: its rhythm is rolled with no
-// outside influence, exactly like the original chaos-mode generator. Every
-// other line then reacts to how busy that anchor turned out to be — real
-// drumming is about sharing space, so a packed anchor (a running sixteenth-
-// note kick, say) pushes the rest of the kit toward sparser, simpler blocks,
-// while a sparse anchor leaves room for other lines to be busier. That's the
-// one guardrail so far; more (per the file's original comment) can layer on
-// top of reactiveProbabilities without changing the call site.
-import { INSTRUMENTS, InstrumentId } from "./instruments";
+// The first instrument (bass drum) is the anchor: its rhythm is rolled with
+// no outside influence. Every other line then reacts to how busy that
+// anchor turned out to be — real drumming is about sharing space, so a
+// packed anchor (a running sixteenth-note kick, say) pushes the rest of the
+// kit toward sparser, simpler blocks, while a sparse anchor leaves room for
+// other lines to be busier, instead of every line independently rolling the
+// same chaotic odds.
+import { InstrumentId } from "./instruments";
 import { NOTE_TILES, RhythmHit, RhythmTile, TRIPLET_TILES, tileFromHits } from "./rhythm";
 import { DEFAULT_VOLUME, LineData, MAX_BEATS } from "./song";
 
 export interface RandomBeatOptions {
-  maxInstruments: number;
+  // Which instruments to generate, in order — the first is the anchor line
+  // (see reactiveProbabilities). Kept to a fixed, simple core for now rather
+  // than randomizing which instruments show up.
+  instruments: InstrumentId[];
   minBlocks: number;
   maxBlocks: number;
   // Chance a given beat is left completely empty (no tile at all) on the
@@ -28,7 +30,7 @@ export interface RandomBeatOptions {
 }
 
 export const DEFAULT_RANDOM_BEAT_OPTIONS: RandomBeatOptions = {
-  maxInstruments: 5,
+  instruments: ["kick", "snare", "hihatClosed"],
   minBlocks: 3,
   maxBlocks: MAX_BEATS,
   emptyBlockProbability: 0.15,
@@ -59,37 +61,6 @@ function clamp01(n: number): number {
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * clamp01(t);
-}
-
-// Instruments that are really the same physical voice played differently —
-// picking more than one from a group into the same loop doesn't add
-// variety, it just clashes (an open and closed hi-hat fighting for the same
-// part every bar, a rimshot duplicating the snare). At most one per group
-// makes it into a random beat.
-const CLASH_GROUPS: InstrumentId[][] = [
-  ["hihatClosed", "hihatOpen"],
-  ["snare", "rimshot"],
-];
-
-function clashGroupFor(instrument: InstrumentId): InstrumentId[] | undefined {
-  return CLASH_GROUPS.find((group) => group.includes(instrument));
-}
-
-function pickRandomInstruments(count: number): InstrumentId[] {
-  const pool = INSTRUMENTS.map((i) => i.id);
-  const picked: InstrumentId[] = [];
-  for (let i = 0; i < count && pool.length > 0; i++) {
-    const index = Math.floor(Math.random() * pool.length);
-    const instrument = pool.splice(index, 1)[0];
-    picked.push(instrument);
-    const group = clashGroupFor(instrument);
-    if (!group) continue;
-    for (const other of group) {
-      const otherIndex = pool.indexOf(other);
-      if (otherIndex !== -1) pool.splice(otherIndex, 1);
-    }
-  }
-  return picked;
 }
 
 function randomTile(hitRestProbability: number): RhythmTile {
@@ -149,7 +120,7 @@ function reactiveProbabilities(anchorDensity: number): { emptyBlockProbability: 
 export function generateRandomBeat(options: Partial<RandomBeatOptions> = {}): LineData[] {
   const opts = { ...DEFAULT_RANDOM_BEAT_OPTIONS, ...options };
   const blockCount = randomInt(opts.minBlocks, opts.maxBlocks);
-  const instruments = pickRandomInstruments(Math.min(opts.maxInstruments, INSTRUMENTS.length));
+  const instruments = opts.instruments;
   if (instruments.length === 0) return [];
 
   const anchor = buildLine(instruments[0], 0, blockCount, opts.emptyBlockProbability, opts.hitRestProbability);
