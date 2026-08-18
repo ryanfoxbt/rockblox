@@ -6,6 +6,7 @@ import { BoardData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
 import { DEFAULT_KIT } from "@/lib/drumKits";
 import { serializeLines } from "@/lib/song";
 import { generateBeatFromText, MAX_TEXT_LENGTH, MAX_TEXT_SLOTS, TextToBeatResult } from "@/lib/textToBeat";
+import { RulesUsedPanel } from "./RulesUsedPanel";
 
 const GENERATED_BPM = 100;
 
@@ -28,6 +29,11 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedSlot, setExpandedSlot] = useState<SlotLetter | null>(null);
+
+  // No board yet (homepage) means nothing has opted out, so default to
+  // shown — matches the DB column's own default of true.
+  const showRules = board ? board.textToBeatShowRules !== false : true;
 
   function close() {
     setOpen(false);
@@ -37,6 +43,7 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
     setSaving(false);
     setSaved(false);
     setError(null);
+    setExpandedSlot(null);
   }
 
   function generate() {
@@ -190,18 +197,29 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
                       {SLOT_LETTERS.map((slot, i) => {
                         const lines = result.slots[i];
                         const sentence = result.usedSentences[i];
+                        const trace = result.traces[i];
+                        const isExpanded = expandedSlot === slot;
                         return (
-                          <li
-                            key={slot}
-                            className="flex items-center justify-between gap-3 rounded-md border border-white/10 px-3 py-1.5 text-sm"
-                          >
-                            <span className="min-w-0 flex-1 truncate text-white/80">
-                              <span className="font-mono text-yellow-400">Slot {slot}</span>{" "}
-                              {sentence ? `— "${sentence}"` : ""}
-                            </span>
-                            <span className="shrink-0 text-white/50">
-                              {lines ? `${lines.length} instrument${lines.length === 1 ? "" : "s"}` : "—"}
-                            </span>
+                          <li key={slot} className="rounded-md border border-white/10 px-3 py-1.5 text-sm">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="min-w-0 flex-1 truncate text-white/80">
+                                <span className="font-mono text-yellow-400">Slot {slot}</span>{" "}
+                                {sentence ? `— "${sentence}"` : ""}
+                              </span>
+                              <span className="shrink-0 text-white/50">
+                                {lines ? `${lines.length} instrument${lines.length === 1 ? "" : "s"}` : "—"}
+                              </span>
+                              {showRules && trace && (
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedSlot(isExpanded ? null : slot)}
+                                  className="shrink-0 text-xs text-white/40 underline decoration-dotted transition hover:text-yellow-400"
+                                >
+                                  {isExpanded ? "Hide rules" : "Rules used"}
+                                </button>
+                              )}
+                            </div>
+                            {showRules && isExpanded && trace && <RulesUsedPanel trace={trace} />}
                           </li>
                         );
                       })}

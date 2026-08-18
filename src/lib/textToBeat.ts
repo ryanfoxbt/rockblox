@@ -44,16 +44,46 @@
 // longest word gets a tom accent colored by its dominant vowel. Paragraphs
 // have no effect: only sentence boundaries and word boundaries matter.
 import { InstrumentId } from "./instruments";
-import { RhythmTile, getTileById } from "./rhythm";
+import { RhythmTile, getTileById, tileFromHits } from "./rhythm";
 import { DEFAULT_VOLUME, LineData, MAX_BEATS } from "./song";
 
 export const MAX_TEXT_LENGTH = 280; // matches X's per-post limit
 export const MAX_TEXT_SLOTS = 4; // one sentence per board slot, A-D
 
+// One word's worth of generation decisions, kept around purely for the
+// "rules used" diagnostic panel (see TextToBeatButton.tsx) — every field
+// here is something generateSlotFromSentence already decided, just surfaced
+// instead of thrown away once the tile lands in a line's blocks.
+export interface WordRuleTrace {
+  word: string;
+  isFunctionWord: boolean;
+  syllables: number;
+  voice: InstrumentId;
+  hits: number;
+  tileId: string;
+  phoneticAccent: "kick" | "hihatOpen" | "snare" | null;
+  comma: boolean;
+  exclaim: boolean;
+  question: boolean;
+}
+
+export interface SentenceRuleTrace {
+  sentence: string;
+  beatsPerMeasure: number;
+  densityCurve: DensityCurve;
+  voiceWidth: VoiceWidth;
+  words: WordRuleTrace[];
+  longestWord: string | null;
+  longestWordTom: InstrumentId | null;
+  secondWord: string | null;
+  secondWordTom: InstrumentId | null;
+}
+
 export interface TextToBeatResult {
   slots: (LineData[] | null)[]; // always length 4, index 0-3 = A-D
   usedSentences: string[]; // the sentences actually mapped, in order
   totalSentences: number; // how many non-empty sentences the input had
+  traces: (SentenceRuleTrace | null)[]; // parallel to slots — see WordRuleTrace
 }
 
 // A syllable-counting heuristic, not a dictionary lookup — vowel-group
@@ -103,20 +133,53 @@ function splitWords(sentence: string): Word[] {
     .filter((w) => w.text.length > 0);
 }
 
-// Maps a hit count (1-6) to a specific catalog tile — straight subdivisions
-// for 1-4 (the most a beat can hold in plain sixteenths), triplet
-// subdivisions for 5-6 (the only way to fit that many onsets in one beat).
-const HITS_TO_TILE_ID: Record<number, string> = {
-  1: "n-quarter",
-  2: "n-e-e",
-  3: "n-e-s-s",
-  4: "n-s-s-s-s",
-  5: "t-e-s4",
-  6: "t-s6",
+// Every catalog shape that fits a given onset count — straight subdivisions
+// for 2-4 (the most a beat can hold in plain sixteenths), triplet
+// subdivisions for 4-6 (the only way to fit that many onsets in one beat, or
+// to lend a 4-onset word a different feel than the straight default).
+// Previously each count mapped to exactly one fixed tile, which is why most
+// generated beats read as a wall of identical quarter/8th-note shapes no
+// matter what the text said — same word length, same rhythm, every time.
+const HIT_TILE_VARIANTS: Record<number, string[]> = {
+  2: ["n-e-e", "n-de-s", "n-s-de"],
+  3: ["n-e-s-s", "n-s-e-s", "n-s-s-e"],
+  4: ["n-s-s-s-s", "t-e2-s2", "t-s2-e2"],
+  5: ["t-e-s4", "t-s-e-s3", "t-s2-e-s2", "t-s3-e-s", "t-s4-e"],
+  6: ["t-s6"],
 };
 
-function tileForHitCount(hits: number): RhythmTile {
-  const id = HITS_TO_TILE_ID[Math.max(1, Math.min(6, hits))];
+// Sums character codes rather than just using word length, so two
+// same-length words don't collapse onto the same variant.
+function wordSeed(word: string): number {
+  let sum = 0;
+  for (let i = 0; i < word.length; i++) sum += word.charCodeAt(i);
+  return sum;
+}
+
+// A lone onset gets pushed off the downbeat into a rest+note eighth pair
+// when the word starts with a vowel, instead of always landing as a flat
+// quarter hit — a plain quarter note on every 1-syllable word (the most
+// common case in plain English text) was the single biggest source of
+// "dull," since it's the one shape every short word shared. Consonant
+// starts (generally the more percussive-sounding onset) stay square on the
+// beat; vowel starts land on the "and" — deterministic by the word's own
+// first letter, so the same word always phrases the same way.
+function tileForSingleHit(word: string): RhythmTile {
+  const first = word[0]?.toLowerCase() ?? "";
+  if ("aeiou".includes(first)) {
+    return tileFromHits([
+      { type: "rest", note: "eighth" },
+      { type: "note", note: "eighth" },
+    ]);
+  }
+  return getTileById("n-quarter")!;
+}
+
+function tileForHitCount(hits: number, word: string): RhythmTile {
+  const clamped = Math.max(1, Math.min(6, hits));
+  if (clamped === 1) return tileForSingleHit(word);
+  const variants = HIT_TILE_VARIANTS[clamped];
+  const id = variants[wordSeed(word) % variants.length];
   return getTileById(id)!;
 }
 
@@ -186,8 +249,8 @@ function setAccentIfClear(blocks: (RhythmTile | null)[], index: number): void {
   if (blocks[index] == null) blocks[index] = ACCENT_TILE;
 }
 
-type DensityCurve = "steady" | "building" | "punchy";
-type VoiceWidth = "focused" | "wide";
+export type DensityCurve = "steady" | "building" | "punchy";
+export type VoiceWidth = "focused" | "wide";
 
 // The sentence-wide "groove profile" — see the file header for why this
 // exists at all: two cheap whole-sentence signals (ending punctuation,
@@ -232,7 +295,12 @@ function beatsPerMeasureFor(sentence: string): number {
   return MIN_MEASURE_BEATS + (sentence.trim().length % MEASURE_BEATS_OPTIONS);
 }
 
-function generateSlotFromSentence(sentence: string): LineData[] | null {
+interface SlotResult {
+  lines: LineData[];
+  trace: SentenceRuleTrace;
+}
+
+function generateSlotFromSentence(sentence: string): SlotResult | null {
   const words = splitWords(sentence);
   if (words.length === 0) return null;
 
@@ -254,6 +322,7 @@ function generateSlotFromSentence(sentence: string): LineData[] | null {
   // seen so far, longest first — the tom-accent candidates.
   let longestWord: { text: string; block: number; syllables: number } | null = null;
   let secondWord: { text: string; block: number; syllables: number } | null = null;
+  const wordTraces: WordRuleTrace[] = [];
 
   // Cycles back to the sentence's first word if it runs out before filling
   // beatsPerMeasure — a short sentence in a wide measure repeats rather than
@@ -268,10 +337,17 @@ function generateSlotFromSentence(sentence: string): LineData[] | null {
     const lower = word.text.toLowerCase();
     const isFunctionWord = FUNCTION_WORDS.has(lower);
     const startBlock = blockIndex;
-    const rhythmBlocks = rhythmBlocksByVoice[rhythmVoiceForWord(wordSlot)]!;
+    const voice = rhythmVoiceForWord(wordSlot);
+    const rhythmBlocks = rhythmBlocksByVoice[voice]!;
+    let phoneticAccent: WordRuleTrace["phoneticAccent"] = null;
+    let hitsUsed = 0;
+    let firstTileId = "";
 
     if (isFunctionWord) {
-      rhythmBlocks[blockIndex] = tileForHitCount(1);
+      const tile = tileForHitCount(1, word.text);
+      rhythmBlocks[blockIndex] = tile;
+      firstTileId = tile.id;
+      hitsUsed = 1;
       blockIndex++;
     } else {
       const syllables = countSyllables(word.text);
@@ -286,21 +362,37 @@ function generateSlotFromSentence(sentence: string): LineData[] | null {
       let remaining = syllables + densityBonus(curve, startBlock / Math.max(1, beatsPerMeasure - 1));
       while (remaining > 0 && blockIndex < beatsPerMeasure) {
         const hits = Math.min(remaining, 6);
-        rhythmBlocks[blockIndex] = tileForHitCount(hits);
+        const tile = tileForHitCount(hits, word.text);
+        rhythmBlocks[blockIndex] = tile;
+        if (firstTileId === "") firstTileId = tile.id;
+        hitsUsed += hits;
         remaining -= hits;
         blockIndex++;
       }
 
       const accent = PHONETIC_ACCENT[lower[0]];
-      if (accent === "hihatOpen") setAccentIfClear(openHihatBlocks, startBlock);
-      else if (accent === "snare") setAccentIfClear(snareBlocks, startBlock);
-      else if (accent === "kick") setAccentIfClear(kickBlocks, startBlock);
+      if (accent === "hihatOpen") { setAccentIfClear(openHihatBlocks, startBlock); phoneticAccent = "hihatOpen"; }
+      else if (accent === "snare") { setAccentIfClear(snareBlocks, startBlock); phoneticAccent = "snare"; }
+      else if (accent === "kick") { setAccentIfClear(kickBlocks, startBlock); phoneticAccent = "kick"; }
     }
     const endBlock = blockIndex - 1;
 
     if (word.comma) setAccentIfClear(snareBlocks, endBlock);
     if (word.exclaim) setAccentIfClear(crashBlocks, startBlock);
     if (word.question) setAccentIfClear(openHihatBlocks, startBlock);
+
+    wordTraces.push({
+      word: word.text,
+      isFunctionWord,
+      syllables: isFunctionWord ? 0 : countSyllables(word.text),
+      voice,
+      hits: hitsUsed,
+      tileId: firstTileId,
+      phoneticAccent,
+      comma: word.comma,
+      exclaim: word.exclaim,
+      question: word.question,
+    });
   }
 
   const lines: LineData[] = [];
@@ -321,10 +413,13 @@ function generateSlotFromSentence(sentence: string): LineData[] | null {
   }
   // Only accent a real multi-syllable word — a sentence of all 1-syllable
   // words has no standout to color.
+  let longestWordTom: InstrumentId | null = null;
+  let secondWordTom: InstrumentId | null = null;
   if (longestWord && longestWord.syllables >= 2) {
     const tomBlocks = emptyBlocks();
     tomBlocks[longestWord.block] = ACCENT_TILE;
     const tomVoice = dominantVowelTom(longestWord.text);
+    longestWordTom = tomVoice;
     lines.push({ id: randomLineId(4), instrument: tomVoice, blocks: tomBlocks, volume: DEFAULT_VOLUME });
 
     // A wide-voiced sentence spreads a second tom color onto the runner-up
@@ -334,11 +429,24 @@ function generateSlotFromSentence(sentence: string): LineData[] | null {
       secondTomBlocks[secondWord.block] = ACCENT_TILE;
       let secondVoice = dominantVowelTom(secondWord.text);
       if (secondVoice === tomVoice) secondVoice = nextTomVoice(secondVoice);
+      secondWordTom = secondVoice;
       lines.push({ id: randomLineId(5), instrument: secondVoice, blocks: secondTomBlocks, volume: DEFAULT_VOLUME });
     }
   }
 
-  return lines;
+  const trace: SentenceRuleTrace = {
+    sentence,
+    beatsPerMeasure,
+    densityCurve: curve,
+    voiceWidth: width,
+    words: wordTraces,
+    longestWord: longestWord && longestWord.syllables >= 2 ? longestWord.text : null,
+    longestWordTom,
+    secondWord: width === "wide" && secondWordTom ? secondWord!.text : null,
+    secondWordTom,
+  };
+
+  return { lines, trace };
 }
 
 export function generateBeatFromText(text: string): TextToBeatResult {
@@ -346,8 +454,11 @@ export function generateBeatFromText(text: string): TextToBeatResult {
   const sentences = splitSentences(clipped).filter((s) => splitWords(s).length > 0);
   const used = sentences.slice(0, MAX_TEXT_SLOTS);
 
-  const slots: (LineData[] | null)[] = used.map((s) => generateSlotFromSentence(s));
+  const results = used.map((s) => generateSlotFromSentence(s));
+  const slots: (LineData[] | null)[] = results.map((r) => r?.lines ?? null);
+  const traces: (SentenceRuleTrace | null)[] = results.map((r) => r?.trace ?? null);
   while (slots.length < MAX_TEXT_SLOTS) slots.push(null);
+  while (traces.length < MAX_TEXT_SLOTS) traces.push(null);
 
-  return { slots, usedSentences: used, totalSentences: sentences.length };
+  return { slots, usedSentences: used, totalSentences: sentences.length, traces };
 }

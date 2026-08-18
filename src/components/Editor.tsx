@@ -512,7 +512,7 @@ export function Editor({
               >
                 🧱 Stack Builder
               </Link>
-              {isBlankBoard(board) && <TextToBeatButton board={board} />}
+              {(isBlankBoard(board) || board?.textToBeatAlwaysOn) && <TextToBeatButton board={board} />}
               {/* Song import is temporarily hidden from the UI — see SongImportButton.tsx; the
                   upload/transcribe/import API routes are untouched, just not linked to from here. */}
               <span className="w-12 shrink-0 text-xs text-white/40">

@@ -37,6 +37,8 @@ export default async function BoardPage({
         slug: board.slug,
         displayName: board.displayName,
         slots: { A: board.slotA, B: board.slotB, C: board.slotC, D: board.slotD },
+        textToBeatAlwaysOn: board.textToBeatAlwaysOn,
+        textToBeatShowRules: board.textToBeatShowRules,
       }}
       initialSlot={initialSlot}
     />

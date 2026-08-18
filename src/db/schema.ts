@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import type { BoardSlotData } from "@/lib/board";
 import type { CustomSamples } from "@/lib/customSamples";
 import type { StackArrangement } from "@/lib/stack";
@@ -35,6 +35,15 @@ export const boards = pgTable("boards", {
   // Stack Builder: an arrangement sequencing repeats of slots A-D, played at
   // one global tempo, into a longer song (see lib/stack.ts).
   stack: jsonb("stack").$type<StackArrangement>(),
+  // Text to Beat is normally gated to a page with nothing saved yet (see
+  // Editor.tsx's isBlankBoard) — this opts a specific page out of that gate
+  // so its owner can keep re-generating from it while testing/iterating,
+  // without it being a general bulk-overwrite tool for anyone's live page.
+  textToBeatAlwaysOn: boolean("text_to_beat_always_on").notNull().default(false),
+  // Whether the Text to Beat preview shows the "rules used" breakdown
+  // (time signature formula, density curve, per-word rhythm/accent choices)
+  // alongside the generated grooves — see lib/textToBeat.ts's trace output.
+  textToBeatShowRules: boolean("text_to_beat_show_rules").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
