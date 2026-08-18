@@ -18,9 +18,9 @@ import { SaveShare } from "@/components/SaveShare";
 import { SheetMusicView } from "@/components/SheetMusicView";
 import { TileVisual } from "@/components/TileVisual";
 import { FartRecorder } from "@/components/FartRecorder";
-import { RandomizeButton } from "@/components/RandomizeButton";
+import { RandomizeButton, VariationKind } from "@/components/RandomizeButton";
 import { RhythmTile, toggleHitRest } from "@/lib/rhythm";
-import { generateRandomBeat } from "@/lib/randomBeat";
+import { generateFillVariation, generateGrooveVariation, generateRandomBeat } from "@/lib/randomBeat";
 import { InstrumentId } from "@/lib/instruments";
 import { useIsMobile } from "@/lib/useIsMobile";
 import {
@@ -30,6 +30,7 @@ import {
   computeMeasureLength,
   createLine,
   deserializeLines,
+  measureLengthFromStoredLines,
   serializeLines,
 } from "@/lib/song";
 import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine";
@@ -38,6 +39,23 @@ import { useHistoryState } from "@/lib/useHistoryState";
 import { BoardData, BoardSlotData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
 import { CustomSamples, arrayBufferToBase64 } from "@/lib/customSamples";
 import { ClaimUrlBox } from "@/components/ClaimUrlBox";
+
+// Which slots have an actual beat in them, excluding `exclude` (typically
+// the slot on screen) — what the Variation popover offers as "base this
+// on." A plain function so callers control exactly when it runs (an event
+// handler, or a useState initializer) rather than it reading a ref at
+// render time.
+function computeVariationSources(
+  slots: Record<SlotLetter, BoardSlotData | null> | null,
+  exclude: SlotLetter
+): { slot: SlotLetter; label: string }[] {
+  if (!slots) return [];
+  return SLOT_LETTERS.filter((slot) => {
+    if (slot === exclude) return false;
+    const data = slots[slot];
+    return !!data && measureLengthFromStoredLines(data.lines) > 0;
+  }).map((slot) => ({ slot, label: `Slot ${slot}` }));
+}
 
 export function Editor({
   initialBpm,
@@ -173,6 +191,7 @@ export function Editor({
     // before leaving it, so switching back later reflects this session's
     // edits rather than the stale data the server sent on page load.
     slotsRef.current[activeSlot] = { bpm, lines: serializeLines(lines), kit, customSamples };
+    setVariationSources(computeVariationSources(slotsRef.current, slot));
 
     const data = slotsRef.current[slot];
     const nextLines = data && data.lines.length > 0 ? deserializeLines(data.lines) : [createLine(0)];
@@ -392,6 +411,21 @@ export function Editor({
     setLines(generateRandomBeat({ complexity }));
   }
 
+  // Slots other than the one on screen that actually have a beat in
+  // them — what the Variation popover offers as "base this on." Only ever
+  // recomputed from a plain event handler (the initial useState here, and
+  // switchSlot below), never read off slotsRef during render.
+  const [variationSources, setVariationSources] = useState<{ slot: SlotLetter; label: string }[]>(() =>
+    computeVariationSources(board?.slots ?? null, activeSlot)
+  );
+
+  function randomizeVariation(sourceSlot: string, kind: VariationKind, complexity: number) {
+    const data = slotsRef.current[sourceSlot as SlotLetter];
+    if (!data) return;
+    const sourceLines = deserializeLines(data.lines);
+    setLines(kind === "fill" ? generateFillVariation(sourceLines, complexity) : generateGrooveVariation(sourceLines, complexity));
+  }
+
   function clearBlock(id: string, index: number) {
     setLines((prev) =>
       prev.map((l) =>
@@ -487,7 +521,11 @@ export function Editor({
               <path d="M20 12H9a5 5 0 0 0 0 10h1" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          <RandomizeButton onGenerate={randomizeBeat} />
+          <RandomizeButton
+            variationSources={variationSources}
+            onGenerateNew={randomizeBeat}
+            onGenerateVariation={randomizeVariation}
+          />
           <button
             type="button"
             onClick={() => setShowSheet(true)}

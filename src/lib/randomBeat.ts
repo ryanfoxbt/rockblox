@@ -1,29 +1,38 @@
-// Generates a RockBlocks beat for a fixed, simple kit — bass drum, snare,
-// and closed hi-hat — with a random measure length and random rhythm tiles
-// (including tiles with some hits toggled to rests) filling each beat.
+// Generates RockBlocks beats for a fixed, simple kit — bass drum, snare,
+// and closed hi-hat — plus variations/fills based on an existing beat.
 //
-// The first instrument (bass drum) is the anchor: its rhythm is rolled with
-// no outside influence. Every other line then reacts to how busy that
-// anchor turned out to be — real drumming is about sharing space, so a
-// packed anchor (a running sixteenth-note kick, say) pushes the rest of the
-// kit toward sparser, simpler blocks, while a sparse anchor leaves room for
-// other lines to be busier, instead of every line independently rolling the
-// same chaotic odds.
+// generateRandomBeat makes a beat from scratch: a random measure length and
+// random rhythm tiles (including tiles with some hits toggled to rests)
+// filling each beat. The first instrument (bass drum) is the anchor: its
+// rhythm is rolled with no outside influence. Every other line then reacts
+// to how busy that anchor turned out to be — real drumming is about sharing
+// space, so a packed anchor (a running sixteenth-note kick, say) pushes the
+// rest of the kit toward sparser, simpler blocks, while a sparse anchor
+// leaves room for other lines to be busier, instead of every line
+// independently rolling the same chaotic odds.
+//
+// generateGrooveVariation and generateFillVariation instead start from an
+// existing beat (typically the song's main groove) — most songs are built
+// from one theme repeated with small changes plus the occasional fill, not
+// four unrelated random beats, so once a first groove exists the natural
+// next step is "give me B/C/D inspired by A" rather than "randomize again."
 //
 // A single 1-10 "complexity" dial (see paramsForComplexity) drives how wild
-// the whole thing gets: how much the measure length varies, whether triplet
-// tiles are in play at all, how dense/steady the anchor is, and how much
-// jitter the reactive lines get. It's one knob rather than four so it stays
-// simple to reason about and tune; it can't separately express "busy but
-// predictable" vs. "sparse but wild" since those collapse onto one axis —
-// if that distinction turns out to matter, split it into two dials later.
+// any of this gets: how much the measure length varies (generateRandomBeat
+// only), whether triplet tiles are in play at all, how dense/steady the
+// anchor is, how much jitter the reactive lines get, and — for a variation —
+// how far it's allowed to drift from its source. It's one knob rather than
+// several so it stays simple to reason about and tune; it can't separately
+// express "busy but predictable" vs. "sparse but wild" since those collapse
+// onto one axis — if that distinction turns out to matter, split it into two
+// dials later.
 import { InstrumentId } from "./instruments";
 import { NOTE_TILES, RhythmHit, RhythmTile, TRIPLET_TILES, tileFromHits } from "./rhythm";
-import { DEFAULT_VOLUME, LineData, MAX_BEATS } from "./song";
+import { computeMeasureLength, DEFAULT_VOLUME, LineData, MAX_BEATS } from "./song";
 
 export const MIN_COMPLEXITY = 1;
 export const MAX_COMPLEXITY = 10;
-export const DEFAULT_COMPLEXITY = 5;
+export const DEFAULT_COMPLEXITY = 3;
 
 export interface RandomBeatOptions {
   // Which instruments to generate, in order — the first is the anchor line
@@ -90,8 +99,8 @@ interface ComplexityParams {
 // (3-7 blocks, 0.15/0.3 empty/rest, the full straight+triplet catalog drawn
 // uniformly — which works out to ~62% triplet tiles since triplets
 // outnumber straight tiles in the catalog 13-to-8) — the level the app
-// shipped with before this dial existed. 5 sits below that: a plain, steady
-// groove. 10 pushes past 7 into real chaos.
+// shipped with before this dial existed. 3 (the default) sits well below
+// that: a plain, steady groove. 10 pushes past 7 into real chaos.
 function paramsForComplexity(complexity: number): ComplexityParams {
   return {
     minBlocks: Math.round(scaleByComplexity(complexity, [[1, 4], [7, 3], [10, 3]])),
@@ -131,6 +140,24 @@ function buildLine(
     blocks[i] = randomTile(hitRestProbability, tripletProbability);
   }
   return { id: randomLineId(index), instrument, blocks, volume: DEFAULT_VOLUME };
+}
+
+// computeMeasureLength derives a beat's length from the last filled block
+// across all lines, not from any stored count — if mutation/generation
+// happens to roll "empty" at the final beat on every line, the measure
+// would silently come out shorter than intended. Force one line to land a
+// tile there.
+function forceReachMeasureLength(
+  lines: LineData[],
+  measureLength: number,
+  hitRestProbability: number,
+  tripletProbability: number
+): void {
+  if (lines.length === 0 || measureLength === 0) return;
+  const reaches = lines.some((l) => l.blocks[measureLength - 1]);
+  if (reaches) return;
+  const forced = lines[randomInt(0, lines.length - 1)];
+  forced.blocks[measureLength - 1] = randomTile(hitRestProbability, tripletProbability);
 }
 
 // Average note hits per beat over the blocks actually in use — the raw
@@ -185,15 +212,96 @@ export function generateRandomBeat(options: Partial<RandomBeatOptions> = {}): Li
     lines.push(buildLine(instruments[i], i, blockCount, emptyBlockProbability, hitRestProbability, params.tripletProbability));
   }
 
-  // computeMeasureLength derives the beat's length from the last filled
-  // block across all lines, not from blockCount directly — if every line
-  // happened to roll "empty" at the final beat, the measure would silently
-  // come out shorter than intended. Force one line to land a tile there.
-  const reachesBlockCount = lines.some((l) => l.blocks[blockCount - 1]);
-  if (!reachesBlockCount) {
-    const forced = lines[randomInt(0, lines.length - 1)];
-    forced.blocks[blockCount - 1] = randomTile(params.hitRestProbability, params.tripletProbability);
-  }
+  forceReachMeasureLength(lines, blockCount, params.hitRestProbability, params.tripletProbability);
+  return lines;
+}
 
+// How much of each block gets re-rolled for a groove variation, scaled by
+// complexity — low complexity keeps the result close kin to its source (a
+// subtle fill-in-the-blanks variation), high complexity lets it drift much
+// further while still sharing the source's instruments and bar length.
+const VARIATION_MUTATION_PROBABILITY: [number, number][] = [[1, 0.15], [5, 0.35], [10, 0.65]];
+// A mutated block has a small chance of flipping to/from silence outright
+// rather than just swapping to a different tile, so variations can gain or
+// drop a hit entirely and not just reshuffle existing ones.
+const VARIATION_ADD_HIT_PROBABILITY = 0.4;
+const VARIATION_DROP_HIT_PROBABILITY = 0.15;
+
+// A variation of an existing groove: same instruments and the same measure
+// length as the source (so it can drop into another slot of the same song
+// without a jarring bar-length change), with each block having a chance —
+// scaled by complexity — of being re-rolled rather than kept as-is.
+export function generateGrooveVariation(sourceLines: LineData[], complexity: number): LineData[] {
+  const measureLength = computeMeasureLength(sourceLines);
+  const params = paramsForComplexity(complexity);
+  const mutationProbability = scaleByComplexity(complexity, VARIATION_MUTATION_PROBABILITY);
+
+  const lines: LineData[] = sourceLines.map((line, index) => {
+    const blocks: (RhythmTile | null)[] = Array(MAX_BEATS).fill(null);
+    for (let i = 0; i < measureLength; i++) {
+      const original = line.blocks[i] ?? null;
+      if (Math.random() >= mutationProbability) {
+        blocks[i] = original;
+        continue;
+      }
+      if (!original) {
+        blocks[i] =
+          Math.random() < VARIATION_ADD_HIT_PROBABILITY
+            ? randomTile(params.hitRestProbability, params.tripletProbability)
+            : null;
+      } else {
+        blocks[i] =
+          Math.random() < VARIATION_DROP_HIT_PROBABILITY
+            ? null
+            : randomTile(params.hitRestProbability, params.tripletProbability);
+      }
+    }
+    return { id: randomLineId(index), instrument: line.instrument, blocks, volume: line.volume };
+  });
+
+  forceReachMeasureLength(lines, measureLength, params.hitRestProbability, params.tripletProbability);
+  return lines;
+}
+
+// Off-kit voices a fill can reach for that a main groove doesn't use — toms
+// and crash are reserved for breaking up the pattern, not playing it.
+const FILL_EXTRA_INSTRUMENTS: InstrumentId[] = ["crash", "lowTom", "midTom", "highTom"];
+// A fill is meant to stand out from the groove it interrupts, so it's
+// generated noticeably busier/wilder than the slider's plain reading —
+// bumped complexity rather than a whole separate dial.
+const FILL_COMPLEXITY_BOOST = 3;
+const FILL_EMPTY_PROBABILITY_SCALE = 0.5;
+const FILL_HIT_REST_PROBABILITY_SCALE = 0.6;
+
+function pickRandomSubset<T>(pool: T[], count: number): T[] {
+  const copy = [...pool];
+  const picked: T[] = [];
+  for (let i = 0; i < count && copy.length > 0; i++) {
+    picked.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
+  }
+  return picked;
+}
+
+// A fill inspired by an existing groove: the same core instruments plus 1-2
+// off-kit voices (toms/crash) for accent, over the source's bar length,
+// generated busier than the groove itself so it reads as a break from the
+// pattern rather than another repeat of it.
+export function generateFillVariation(sourceLines: LineData[], complexity: number): LineData[] {
+  const measureLength = computeMeasureLength(sourceLines);
+  const params = paramsForComplexity(Math.min(MAX_COMPLEXITY, complexity + FILL_COMPLEXITY_BOOST));
+
+  const coreInstruments = sourceLines.map((l) => l.instrument);
+  const extraPool = FILL_EXTRA_INSTRUMENTS.filter((i) => !coreInstruments.includes(i));
+  const extras = pickRandomSubset(extraPool, Math.min(extraPool.length, randomInt(1, 2)));
+  const instruments = [...coreInstruments, ...extras];
+
+  const emptyBlockProbability = Math.max(0.03, params.emptyBlockProbability * FILL_EMPTY_PROBABILITY_SCALE);
+  const hitRestProbability = params.hitRestProbability * FILL_HIT_REST_PROBABILITY_SCALE;
+
+  const lines = instruments.map((instrument, index) =>
+    buildLine(instrument, index, measureLength, emptyBlockProbability, hitRestProbability, params.tripletProbability)
+  );
+
+  forceReachMeasureLength(lines, measureLength, hitRestProbability, params.tripletProbability);
   return lines;
 }
