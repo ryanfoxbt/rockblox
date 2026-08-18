@@ -20,6 +20,7 @@ import { SheetMusicView } from "@/components/SheetMusicView";
 import { TileVisual } from "@/components/TileVisual";
 import { FartRecorder } from "@/components/FartRecorder";
 import { RandomizeButton, VariationKind } from "@/components/RandomizeButton";
+import { TextToBeatButton } from "@/components/TextToBeatButton";
 import { RhythmTile, toggleHitRest } from "@/lib/rhythm";
 import { generateFillVariation, generateGrooveVariation, generateRandomBeat } from "@/lib/randomBeat";
 import { InstrumentId } from "@/lib/instruments";
@@ -56,6 +57,15 @@ function computeVariationSources(
     const data = slots[slot];
     return !!data && measureLengthFromStoredLines(data.lines) > 0;
   }).map((slot) => ({ slot, label: `Slot ${slot}` }));
+}
+
+// Whether every slot was empty when the page loaded — Text to Beat is
+// pitched as a first-impression, paste-your-tweet-and-go hook for a brand
+// new page, not a bulk-overwrite tool for one someone's already built on,
+// so it's gated to this rather than shown everywhere.
+function isBlankBoard(board: BoardData | undefined): boolean {
+  if (!board) return false;
+  return SLOT_LETTERS.every((slot) => !board.slots[slot]);
 }
 
 export function Editor({
@@ -495,6 +505,7 @@ export function Editor({
               >
                 🧱 Stack Builder
               </Link>
+              {isBlankBoard(board) && <TextToBeatButton board={board} />}
               {/* Song import is temporarily hidden from the UI — see SongImportButton.tsx; the
                   upload/transcribe/import API routes are untouched, just not linked to from here. */}
               <span className="w-12 shrink-0 text-xs text-white/40">
