@@ -18,6 +18,7 @@ import { SaveShare } from "@/components/SaveShare";
 import { SheetMusicView } from "@/components/SheetMusicView";
 import { TileVisual } from "@/components/TileVisual";
 import { FartRecorder } from "@/components/FartRecorder";
+import { RandomizeButton } from "@/components/RandomizeButton";
 import { RhythmTile, toggleHitRest } from "@/lib/rhythm";
 import { generateRandomBeat } from "@/lib/randomBeat";
 import { InstrumentId } from "@/lib/instruments";
@@ -387,8 +388,8 @@ export function Editor({
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, instrument } : l)));
   }
 
-  function randomizeBeat() {
-    setLines(generateRandomBeat());
+  function randomizeBeat(complexity: number) {
+    setLines(generateRandomBeat({ complexity }));
   }
 
   function clearBlock(id: string, index: number) {
@@ -421,9 +422,9 @@ export function Editor({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {board && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <div className="flex overflow-hidden rounded-md border border-white/15">
                 {SLOT_LETTERS.map((slot) => (
                   <button
@@ -486,14 +487,7 @@ export function Editor({
               <path d="M20 12H9a5 5 0 0 0 0 10h1" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          <button
-            type="button"
-            onClick={randomizeBeat}
-            title="Randomize this beat — new instruments, length, and rhythms"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-base text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
-          >
-            🎲
-          </button>
+          <RandomizeButton onGenerate={randomizeBeat} />
           <button
             type="button"
             onClick={() => setShowSheet(true)}
