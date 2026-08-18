@@ -27,7 +27,7 @@
 // onto one axis — if that distinction turns out to matter, split it into two
 // dials later.
 import { InstrumentId } from "./instruments";
-import { NOTE_TILES, RhythmHit, RhythmTile, TRIPLET_TILES, tileFromHits } from "./rhythm";
+import { NOTE_FRACTION, NOTE_TILES, RhythmHit, RhythmTile, TRIPLET_TILES, tileFromHits } from "./rhythm";
 import { computeMeasureLength, DEFAULT_VOLUME, LineData, MAX_BEATS } from "./song";
 
 export const MIN_COMPLEXITY = 1;
@@ -263,16 +263,6 @@ export function generateGrooveVariation(sourceLines: LineData[], complexity: num
   return lines;
 }
 
-// Off-kit voices a fill can reach for that a main groove doesn't use — toms
-// and crash are reserved for breaking up the pattern, not playing it.
-const FILL_EXTRA_INSTRUMENTS: InstrumentId[] = ["crash", "lowTom", "midTom", "highTom"];
-// A fill is meant to stand out from the groove it interrupts, so it's
-// generated noticeably busier/wilder than the slider's plain reading —
-// bumped complexity rather than a whole separate dial.
-const FILL_COMPLEXITY_BOOST = 3;
-const FILL_EMPTY_PROBABILITY_SCALE = 0.5;
-const FILL_HIT_REST_PROBABILITY_SCALE = 0.6;
-
 function pickRandomSubset<T>(pool: T[], count: number): T[] {
   const copy = [...pool];
   const picked: T[] = [];
@@ -282,26 +272,179 @@ function pickRandomSubset<T>(pool: T[], count: number): T[] {
   return picked;
 }
 
-// A fill inspired by an existing groove: the same core instruments plus 1-2
-// off-kit voices (toms/crash) for accent, over the source's bar length,
-// generated busier than the groove itself so it reads as a break from the
-// pattern rather than another repeat of it.
+// A drum fill rarely rebuilds the whole bar from scratch: usually the
+// groove keeps playing for most of the measure and only the tail end —
+// the last beat, the last beat and a half, sometimes (occasionally) the
+// entire bar — breaks into fill material. Real fills also tend to be
+// simple: straight time (rarely a polyrhythm/triplet feel), built mostly
+// from kick/snare/toms, with the timekeeping cymbal (hi-hat/ride) dropping
+// out for the tail and an occasional crash as the only cymbal voice.
+const CYMBAL_VOICES: InstrumentId[] = ["hihatClosed", "hihatOpen", "ride"];
+const FILL_TOM_CHOICES: InstrumentId[] = ["lowTom", "midTom", "highTom"];
+const SLOTS_PER_BEAT = 4;
+// How often the fill takes over the whole bar rather than just its tail.
+const FULL_MEASURE_FILL_PROBABILITY = 0.25;
+// A tail longer than this (in beats) stops reading as "a fill" and starts
+// reading as "a different groove," regardless of how long the bar is.
+const MAX_FILL_TAIL_BEATS = 3;
+
+// How much of the measure (from the end) becomes fill material — a whole
+// number of beats, or a whole number plus a half-beat (the "start on beat
+// 2 1/2" case), never finer than that. Always leaves at least one full beat
+// of groove prefix unless the whole bar is chosen as the fill.
+function pickFillTailBeats(measureLength: number): number {
+  if (measureLength <= 1 || Math.random() < FULL_MEASURE_FILL_PROBABILITY) return measureLength;
+  const maxTail = Math.min(measureLength - 1, MAX_FILL_TAIL_BEATS);
+  const halfBeatSteps = Math.round(maxTail * 2);
+  return (1 + Math.floor(Math.random() * halfBeatSteps)) / 2;
+}
+
+// Decomposes a straight-note tile into 4 sixteenth-slot onset flags —
+// null if the tile contains a triplet fraction, which can't land cleanly
+// on a 4-slot grid (a null/empty beat decomposes to all-false, not null).
+function tileToSlotFlags(tile: RhythmTile | null): boolean[] | null {
+  if (!tile) return Array(SLOTS_PER_BEAT).fill(false);
+  const flags: boolean[] = [];
+  for (const hit of tile.hits) {
+    const span = NOTE_FRACTION[hit.note] * SLOTS_PER_BEAT;
+    if (!Number.isInteger(span)) return null;
+    flags.push(hit.type === "note");
+    for (let i = 1; i < span; i++) flags.push(false);
+  }
+  return flags.length === SLOTS_PER_BEAT ? flags : null;
+}
+
+function slotFlagsToTile(flags: boolean[]): RhythmTile | null {
+  if (!flags.some((f) => f)) return null;
+  const hits: RhythmHit[] = flags.map((f) => ({ type: f ? "note" : "rest", note: "sixteenth" }));
+  return tileFromHits(hits);
+}
+
+function randomFillSlots(count: number, hitProbability: number): boolean[] {
+  return Array.from({ length: count }, () => Math.random() < hitProbability);
+}
+
+interface FillDensity {
+  kick: number;
+  snare: number;
+  otherCore: number;
+  tom: number;
+  crash: number;
+}
+
+// Deliberately narrower ranges than a from-scratch beat's density — a fill
+// is meant to read as a simple, punchy break, not a busy solo.
+function fillDensityForComplexity(complexity: number): FillDensity {
+  return {
+    kick: scaleByComplexity(complexity, [[1, 0.2], [10, 0.5]]),
+    snare: scaleByComplexity(complexity, [[1, 0.3], [10, 0.6]]),
+    otherCore: scaleByComplexity(complexity, [[1, 0.25], [10, 0.55]]),
+    tom: scaleByComplexity(complexity, [[1, 0.15], [10, 0.4]]),
+    crash: scaleByComplexity(complexity, [[1, 0.2], [10, 0.55]]),
+  };
+}
+
+function fillHitProbabilityFor(instrument: InstrumentId, density: FillDensity): number {
+  if (instrument === "kick") return density.kick;
+  if (instrument === "snare") return density.snare;
+  return density.otherCore;
+}
+
+// Builds one line's blocks for the fill: beats fully before the cutoff are
+// copied verbatim from the source (untouched groove material), beats fully
+// after it are generated fresh, and the one beat the cutoff falls inside
+// (if it's a half-beat cutoff) keeps its source content for the first half
+// and gets fresh content for the second. `sourceBlocks` is null for a line
+// that doesn't exist in the source at all (a newly-added tom) — it has
+// nothing to copy, so its prefix is silent.
+function buildFillLineBlocks(
+  sourceBlocks: (RhythmTile | null)[] | null,
+  measureLength: number,
+  tailStartBeat: number,
+  straddleBeat: number,
+  silenceDuringTail: boolean,
+  hitProbability: number
+): (RhythmTile | null)[] {
+  const blocks: (RhythmTile | null)[] = Array(MAX_BEATS).fill(null);
+  const prefixBeats = Math.floor(tailStartBeat);
+  const half = SLOTS_PER_BEAT / 2;
+
+  for (let b = 0; b < measureLength; b++) {
+    if (b < prefixBeats) {
+      blocks[b] = sourceBlocks ? sourceBlocks[b] ?? null : null;
+      continue;
+    }
+    if (b === straddleBeat) {
+      const prefixFlags = (sourceBlocks ? tileToSlotFlags(sourceBlocks[b] ?? null) : null) ?? Array(SLOTS_PER_BEAT).fill(false);
+      const tailFlags = silenceDuringTail ? Array(half).fill(false) : randomFillSlots(half, hitProbability);
+      blocks[b] = slotFlagsToTile([...prefixFlags.slice(0, half), ...tailFlags]);
+      continue;
+    }
+    blocks[b] = silenceDuringTail ? null : slotFlagsToTile(randomFillSlots(SLOTS_PER_BEAT, hitProbability));
+  }
+  return blocks;
+}
+
+// A fill inspired by an existing groove: the groove keeps playing through
+// most of the bar, and only the tail end turns into fill material — mostly
+// kick/snare (plus whatever else the groove already used), 1-2 toms added
+// for color, the timekeeping cymbal dropping out for the tail, and an
+// occasional single crash accent landing on the very last sixteenth of the
+// bar. No triplets: real fills are rarely polyrhythmic.
 export function generateFillVariation(sourceLines: LineData[], complexity: number): LineData[] {
   const measureLength = computeMeasureLength(sourceLines);
-  const params = paramsForComplexity(Math.min(MAX_COMPLEXITY, complexity + FILL_COMPLEXITY_BOOST));
+  if (measureLength === 0) return [];
+  const density = fillDensityForComplexity(complexity);
 
-  const coreInstruments = sourceLines.map((l) => l.instrument);
-  const extraPool = FILL_EXTRA_INSTRUMENTS.filter((i) => !coreInstruments.includes(i));
-  const extras = pickRandomSubset(extraPool, Math.min(extraPool.length, randomInt(1, 2)));
-  const instruments = [...coreInstruments, ...extras];
+  let tailBeats = pickFillTailBeats(measureLength);
+  let tailStartBeat = measureLength - tailBeats;
+  let straddleBeat = Number.isInteger(tailStartBeat) ? -1 : Math.floor(tailStartBeat);
 
-  const emptyBlockProbability = Math.max(0.03, params.emptyBlockProbability * FILL_EMPTY_PROBABILITY_SCALE);
-  const hitRestProbability = params.hitRestProbability * FILL_HIT_REST_PROBABILITY_SCALE;
+  // A half-beat cutoff only works when every source line's tile at that
+  // beat is straight (decomposable onto the sixteenth grid) — a triplet
+  // tile can't be split mid-beat, so fall back to a whole-beat cut instead.
+  if (straddleBeat >= 0) {
+    const decomposable = sourceLines.every((l) => tileToSlotFlags(l.blocks[straddleBeat] ?? null) !== null);
+    if (!decomposable) {
+      tailBeats = Math.ceil(tailBeats);
+      tailStartBeat = measureLength - tailBeats;
+      straddleBeat = -1;
+    }
+  }
 
-  const lines = instruments.map((instrument, index) =>
-    buildLine(instrument, index, measureLength, emptyBlockProbability, hitRestProbability, params.tripletProbability)
+  const toms = pickRandomSubset(
+    FILL_TOM_CHOICES.filter((t) => !sourceLines.some((l) => l.instrument === t)),
+    randomInt(1, 2)
   );
+  const includeCrash = !sourceLines.some((l) => l.instrument === "crash") && Math.random() < density.crash;
 
-  forceReachMeasureLength(lines, measureLength, hitRestProbability, params.tripletProbability);
-  return lines;
+  const lines: LineData[] = [];
+  let index = 0;
+  for (const line of sourceLines) {
+    const isCymbal = CYMBAL_VOICES.includes(line.instrument);
+    const blocks = buildFillLineBlocks(
+      line.blocks,
+      measureLength,
+      tailStartBeat,
+      straddleBeat,
+      isCymbal,
+      fillHitProbabilityFor(line.instrument, density)
+    );
+    lines.push({ id: randomLineId(index++), instrument: line.instrument, blocks, volume: line.volume });
+  }
+  for (const tom of toms) {
+    const blocks = buildFillLineBlocks(null, measureLength, tailStartBeat, straddleBeat, false, density.tom);
+    lines.push({ id: randomLineId(index++), instrument: tom, blocks, volume: DEFAULT_VOLUME });
+  }
+  if (includeCrash) {
+    const blocks: (RhythmTile | null)[] = Array(MAX_BEATS).fill(null);
+    blocks[measureLength - 1] = slotFlagsToTile([false, false, false, true]);
+    lines.push({ id: randomLineId(index++), instrument: "crash", blocks, volume: DEFAULT_VOLUME });
+  }
+
+  // Drop any line left with nothing to play — most commonly the timekeeping
+  // cymbal on a full-measure fill, which never got a chance to sound at all.
+  const nonEmptyLines = lines.filter((l) => l.blocks.some((b) => b));
+  forceReachMeasureLength(nonEmptyLines, measureLength, 0.1, 0);
+  return nonEmptyLines;
 }
