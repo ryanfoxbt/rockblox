@@ -1,12 +1,20 @@
 // Turns pasted text into up to four RockBlocks grooves — one per sentence,
-// dropped into Slots A-D in order. The core idea: each word becomes one
-// beat-block, and its syllable count picks how many hits subdivide that
-// beat (a 1-syllable word is a single quarter hit, a 6-syllable word fills
-// the beat with the busiest tile in the catalog). Which instrument plays a
-// given word's rhythm round-robins across kick/snare/closed hi-hat by the
-// word's position in the sentence — the same trio random mode anchors on —
-// so the beat reads as one groove shared across the kit rather than
-// everything piling onto the kick while the rest of the kit sits idle.
+// dropped into Slots A-D in order. The sentence's *time signature* comes
+// first: its character count modulo 5, plus 3, lands somewhere in 3-7 beats
+// (see beatsPerMeasureFor) — a plain, deterministic formula rather than
+// however many blocks the words happened to fill, which in practice almost
+// always maxed out at 7/4 regardless of what the text said. The core idea
+// for filling those beats: each word becomes one beat-block, and its
+// syllable count picks how many hits subdivide that beat (a 1-syllable word
+// is a single quarter hit, a 6-syllable word fills the beat with the
+// busiest tile in the catalog). A sentence with more words than the target
+// measure needs is truncated; one with fewer cycles back to its first word
+// rather than leaving the bar short of the time signature the text called
+// for. Which instrument plays a given word's rhythm round-robins across
+// kick/snare/closed hi-hat by the word's position in the sentence — the
+// same trio random mode anchors on — so the beat reads as one groove shared
+// across the kit rather than everything piling onto the kick while the
+// rest of the kit sits idle.
 //
 // On top of that per-word mapping, two whole-sentence properties set a
 // "groove profile" before any word is generated — borrowed from a melody
@@ -210,12 +218,27 @@ function nextTomVoice(tom: InstrumentId): InstrumentId {
   return "lowTom";
 }
 
+const MIN_MEASURE_BEATS = 3;
+const MAX_MEASURE_BEATS = MAX_BEATS; // 7 — the app's own per-pattern ceiling
+const MEASURE_BEATS_OPTIONS = MAX_MEASURE_BEATS - MIN_MEASURE_BEATS + 1; // 3,4,5,6,7 = 5 choices
+
+// Picks the sentence's time signature from its character count via a plain
+// modulo, landing somewhere in 3-7 — a from-scratch beat used to almost
+// always end up at 7/4 simply because that's the block-filling loop's hard
+// ceiling, not because the text called for it. Character count (not word
+// count) gives finer-grained, less clustered spread across the five
+// options, and ties back to the feature's own 280-character framing.
+function beatsPerMeasureFor(sentence: string): number {
+  return MIN_MEASURE_BEATS + (sentence.trim().length % MEASURE_BEATS_OPTIONS);
+}
+
 function generateSlotFromSentence(sentence: string): LineData[] | null {
   const words = splitWords(sentence);
   if (words.length === 0) return null;
 
   const curve = densityCurveFor(sentence);
   const width = voiceWidthFor(words[0].text);
+  const beatsPerMeasure = beatsPerMeasureFor(sentence);
 
   const kickBlocks = emptyBlocks();
   const snareBlocks = emptyBlocks();
@@ -232,14 +255,20 @@ function generateSlotFromSentence(sentence: string): LineData[] | null {
   let longestWord: { text: string; block: number; syllables: number } | null = null;
   let secondWord: { text: string; block: number; syllables: number } | null = null;
 
+  // Cycles back to the sentence's first word if it runs out before filling
+  // beatsPerMeasure — a short sentence in a wide measure repeats rather than
+  // leaving the bar short of the time signature the text called for. A long
+  // sentence simply stops early, same truncation as before. Either way each
+  // word (repeats included) still gets its own round-robin voice turn and
+  // density-curve position, both driven off the running slot index/block
+  // position rather than the word array's own length.
   let blockIndex = 0;
-  for (let i = 0; i < words.length; i++) {
-    if (blockIndex >= MAX_BEATS) break;
-    const word = words[i];
+  for (let wordSlot = 0; blockIndex < beatsPerMeasure; wordSlot++) {
+    const word = words[wordSlot % words.length];
     const lower = word.text.toLowerCase();
     const isFunctionWord = FUNCTION_WORDS.has(lower);
     const startBlock = blockIndex;
-    const rhythmBlocks = rhythmBlocksByVoice[rhythmVoiceForWord(i)]!;
+    const rhythmBlocks = rhythmBlocksByVoice[rhythmVoiceForWord(wordSlot)]!;
 
     if (isFunctionWord) {
       rhythmBlocks[blockIndex] = tileForHitCount(1);
@@ -254,8 +283,8 @@ function generateSlotFromSentence(sentence: string): LineData[] | null {
         secondWord = candidate;
       }
 
-      let remaining = syllables + densityBonus(curve, i / Math.max(1, words.length - 1));
-      while (remaining > 0 && blockIndex < MAX_BEATS) {
+      let remaining = syllables + densityBonus(curve, startBlock / Math.max(1, beatsPerMeasure - 1));
+      while (remaining > 0 && blockIndex < beatsPerMeasure) {
         const hits = Math.min(remaining, 6);
         rhythmBlocks[blockIndex] = tileForHitCount(hits);
         remaining -= hits;
