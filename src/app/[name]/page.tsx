@@ -2,12 +2,19 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db";
 import { boards } from "@/db/schema";
-import { isReservedBoardName, isValidBoardName, normalizeBoardSlug } from "@/lib/board";
+import { isReservedBoardName, isValidBoardName, normalizeBoardSlug, SLOT_LETTERS } from "@/lib/board";
 import { Editor } from "@/components/Editor";
 import { ClaimBoard } from "@/components/ClaimBoard";
 
-export default async function BoardPage({ params }: { params: Promise<{ name: string }> }) {
+export default async function BoardPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ name: string }>;
+  searchParams: Promise<{ slot?: string }>;
+}) {
   const { name } = await params;
+  const { slot } = await searchParams;
 
   if (!isValidBoardName(name) || isReservedBoardName(name)) notFound();
 
@@ -22,6 +29,8 @@ export default async function BoardPage({ params }: { params: Promise<{ name: st
     return <ClaimBoard name={name} />;
   }
 
+  const initialSlot = SLOT_LETTERS.find((l) => l === slot);
+
   return (
     <Editor
       board={{
@@ -29,6 +38,7 @@ export default async function BoardPage({ params }: { params: Promise<{ name: st
         displayName: board.displayName,
         slots: { A: board.slotA, B: board.slotB, C: board.slotC, D: board.slotD },
       }}
+      initialSlot={initialSlot}
     />
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragEndEvent,
@@ -63,6 +64,7 @@ export function Editor({
   initialKit,
   initialCustomSamples,
   initialSlug,
+  initialSlot,
   board,
 }: {
   initialBpm?: number;
@@ -70,10 +72,13 @@ export function Editor({
   initialKit?: string;
   initialCustomSamples?: CustomSamples;
   initialSlug?: string;
+  // Which slot to open on, e.g. from a `?slot=` URL param set when returning
+  // from Stack Builder — falls back to the first non-empty slot when absent.
+  initialSlot?: SlotLetter;
   board?: BoardData;
 }) {
   const [activeSlot, setActiveSlot] = useState<SlotLetter>(
-    () => (board && SLOT_LETTERS.find((l) => board.slots[l])) || "A"
+    () => initialSlot || (board && SLOT_LETTERS.find((l) => board.slots[l])) || "A"
   );
   // Tracks the last payload known to be persisted for this slot, so the
   // autosave effect only fires on real edits — not on mount, not when
@@ -118,6 +123,7 @@ export function Editor({
   const [samplesLoading, setSamplesLoading] = useState(true);
 
   const isMobile = useIsMobile();
+  const router = useRouter();
   const playerRef = useRef<RockBloxPlayer | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -192,6 +198,11 @@ export function Editor({
     // edits rather than the stale data the server sent on page load.
     slotsRef.current[activeSlot] = { bpm, lines: serializeLines(lines), kit, customSamples };
     setVariationSources(computeVariationSources(slotsRef.current, slot));
+    // Keep the URL in sync with the active slot (replace, not push, so
+    // switching slots doesn't pile up back-button history) — this is what
+    // lets the browser's actual back button, not just the in-app link,
+    // return to the same slot after a trip to Stack Builder.
+    router.replace(`/${board.displayName}?slot=${slot}`, { scroll: false });
 
     const data = slotsRef.current[slot];
     const nextLines = data && data.lines.length > 0 ? deserializeLines(data.lines) : [createLine(0)];
@@ -478,7 +489,7 @@ export function Editor({
                 ))}
               </div>
               <Link
-                href={`/${board.displayName}/stack`}
+                href={`/${board.displayName}/stack?from=${activeSlot}`}
                 title="Arrange your beats into a longer song"
                 className="shrink-0 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
               >

@@ -48,8 +48,11 @@ function AppendDropZone({ index, onTap }: { index: number; onTap: () => void }) 
   );
 }
 
-export function StackBuilder({ board }: { board: BoardData }) {
+export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSlot?: SlotLetter }) {
   const isMobile = useIsMobile();
+  // Send the user back to whichever slot they were editing before they came
+  // here, rather than always landing back on the editor's default slot.
+  const editorHref = `/${board.displayName}${returnSlot ? `?slot=${returnSlot}` : ""}`;
 
   const slotInfo = useMemo(() => {
     const info = {} as Record<SlotLetter, SlotInfo>;
@@ -324,7 +327,7 @@ export function StackBuilder({ board }: { board: BoardData }) {
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 pb-24 text-white">
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 px-6 py-4">
         <div>
-          <Link href={`/${board.displayName}`} className="text-xs text-white/40 underline decoration-dotted hover:text-yellow-400">
+          <Link href={editorHref} className="text-xs text-white/40 underline decoration-dotted hover:text-yellow-400">
             ← Back to /{board.displayName}
           </Link>
           <h1 className="mt-1 text-2xl font-black tracking-tight">
@@ -457,7 +460,7 @@ export function StackBuilder({ board }: { board: BoardData }) {
 
           {!hasAnyBeats ? (
             <p className="text-sm text-white/50">
-              Build at least one beat (A, B, C or D) on your <Link href={`/${board.displayName}`} className="text-yellow-400 underline decoration-dotted">page</Link> first, then come back to arrange them into a song.
+              Build at least one beat (A, B, C or D) on your <Link href={editorHref} className="text-yellow-400 underline decoration-dotted">page</Link> first, then come back to arrange them into a song.
             </p>
           ) : (
             <>
