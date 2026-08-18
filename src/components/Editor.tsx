@@ -62,10 +62,16 @@ function computeVariationSources(
 // Whether every slot was empty when the page loaded — Text to Beat is
 // pitched as a first-impression, paste-your-tweet-and-go hook for a brand
 // new page, not a bulk-overwrite tool for one someone's already built on,
-// so it's gated to this rather than shown everywhere.
+// so it's gated to this rather than shown everywhere. A slot claimed via
+// the homepage's "get your own page" box always saves *something* into
+// slotA (even just a lineless placeholder row) rather than leaving it
+// null, so "empty" has to mean no real hits, not just "no data at all."
 function isBlankBoard(board: BoardData | undefined): boolean {
   if (!board) return false;
-  return SLOT_LETTERS.every((slot) => !board.slots[slot]);
+  return SLOT_LETTERS.every((slot) => {
+    const data = board.slots[slot];
+    return !data || measureLengthFromStoredLines(data.lines) === 0;
+  });
 }
 
 export function Editor({
@@ -472,8 +478,9 @@ export function Editor({
               Your page: <span className="font-mono text-yellow-400">/{board.displayName}</span>
             </p>
           ) : (
-            <div className="mt-2">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <ClaimUrlBox bpm={bpm} lines={lines} kit={kit} customSamples={customSamples} />
+              <TextToBeatButton />
             </div>
           )}
         </div>

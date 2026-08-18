@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { BoardData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
 import { DEFAULT_KIT } from "@/lib/drumKits";
 import { serializeLines } from "@/lib/song";
@@ -10,14 +11,20 @@ const GENERATED_BPM = 100;
 
 // Paste-text-get-a-beat, for a brand new, still-empty page — see
 // Editor.tsx for the "blank board only" gate. One sentence becomes one
-// slot's groove (see lib/textToBeat.ts for the word-rhythm mapping), so
-// this can fill all of Slots A-D in one go from a single tweet-length
-// paste, then save straight to the board (bypassing the single-slot
-// in-memory editor state, same as SongImportButton does for song imports).
-export function TextToBeatButton({ board }: { board: BoardData }) {
+// slot's groove (see lib/textToBeat.ts for the word-rhythm mapping).
+//
+// Two entry points, two save paths: from an already-claimed-but-blank
+// page (`board` set), Save writes straight to Slots A-D via the existing
+// per-slot PUT, same as SongImportButton does for song imports. From the
+// homepage (`board` undefined — nothing claimed yet), there's nowhere to
+// save to yet, so Save instead asks for a page name and creates the board
+// with all four slots already filled in one call.
+export function TextToBeatButton({ board }: { board?: BoardData }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [result, setResult] = useState<TextToBeatResult | null>(null);
+  const [claimName, setClaimName] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +33,7 @@ export function TextToBeatButton({ board }: { board: BoardData }) {
     setOpen(false);
     setText("");
     setResult(null);
+    setClaimName("");
     setSaving(false);
     setSaved(false);
     setError(null);
@@ -37,11 +45,14 @@ export function TextToBeatButton({ board }: { board: BoardData }) {
     setError(null);
   }
 
-  async function save() {
-    if (!result) return;
-    const toSave = SLOT_LETTERS
+  function slotsToSave(result: TextToBeatResult) {
+    return SLOT_LETTERS
       .map((slot, i) => ({ slot, lines: result.slots[i] }))
       .filter((s): s is { slot: SlotLetter; lines: NonNullable<(typeof s)["lines"]> } => !!s.lines);
+  }
+
+  async function saveToBoard(board: BoardData, result: TextToBeatResult) {
+    const toSave = slotsToSave(result);
     if (toSave.length === 0) return;
 
     setSaving(true);
@@ -61,6 +72,41 @@ export function TextToBeatButton({ board }: { board: BoardData }) {
     } catch {
       setError("Couldn't save — try again.");
     } finally {
+      setSaving(false);
+    }
+  }
+
+  async function claimAndSave(result: TextToBeatResult) {
+    const name = claimName.trim();
+    if (!name) return;
+    const toSave = slotsToSave(result);
+    if (toSave.length === 0) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/boards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          slots: Object.fromEntries(
+            toSave.map(({ slot, lines }) => [
+              slot,
+              { bpm: GENERATED_BPM, lines: serializeLines(lines), kit: DEFAULT_KIT },
+            ])
+          ),
+        }),
+      });
+      const data = (await res.json().catch(() => null)) as { error?: string; displayName?: string } | null;
+      if (!res.ok) {
+        setError(data?.error ?? "Couldn't claim that page — try again.");
+        setSaving(false);
+        return;
+      }
+      router.push(`/${data?.displayName ?? name}`);
+    } catch {
+      setError("Couldn't claim that page — try again.");
       setSaving(false);
     }
   }
@@ -160,28 +206,60 @@ export function TextToBeatButton({ board }: { board: BoardData }) {
                         );
                       })}
                     </ul>
-                    <p className="text-xs text-white/40">Saving overwrites whatever is currently in those slots.</p>
-                    {error && <p className="text-sm text-red-400">{error}</p>}
-                    {saved ? (
-                      <div className="flex flex-col gap-2">
-                        <p className="text-sm text-yellow-400">Saved.</p>
+
+                    {board ? (
+                      <>
+                        <p className="text-xs text-white/40">
+                          Saving overwrites whatever is currently in those slots.
+                        </p>
+                        {error && <p className="text-sm text-red-400">{error}</p>}
+                        {saved ? (
+                          <div className="flex flex-col gap-2">
+                            <p className="text-sm text-yellow-400">Saved.</p>
+                            <button
+                              type="button"
+                              onClick={() => window.location.reload()}
+                              className="self-start rounded-md border border-white/15 px-3 py-1.5 text-sm text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+                            >
+                              Reload to view it
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => saveToBoard(board, result)}
+                            disabled={saving}
+                            className="w-full rounded-full bg-yellow-400 px-4 py-1.5 text-sm font-bold text-slate-900 transition hover:bg-yellow-300 disabled:opacity-60"
+                          >
+                            {saving ? "Saving…" : "Save to Slots A-D"}
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <label className="flex flex-col gap-1 text-sm text-white/70">
+                          Claim a page to save it
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-white/40">/</span>
+                            <input
+                              value={claimName}
+                              onChange={(e) => setClaimName(e.target.value)}
+                              placeholder="YourName"
+                              maxLength={24}
+                              className="flex-1 rounded-md border border-white/15 bg-white/5 px-2 py-1.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none"
+                            />
+                          </div>
+                        </label>
+                        {error && <p className="text-sm text-red-400">{error}</p>}
                         <button
                           type="button"
-                          onClick={() => window.location.reload()}
-                          className="self-start rounded-md border border-white/15 px-3 py-1.5 text-sm text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+                          onClick={() => claimAndSave(result)}
+                          disabled={saving || claimName.trim().length === 0}
+                          className="w-full rounded-full bg-yellow-400 px-4 py-1.5 text-sm font-bold text-slate-900 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          Reload to view it
+                          {saving ? "Claiming…" : "Claim & Save"}
                         </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={save}
-                        disabled={saving}
-                        className="w-full rounded-full bg-yellow-400 px-4 py-1.5 text-sm font-bold text-slate-900 transition hover:bg-yellow-300 disabled:opacity-60"
-                      >
-                        {saving ? "Saving…" : "Save to Slots A-D"}
-                      </button>
+                      </>
                     )}
                   </>
                 )}
