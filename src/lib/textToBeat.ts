@@ -2,7 +2,11 @@
 // dropped into Slots A-D in order. The core idea: each word becomes one
 // beat-block, and its syllable count picks how many hits subdivide that
 // beat (a 1-syllable word is a single quarter hit, a 6-syllable word fills
-// the beat with the busiest tile in the catalog).
+// the beat with the busiest tile in the catalog). Which instrument plays a
+// given word's rhythm round-robins across kick/snare/closed hi-hat by the
+// word's position in the sentence — the same trio random mode anchors on —
+// so the beat reads as one groove shared across the kit rather than
+// everything piling onto the kick while the rest of the kit sits idle.
 //
 // On top of that per-word mapping, two whole-sentence properties set a
 // "groove profile" before any word is generated — borrowed from a melody
@@ -22,10 +26,10 @@
 // Two more per-word rules, also lifted from the same source: a short list of
 // common function words ("the", "a", "is", ...) always renders as a single
 // plain hit, so filler doesn't compete rhythmically with real content — and
-// a word's *first letter* can trigger a phonetic accent on a second line
-// (fricatives like s/f/z read as a hi-hat sizzle, tongue-taps like t/d read
-// as a snare tap) — sound-symbolism rather than randomness, so the same
-// word always accents the same way.
+// a word's *first letter* can trigger a phonetic accent on top of its own
+// rhythm (plosives like b/k/p read as a kick punch, fricatives like s/f/z as
+// a hi-hat sizzle, tongue-taps like t/d as a snare tap) — sound-symbolism
+// rather than randomness, so the same word always accents the same way.
 //
 // Punctuation also becomes accents on separate lines — comma, exclamation,
 // and question mark each read as a distinct hit — and each sentence's
@@ -145,15 +149,34 @@ const FUNCTION_WORDS = new Set([
   "this", "that", "with", "for", "do", "did", "does",
 ]);
 
-// Fricatives/sibilants read as a hi-hat sizzle; tongue-tap consonants read
-// as a crisp snare tap — sound-symbolism rather than randomness, so a word
-// accents the same way every time it appears. Plosives (b/k/p/g) get no
-// accent of their own: the kick line already carries every word's rhythm,
-// so a kick-specific accent here would have nowhere new to land.
-const PHONETIC_ACCENT: Record<string, "hihatOpen" | "snare"> = {
+// Plosives read as a kick punch, fricatives/sibilants as a hi-hat sizzle,
+// tongue-tap consonants as a crisp snare tap — sound-symbolism rather than
+// randomness, so a word accents the same way every time it appears.
+const PHONETIC_ACCENT: Record<string, "kick" | "hihatOpen" | "snare"> = {
+  b: "kick", k: "kick", g: "kick", p: "kick", c: "kick",
   s: "hihatOpen", f: "hihatOpen", z: "hihatOpen", v: "hihatOpen", h: "hihatOpen",
   t: "snare", d: "snare", j: "snare",
 };
+
+// The three voices that trade off carrying each word's own syllable-rhythm
+// — same trio random mode anchors on (kick, snare, closed hi-hat) — cycled
+// by each word's position in the sentence. Previously every word's rhythm
+// landed on the kick alone, so the kick dominated every groove regardless
+// of what the text said; round-robining by index is the simplest rule that
+// guarantees an even split while staying entirely deterministic.
+const RHYTHM_VOICES: InstrumentId[] = ["kick", "snare", "hihatClosed"];
+
+function rhythmVoiceForWord(index: number): InstrumentId {
+  return RHYTHM_VOICES[index % RHYTHM_VOICES.length];
+}
+
+// Only fills an accent tile into a block that's still empty — a word's own
+// rhythm (written first) always wins over an accent that would otherwise
+// land on that same block, e.g. a comma on a word whose rhythm happened to
+// round-robin onto the snare.
+function setAccentIfClear(blocks: (RhythmTile | null)[], index: number): void {
+  if (blocks[index] == null) blocks[index] = ACCENT_TILE;
+}
 
 type DensityCurve = "steady" | "building" | "punchy";
 type VoiceWidth = "focused" | "wide";
@@ -196,8 +219,14 @@ function generateSlotFromSentence(sentence: string): LineData[] | null {
 
   const kickBlocks = emptyBlocks();
   const snareBlocks = emptyBlocks();
+  const hihatClosedBlocks = emptyBlocks();
   const crashBlocks = emptyBlocks();
   const openHihatBlocks = emptyBlocks();
+  const rhythmBlocksByVoice: Partial<Record<InstrumentId, (RhythmTile | null)[]>> = {
+    kick: kickBlocks,
+    snare: snareBlocks,
+    hihatClosed: hihatClosedBlocks,
+  };
   // Tracks the two longest *content* words (function words never qualify)
   // seen so far, longest first — the tom-accent candidates.
   let longestWord: { text: string; block: number; syllables: number } | null = null;
@@ -210,9 +239,10 @@ function generateSlotFromSentence(sentence: string): LineData[] | null {
     const lower = word.text.toLowerCase();
     const isFunctionWord = FUNCTION_WORDS.has(lower);
     const startBlock = blockIndex;
+    const rhythmBlocks = rhythmBlocksByVoice[rhythmVoiceForWord(i)]!;
 
     if (isFunctionWord) {
-      kickBlocks[blockIndex] = tileForHitCount(1);
+      rhythmBlocks[blockIndex] = tileForHitCount(1);
       blockIndex++;
     } else {
       const syllables = countSyllables(word.text);
@@ -227,25 +257,32 @@ function generateSlotFromSentence(sentence: string): LineData[] | null {
       let remaining = syllables + densityBonus(curve, i / Math.max(1, words.length - 1));
       while (remaining > 0 && blockIndex < MAX_BEATS) {
         const hits = Math.min(remaining, 6);
-        kickBlocks[blockIndex] = tileForHitCount(hits);
+        rhythmBlocks[blockIndex] = tileForHitCount(hits);
         remaining -= hits;
         blockIndex++;
       }
 
       const accent = PHONETIC_ACCENT[lower[0]];
-      if (accent === "hihatOpen") openHihatBlocks[startBlock] = ACCENT_TILE;
-      else if (accent === "snare") snareBlocks[startBlock] = ACCENT_TILE;
+      if (accent === "hihatOpen") setAccentIfClear(openHihatBlocks, startBlock);
+      else if (accent === "snare") setAccentIfClear(snareBlocks, startBlock);
+      else if (accent === "kick") setAccentIfClear(kickBlocks, startBlock);
     }
     const endBlock = blockIndex - 1;
 
-    if (word.comma) snareBlocks[endBlock] = ACCENT_TILE;
-    if (word.exclaim) crashBlocks[startBlock] = ACCENT_TILE;
-    if (word.question) openHihatBlocks[startBlock] = ACCENT_TILE;
+    if (word.comma) setAccentIfClear(snareBlocks, endBlock);
+    if (word.exclaim) setAccentIfClear(crashBlocks, startBlock);
+    if (word.question) setAccentIfClear(openHihatBlocks, startBlock);
   }
 
-  const lines: LineData[] = [{ id: randomLineId(0), instrument: "kick", blocks: kickBlocks, volume: DEFAULT_VOLUME }];
+  const lines: LineData[] = [];
+  if (kickBlocks.some(Boolean)) {
+    lines.push({ id: randomLineId(0), instrument: "kick", blocks: kickBlocks, volume: DEFAULT_VOLUME });
+  }
   if (snareBlocks.some(Boolean)) {
     lines.push({ id: randomLineId(1), instrument: "snare", blocks: snareBlocks, volume: DEFAULT_VOLUME });
+  }
+  if (hihatClosedBlocks.some(Boolean)) {
+    lines.push({ id: randomLineId(6), instrument: "hihatClosed", blocks: hihatClosedBlocks, volume: DEFAULT_VOLUME });
   }
   if (crashBlocks.some(Boolean)) {
     lines.push({ id: randomLineId(2), instrument: "crash", blocks: crashBlocks, volume: DEFAULT_VOLUME });
