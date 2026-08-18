@@ -2,11 +2,35 @@
 // dropped into Slots A-D in order. The core idea: each word becomes one
 // beat-block, and its syllable count picks how many hits subdivide that
 // beat (a 1-syllable word is a single quarter hit, a 6-syllable word fills
-// the beat with the busiest tile in the catalog). Punctuation becomes
-// accents on separate lines — comma, exclamation, and question mark each
-// read as a distinct hit — and each sentence's longest word gets a tom
-// accent colored by its dominant vowel. Paragraphs have no effect: only
-// sentence boundaries and word boundaries matter.
+// the beat with the busiest tile in the catalog).
+//
+// On top of that per-word mapping, two whole-sentence properties set a
+// "groove profile" before any word is generated — borrowed from a melody
+// generator (github.com/ryanfox — "The Rejection Remix") whose drum rules
+// were an afterthought but whose *melody* rules had exactly the shape worth
+// stealing: read a couple of cheap, whole-text signals (last punctuation
+// mark, first word's length) into a small set of named profiles, then let
+// every word's generation lean on that profile rather than each word being
+// generated in isolation. Independently-random word-by-word output tends to
+// sound like noise; a shared profile gives the whole groove one identity.
+//   - Density curve (from the sentence's ending punctuation): "?" builds
+//     density toward the end (a rising, anticipatory feel), "!" stays dense
+//     throughout (immediate energy), anything else is flat/steady.
+//   - Voice width (from the first word's length): a long opening word widens
+//     the groove to a second tom color on the sentence's second-longest
+//     word, not just its longest.
+// Two more per-word rules, also lifted from the same source: a short list of
+// common function words ("the", "a", "is", ...) always renders as a single
+// plain hit, so filler doesn't compete rhythmically with real content — and
+// a word's *first letter* can trigger a phonetic accent on a second line
+// (fricatives like s/f/z read as a hi-hat sizzle, tongue-taps like t/d read
+// as a snare tap) — sound-symbolism rather than randomness, so the same
+// word always accents the same way.
+//
+// Punctuation also becomes accents on separate lines — comma, exclamation,
+// and question mark each read as a distinct hit — and each sentence's
+// longest word gets a tom accent colored by its dominant vowel. Paragraphs
+// have no effect: only sentence boundaries and word boundaries matter.
 import { InstrumentId } from "./instruments";
 import { RhythmTile, getTileById } from "./rhythm";
 import { DEFAULT_VOLUME, LineData, MAX_BEATS } from "./song";
@@ -110,31 +134,107 @@ function emptyBlocks(): (RhythmTile | null)[] {
   return Array(MAX_BEATS).fill(null);
 }
 
+// Common short function words — pronouns, articles, prepositions, auxiliary
+// verbs — that carry little content of their own. Forcing these to a single
+// plain hit (skipping density bonuses and phonetic accents) keeps them from
+// competing rhythmically with the words actually worth emphasizing.
+const FUNCTION_WORDS = new Set([
+  "a", "an", "the", "is", "are", "was", "were", "be", "been", "am",
+  "to", "of", "in", "on", "at", "it", "as", "so", "if", "or", "and", "but",
+  "my", "no", "we", "he", "she", "you", "i", "us", "me", "him", "her",
+  "this", "that", "with", "for", "do", "did", "does",
+]);
+
+// Fricatives/sibilants read as a hi-hat sizzle; tongue-tap consonants read
+// as a crisp snare tap — sound-symbolism rather than randomness, so a word
+// accents the same way every time it appears. Plosives (b/k/p/g) get no
+// accent of their own: the kick line already carries every word's rhythm,
+// so a kick-specific accent here would have nowhere new to land.
+const PHONETIC_ACCENT: Record<string, "hihatOpen" | "snare"> = {
+  s: "hihatOpen", f: "hihatOpen", z: "hihatOpen", v: "hihatOpen", h: "hihatOpen",
+  t: "snare", d: "snare", j: "snare",
+};
+
+type DensityCurve = "steady" | "building" | "punchy";
+type VoiceWidth = "focused" | "wide";
+
+// The sentence-wide "groove profile" — see the file header for why this
+// exists at all: two cheap whole-sentence signals (ending punctuation,
+// first word's length) set a shared identity that every word's generation
+// leans on, instead of each word rolling independently.
+function densityCurveFor(sentence: string): DensityCurve {
+  const lastChar = sentence.trim().slice(-1);
+  if (lastChar === "?") return "building";
+  if (lastChar === "!") return "punchy";
+  return "steady";
+}
+
+function voiceWidthFor(firstWord: string): VoiceWidth {
+  return firstWord.length > 6 ? "wide" : "focused";
+}
+
+// How many extra syllable-hits a word's density curve adds, based on how
+// far through the sentence it falls (0 = first word, 1 = last).
+function densityBonus(curve: DensityCurve, position: number): number {
+  if (curve === "punchy") return 1;
+  if (curve === "building") return Math.floor(position * 2);
+  return 0;
+}
+
+function nextTomVoice(tom: InstrumentId): InstrumentId {
+  if (tom === "lowTom") return "midTom";
+  if (tom === "midTom") return "highTom";
+  return "lowTom";
+}
+
 function generateSlotFromSentence(sentence: string): LineData[] | null {
   const words = splitWords(sentence);
   if (words.length === 0) return null;
+
+  const curve = densityCurveFor(sentence);
+  const width = voiceWidthFor(words[0].text);
 
   const kickBlocks = emptyBlocks();
   const snareBlocks = emptyBlocks();
   const crashBlocks = emptyBlocks();
   const openHihatBlocks = emptyBlocks();
+  // Tracks the two longest *content* words (function words never qualify)
+  // seen so far, longest first — the tom-accent candidates.
   let longestWord: { text: string; block: number; syllables: number } | null = null;
+  let secondWord: { text: string; block: number; syllables: number } | null = null;
 
   let blockIndex = 0;
-  for (const word of words) {
+  for (let i = 0; i < words.length; i++) {
     if (blockIndex >= MAX_BEATS) break;
-    const syllables = countSyllables(word.text);
-    if (!longestWord || syllables > longestWord.syllables) {
-      longestWord = { text: word.text, block: blockIndex, syllables };
-    }
-
+    const word = words[i];
+    const lower = word.text.toLowerCase();
+    const isFunctionWord = FUNCTION_WORDS.has(lower);
     const startBlock = blockIndex;
-    let remaining = syllables;
-    while (remaining > 0 && blockIndex < MAX_BEATS) {
-      const hits = Math.min(remaining, 6);
-      kickBlocks[blockIndex] = tileForHitCount(hits);
-      remaining -= hits;
+
+    if (isFunctionWord) {
+      kickBlocks[blockIndex] = tileForHitCount(1);
       blockIndex++;
+    } else {
+      const syllables = countSyllables(word.text);
+      const candidate = { text: word.text, block: startBlock, syllables };
+      if (!longestWord || syllables > longestWord.syllables) {
+        secondWord = longestWord;
+        longestWord = candidate;
+      } else if (!secondWord || syllables > secondWord.syllables) {
+        secondWord = candidate;
+      }
+
+      let remaining = syllables + densityBonus(curve, i / Math.max(1, words.length - 1));
+      while (remaining > 0 && blockIndex < MAX_BEATS) {
+        const hits = Math.min(remaining, 6);
+        kickBlocks[blockIndex] = tileForHitCount(hits);
+        remaining -= hits;
+        blockIndex++;
+      }
+
+      const accent = PHONETIC_ACCENT[lower[0]];
+      if (accent === "hihatOpen") openHihatBlocks[startBlock] = ACCENT_TILE;
+      else if (accent === "snare") snareBlocks[startBlock] = ACCENT_TILE;
     }
     const endBlock = blockIndex - 1;
 
@@ -158,12 +258,18 @@ function generateSlotFromSentence(sentence: string): LineData[] | null {
   if (longestWord && longestWord.syllables >= 2) {
     const tomBlocks = emptyBlocks();
     tomBlocks[longestWord.block] = ACCENT_TILE;
-    lines.push({
-      id: randomLineId(4),
-      instrument: dominantVowelTom(longestWord.text),
-      blocks: tomBlocks,
-      volume: DEFAULT_VOLUME,
-    });
+    const tomVoice = dominantVowelTom(longestWord.text);
+    lines.push({ id: randomLineId(4), instrument: tomVoice, blocks: tomBlocks, volume: DEFAULT_VOLUME });
+
+    // A wide-voiced sentence spreads a second tom color onto the runner-up
+    // word instead of leaving every other word to the kick alone.
+    if (width === "wide" && secondWord && secondWord.syllables >= 2 && secondWord.block !== longestWord.block) {
+      const secondTomBlocks = emptyBlocks();
+      secondTomBlocks[secondWord.block] = ACCENT_TILE;
+      let secondVoice = dominantVowelTom(secondWord.text);
+      if (secondVoice === tomVoice) secondVoice = nextTomVoice(secondVoice);
+      lines.push({ id: randomLineId(5), instrument: secondVoice, blocks: secondTomBlocks, volume: DEFAULT_VOLUME });
+    }
   }
 
   return lines;
