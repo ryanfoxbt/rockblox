@@ -39,7 +39,7 @@ export function ComplainButton() {
         title="Complain"
         className="fixed bottom-3 left-3 z-40 text-xs text-white/30 transition hover:text-yellow-400"
       >
-        Complain
+        😠 Complain
       </button>
 
       {open && (
@@ -52,7 +52,7 @@ export function ComplainButton() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">Complain</h2>
+              <h2 className="text-lg font-bold">😠 Complain</h2>
               <button
                 type="button"
                 onClick={close}
