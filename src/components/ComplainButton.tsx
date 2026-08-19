@@ -37,7 +37,7 @@ export function ComplainButton() {
         type="button"
         onClick={() => setOpen(true)}
         title="Complain"
-        className="fixed bottom-3 right-3 z-40 text-xs text-white/30 transition hover:text-yellow-400"
+        className="fixed bottom-3 left-3 z-40 text-xs text-white/30 transition hover:text-yellow-400"
       >
         Complain
       </button>

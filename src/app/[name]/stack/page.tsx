@@ -24,7 +24,7 @@ export default async function StackPage({
     .where(eq(boards.slug, normalizeBoardSlug(name)))
     .limit(1);
 
-  // Stack Builder arranges an already-claimed page's saved beats — nothing
+  // Stacks arranges an already-claimed page's saved beats — nothing
   // to arrange on an unclaimed name, so send them to claim it first.
   if (!board) redirect(`/${name}`);
 

@@ -77,7 +77,7 @@ export function Editor({
   initialCustomSamples?: CustomSamples;
   initialSlug?: string;
   // Which slot to open on, e.g. from a `?slot=` URL param set when returning
-  // from Stack Builder — falls back to the first non-empty slot when absent.
+  // from Stacks — falls back to the first non-empty slot when absent.
   initialSlot?: SlotLetter;
   board?: BoardData;
 }) {
@@ -161,7 +161,7 @@ export function Editor({
       if (Object.keys(customSamples).length > 0) playerRef.current?.loadCustomSamples(customSamples);
     });
     // Tears the player (and its AudioContext + loop timer) down when this
-    // page goes away — otherwise navigating to the Stack Builder (a
+    // page goes away — otherwise navigating to Stacks (a
     // client-side route change that unmounts this component but not the
     // page) left the still-looping beat audible underneath the new page.
     return () => {
@@ -256,7 +256,7 @@ export function Editor({
     // Keep the URL in sync with the active slot (replace, not push, so
     // switching slots doesn't pile up back-button history) — this is what
     // lets the browser's actual back button, not just the in-app link,
-    // return to the same slot after a trip to Stack Builder.
+    // return to the same slot after a trip to Stacks.
     router.replace(`/${board.displayName}?slot=${slot}`, { scroll: false });
 
     const data = slotsRef.current[slot];
@@ -616,7 +616,7 @@ export function Editor({
               <button
                 type="button"
                 onClick={() => setToolsMenuOpen((v) => !v)}
-                title="Stack Builder, Text to Beat, Wall, Randomize"
+                title="Stacks, TextyBeat, Wall, Inspiration"
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
@@ -639,7 +639,7 @@ export function Editor({
                     title="Arrange your beats into a longer song"
                     className="block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
                   >
-                    Stack Builder
+                    Stacks
                   </Link>
                   <TextToBeatButton board={board} variant="menuItem" />
                   <WallButton boardSlug={board.slug} />

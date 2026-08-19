@@ -138,14 +138,14 @@ export function TextToBeatButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        title="Turn pasted text into a beat"
+        title="TextyBeat — turn pasted text into a beat"
         className={
           variant === "menuItem"
             ? "block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
             : "shrink-0 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
         }
       >
-        Text to Beat
+        TextyBeat
       </button>
 
       {open && (
@@ -155,7 +155,7 @@ export function TextToBeatButton({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">Text to Beat</h2>
+              <h2 className="text-lg font-bold">TextyBeat</h2>
               <button
                 type="button"
                 onClick={close}

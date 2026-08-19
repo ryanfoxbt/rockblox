@@ -27,10 +27,10 @@ export function RandomizeButton({
   onGenerateNew: (complexity: number) => void;
   onGenerateVariation: (sourceSlot: string, kind: VariationKind, complexity: number) => void;
   // "menuItem" renders as a plain full-width row for the header's
-  // consolidated tools menu (see Editor.tsx) instead of its own icon button
-  // — used on board pages, where it joins Stack Builder/Text to
-  // Beat/Wall there. The homepage has no such menu (nothing else to group
-  // it with), so it stays a standalone icon button there.
+  // consolidated tools menu (see Editor.tsx, labeled "Inspiration" there)
+  // instead of its own icon button — used on board pages, where it joins
+  // Stacks/TextyBeat/Wall there. The homepage has no such menu (nothing
+  // else to group it with), so it stays a standalone icon button there.
   variant?: "button" | "menuItem";
 }) {
   const [open, setOpen] = useState(false);
@@ -63,7 +63,7 @@ export function RandomizeButton({
       <button
         type="button"
         onClick={handleOpen}
-        title="Randomize this beat"
+        title="Inspiration — randomize this beat"
         className={
           variant === "menuItem"
             ? "block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
@@ -71,7 +71,7 @@ export function RandomizeButton({
         }
       >
         {variant === "menuItem" ? (
-          "Randomize"
+          "Inspiration"
         ) : (
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
             <path d="M17 3 21 7 17 11" strokeLinecap="round" strokeLinejoin="round" />
@@ -92,7 +92,7 @@ export function RandomizeButton({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">Randomize</h2>
+              <h2 className="text-lg font-bold">Inspiration</h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}

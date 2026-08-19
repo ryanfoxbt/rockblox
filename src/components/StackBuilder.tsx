@@ -331,7 +331,7 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
             ← Back to /{board.displayName}
           </Link>
           <h1 className="mt-1 text-2xl font-black tracking-tight">
-            Stack <span className="text-yellow-400">Builder</span>
+            Stack<span className="text-yellow-400">s</span>
           </h1>
           <p className="mt-1 max-w-lg text-sm text-white/50">
             {isMobile
