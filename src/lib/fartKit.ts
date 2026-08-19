@@ -67,3 +67,28 @@ export function synthesizeFartBuffers(ctx: BaseAudioContext): Map<InstrumentId, 
   }
   return map;
 }
+
+// Real recordings, one per instrument slot, dropped into public/fart-kit/ —
+// e.g. public/fart-kit/kick.mp3 — take over from the synthesized default for
+// that slot. Nothing to wire up: any slot without a file just keeps using
+// its synthesized sound, so partial sets work fine.
+const FART_SAMPLE_BASE_URL = "/fart-kit";
+
+async function loadFartSample(ctx: BaseAudioContext, id: InstrumentId): Promise<AudioBuffer | null> {
+  try {
+    const res = await fetch(`${FART_SAMPLE_BASE_URL}/${id}.mp3`);
+    if (!res.ok) return null;
+    return await ctx.decodeAudioData(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+export async function loadFartBuffers(ctx: BaseAudioContext): Promise<Map<InstrumentId, AudioBuffer>> {
+  const map = synthesizeFartBuffers(ctx);
+  const overrides = await Promise.all(INSTRUMENTS.map(({ id }) => loadFartSample(ctx, id).then((buf) => [id, buf] as const)));
+  for (const [id, buf] of overrides) {
+    if (buf) map.set(id, buf);
+  }
+  return map;
+}

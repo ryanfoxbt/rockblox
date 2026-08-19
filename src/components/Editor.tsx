@@ -619,7 +619,19 @@ export function Editor({
               kits={DRUM_KITS}
               onKitChange={applyKit}
             >
-              {kit === "Fart" && <FartRecorder onRecorded={handleCustomSampleRecorded} />}
+              {kit === "Fart" && (
+                <>
+                  <FartRecorder onRecorded={handleCustomSampleRecorded} />
+                  <a
+                    href="https://albumsanonymous.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-white/40 transition hover:text-yellow-400"
+                  >
+                    Sponsored by Albums Anonymous
+                  </a>
+                </>
+              )}
             </Transport>
 
             <div className="flex flex-col gap-3">
