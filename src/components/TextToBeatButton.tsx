@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BoardData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
 import { DEFAULT_KIT } from "@/lib/drumKits";
@@ -10,12 +11,12 @@ import { RulesUsedPanel } from "./RulesUsedPanel";
 
 const GENERATED_BPM = 100;
 
-// Paste-text-get-a-beat, for a brand new, still-empty page — see
-// Editor.tsx for the "blank board only" gate. One sentence becomes one
-// slot's groove (see lib/textToBeat.ts for the word-rhythm mapping).
+// Paste-text-get-a-beat — available everywhere, claimed page or not. One
+// sentence becomes one slot's groove (see lib/textToBeat.ts for the
+// word-rhythm mapping).
 //
-// Two entry points, two save paths: from an already-claimed-but-blank
-// page (`board` set), Save writes straight to Slots A-D via the existing
+// Two entry points, two save paths: from an already-claimed page
+// (`board` set), Save writes straight to Slots A-D via the existing
 // per-slot PUT, same as SongImportButton does for song imports. From the
 // homepage (`board` undefined — nothing claimed yet), there's nowhere to
 // save to yet, so Save instead asks for a page name and creates the board
@@ -29,6 +30,7 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [takenName, setTakenName] = useState<string | null>(null);
   const [expandedSlot, setExpandedSlot] = useState<SlotLetter | null>(null);
 
   // No board yet (homepage) means nothing has opted out, so default to
@@ -43,6 +45,7 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
     setSaving(false);
     setSaved(false);
     setError(null);
+    setTakenName(null);
     setExpandedSlot(null);
   }
 
@@ -91,6 +94,7 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
 
     setSaving(true);
     setError(null);
+    setTakenName(null);
     try {
       const res = await fetch("/api/boards", {
         method: "POST",
@@ -107,7 +111,8 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
       });
       const data = (await res.json().catch(() => null)) as { error?: string; displayName?: string } | null;
       if (!res.ok) {
-        setError(data?.error ?? "Couldn't claim that page — try again.");
+        if (res.status === 409) setTakenName(name);
+        else setError(data?.error ?? "Couldn't claim that page — try again.");
         setSaving(false);
         return;
       }
@@ -124,9 +129,9 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
         type="button"
         onClick={() => setOpen(true)}
         title="Turn pasted text into a beat"
-        className="shrink-0 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
+        className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 sm:px-3"
       >
-        🐦 Text to Beat
+        🐦 <span className="hidden sm:inline">Text to Beat</span>
       </button>
 
       {open && (
@@ -261,7 +266,11 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
                             <span className="text-xs text-white/40">/</span>
                             <input
                               value={claimName}
-                              onChange={(e) => setClaimName(e.target.value)}
+                              onChange={(e) => {
+                                setClaimName(e.target.value);
+                                setTakenName(null);
+                                setError(null);
+                              }}
                               placeholder="YourName"
                               maxLength={24}
                               className="flex-1 rounded-md border border-white/15 bg-white/5 px-2 py-1.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none"
@@ -269,6 +278,19 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
                           </div>
                         </label>
                         {error && <p className="text-sm text-red-400">{error}</p>}
+                        {takenName && (
+                          <p className="text-xs text-white/40">
+                            🔒 <span className="font-mono text-white/60">/{takenName}</span> is already someone&apos;s.
+                            Nothing&apos;s locked around here, though —{" "}
+                            <Link
+                              href={`/${takenName}`}
+                              className="font-semibold text-yellow-400 underline decoration-dotted hover:text-yellow-300"
+                            >
+                              😈 Be Sneaky and peek anyway
+                            </Link>
+                            .
+                          </p>
+                        )}
                         <button
                           type="button"
                           onClick={() => claimAndSave(result)}

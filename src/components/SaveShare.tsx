@@ -60,9 +60,9 @@ export function SaveShare({
         <button
           type="button"
           onClick={handleCopy}
-          className="rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
+          className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 sm:px-4"
         >
-          {copied ? "Copied!" : "Share"}
+          🔗 {copied ? "Copied!" : <span className="hidden sm:inline">Share</span>}
         </button>
         <button
           type="button"
@@ -82,9 +82,9 @@ export function SaveShare({
         type="button"
         onClick={handleSave}
         disabled={measureLength < 1 || status === "saving"}
-        className="rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+        className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30 sm:px-4"
       >
-        {status === "saving" ? "Saving…" : "Save & Share"}
+        🔗 {status === "saving" ? "Saving…" : <span className="hidden sm:inline">Save & Share</span>}
       </button>
       {status === "error" && <span className="text-xs text-red-400">Couldn&apos;t save, try again</span>}
       {sharePath && (

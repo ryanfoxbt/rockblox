@@ -21,6 +21,7 @@ import { TileVisual } from "@/components/TileVisual";
 import { FartRecorder } from "@/components/FartRecorder";
 import { RandomizeButton, VariationKind } from "@/components/RandomizeButton";
 import { TextToBeatButton } from "@/components/TextToBeatButton";
+import { WallButton } from "@/components/WallButton";
 import { RhythmTile, toggleHitRest } from "@/lib/rhythm";
 import { generateFillVariation, generateGrooveVariation, generateRandomBeat } from "@/lib/randomBeat";
 import { InstrumentId } from "@/lib/instruments";
@@ -58,21 +59,6 @@ function computeVariationSources(
     const data = slots[slot];
     return !!data && measureLengthFromStoredLines(data.lines) > 0;
   }).map((slot) => ({ slot, label: `Slot ${slot}` }));
-}
-
-// Whether every slot was empty when the page loaded — Text to Beat is
-// pitched as a first-impression, paste-your-tweet-and-go hook for a brand
-// new page, not a bulk-overwrite tool for one someone's already built on,
-// so it's gated to this rather than shown everywhere. A slot claimed via
-// the homepage's "get your own page" box always saves *something* into
-// slotA (even just a lineless placeholder row) rather than leaving it
-// null, so "empty" has to mean no real hits, not just "no data at all."
-function isBlankBoard(board: BoardData | undefined): boolean {
-  if (!board) return false;
-  return SLOT_LETTERS.every((slot) => {
-    const data = board.slots[slot];
-    return !data || measureLengthFromStoredLines(data.lines) === 0;
-  });
 }
 
 export function Editor({
@@ -511,12 +497,12 @@ export function Editor({
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 px-6 py-4">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight">
+          <h1 className="text-xl font-black tracking-tight sm:text-2xl">
             Rock<span className="text-yellow-400">Blocks</span>
           </h1>
-          <p className="text-sm text-white/50">
+          <p className="hidden text-sm text-white/50 sm:block">
             {isMobile
               ? `Tap a tile, then tap up to ${MAX_BEATS} beat blocks per line to build a drum groove. Tap a hit again to rest it.`
               : `Drag rhythmic values into up to ${MAX_BEATS} beat blocks per line to build a drum groove, or click a tile then click a block to place it — handy on a trackpad. Click a hit to rest it, or click a block's grip handle to pick it up and move it elsewhere.`}
@@ -524,6 +510,11 @@ export function Editor({
           {board ? (
             <p className="mt-1 text-xs text-white/40">
               Your page: <span className="font-mono text-yellow-400">/{board.displayName}</span>
+              {saveStatus !== "idle" && (
+                <span className="ml-2">
+                  {saveStatus === "saving" ? "· Saving…" : saveStatus === "error" ? "· Error" : "· Saved"}
+                </span>
+              )}
             </p>
           ) : (
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -532,9 +523,9 @@ export function Editor({
             </div>
           )}
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
           {board && (
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
               <div className="flex overflow-hidden rounded-md border border-white/15">
                 {SLOT_LETTERS.map((slot) => (
                   <button
@@ -556,76 +547,70 @@ export function Editor({
               <Link
                 href={`/${board.displayName}/stack?from=${activeSlot}`}
                 title="Arrange your beats into a longer song"
-                className="shrink-0 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
+                className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 sm:px-3"
               >
-                🧱 Stack Builder
+                🧱 <span className="hidden sm:inline">Stack Builder</span>
               </Link>
-              {(isBlankBoard(board) || board?.textToBeatAlwaysOn) && <TextToBeatButton board={board} />}
+              <TextToBeatButton board={board} />
+              <WallButton boardSlug={board.slug} />
               {/* Song import is temporarily hidden from the UI — see SongImportButton.tsx; the
                   upload/transcribe/import API routes are untouched, just not linked to from here. */}
-              <span className="w-12 shrink-0 text-xs text-white/40">
-                {saveStatus === "saving"
-                  ? "Saving…"
-                  : saveStatus === "error"
-                    ? "Error"
-                    : saveStatus === "saved"
-                      ? "Saved"
-                      : ""}
-              </span>
             </div>
           )}
-          <button
-            type="button"
-            onClick={undo}
-            disabled={!canUndo}
-            title="Undo (Ctrl+Z)"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <path d="M9 8 4 12l5 4" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M4 12h11a5 5 0 0 1 0 10h-1" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={redo}
-            disabled={!canRedo}
-            title="Redo (Ctrl+Shift+Z)"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <path d="m15 8 5 4-5 4" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M20 12H9a5 5 0 0 0 0 10h1" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <RandomizeButton
-            variationSources={variationSources}
-            onGenerateNew={randomizeBeat}
-            onGenerateVariation={randomizeVariation}
-          />
-          <button
-            type="button"
-            onClick={() => setShowSheet(true)}
-            disabled={measureLength < 1}
-            title="View sheet music"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <line x1="3" y1="7" x2="21" y2="7" />
-              <line x1="3" y1="11" x2="21" y2="11" />
-              <line x1="3" y1="15" x2="21" y2="15" />
-              <circle cx="9" cy="17.5" r="2" fill="currentColor" stroke="none" />
-              <line x1="11" y1="17.5" x2="11" y2="9" />
-            </svg>
-          </button>
-          <SaveShare
-            bpm={bpm}
-            lines={lines}
-            kit={kit}
-            customSamples={customSamples}
-            initialSlug={initialSlug}
-            boardPath={board ? `/${board.displayName}` : undefined}
-          />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={undo}
+              disabled={!canUndo}
+              title="Undo (Ctrl+Z)"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <path d="M9 8 4 12l5 4" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M4 12h11a5 5 0 0 1 0 10h-1" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={redo}
+              disabled={!canRedo}
+              title="Redo (Ctrl+Shift+Z)"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <path d="m15 8 5 4-5 4" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M20 12H9a5 5 0 0 0 0 10h1" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <RandomizeButton
+              variationSources={variationSources}
+              onGenerateNew={randomizeBeat}
+              onGenerateVariation={randomizeVariation}
+            />
+            <button
+              type="button"
+              onClick={() => setShowSheet(true)}
+              disabled={measureLength < 1}
+              title="View sheet music"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <line x1="3" y1="7" x2="21" y2="7" />
+                <line x1="3" y1="11" x2="21" y2="11" />
+                <line x1="3" y1="15" x2="21" y2="15" />
+                <circle cx="9" cy="17.5" r="2" fill="currentColor" stroke="none" />
+                <line x1="11" y1="17.5" x2="11" y2="9" />
+              </svg>
+            </button>
+            <SaveShare
+              bpm={bpm}
+              lines={lines}
+              kit={kit}
+              customSamples={customSamples}
+              initialSlug={initialSlug}
+              boardPath={board ? `/${board.displayName}` : undefined}
+            />
+          </div>
         </div>
       </header>
 

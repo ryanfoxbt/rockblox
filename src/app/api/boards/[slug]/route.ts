@@ -25,7 +25,6 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     displayName: board.displayName,
     slots: { A: board.slotA, B: board.slotB, C: board.slotC, D: board.slotD },
     stack: board.stack ?? null,
-    textToBeatAlwaysOn: board.textToBeatAlwaysOn,
     textToBeatShowRules: board.textToBeatShowRules,
   });
 }

@@ -1,4 +1,4 @@
-import { boolean, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import type { BoardSlotData } from "@/lib/board";
 import type { CustomSamples } from "@/lib/customSamples";
 import type { StackArrangement } from "@/lib/stack";
@@ -35,10 +35,10 @@ export const boards = pgTable("boards", {
   // Stack Builder: an arrangement sequencing repeats of slots A-D, played at
   // one global tempo, into a longer song (see lib/stack.ts).
   stack: jsonb("stack").$type<StackArrangement>(),
-  // Text to Beat is normally gated to a page with nothing saved yet (see
-  // Editor.tsx's isBlankBoard) — this opts a specific page out of that gate
-  // so its owner can keep re-generating from it while testing/iterating,
-  // without it being a general bulk-overwrite tool for anyone's live page.
+  // Deprecated — no longer read (Text to Beat is unconditional everywhere
+  // now), kept here purely so `db:push` doesn't propose dropping this
+  // column, which would be a real, irreversible data-loss operation for no
+  // benefit. Safe to actually drop in a future cleanup pass.
   textToBeatAlwaysOn: boolean("text_to_beat_always_on").notNull().default(false),
   // Whether the Text to Beat preview shows the "rules used" breakdown
   // (time signature formula, density curve, per-word rhythm/accent choices)
@@ -47,6 +47,24 @@ export const boards = pgTable("boards", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// One scrawled line on a board's graffiti wall — like writing on a bathroom
+// stall or a tree trunk, except the "wall" is shared by everyone who visits
+// that URL. `boardSlug` isn't a foreign key (this app has no cascading-delete
+// story for boards at all), just a plain lookup key. `ipHash` exists only
+// for the per-board-per-IP rate limit in the wall API route — never the raw
+// IP, and never surfaced to any client.
+export const wallMessages = pgTable(
+  "wall_messages",
+  {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    boardSlug: text("board_slug").notNull(),
+    message: text("message").notNull(),
+    ipHash: text("ip_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("wall_messages_board_slug_idx").on(table.boardSlug)]
+);
 
 // Freeform gripes from the "Complain" button — not tied to a user (there's
 // no login), just whatever page they typed it from, for context.

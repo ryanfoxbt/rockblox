@@ -24,9 +24,6 @@ export interface BoardData {
   // The Stack Builder arrangement (sequencing repeats of A-D into one longer
   // song), if this page's owner has built one. Board-level, not per-slot.
   stack?: StackArrangement | null;
-  // Opts this page out of Text to Beat's blank-board-only gate — see
-  // schema.ts's textToBeatAlwaysOn for why this exists.
-  textToBeatAlwaysOn?: boolean;
   // Whether Text to Beat's preview shows the "rules used" breakdown.
   textToBeatShowRules?: boolean;
 }

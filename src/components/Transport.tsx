@@ -100,9 +100,9 @@ export function Transport({
           max={220}
           value={bpm}
           onChange={(e) => onBpmChange(Number(e.target.value))}
-          className="w-40 accent-yellow-400"
+          className="w-24 accent-yellow-400 sm:w-40"
         />
-        <span className="w-16 text-sm text-white/80">{bpm} BPM</span>
+        <span className="w-14 text-sm text-white/80 sm:w-16">{bpm} BPM</span>
       </div>
 
       <div className="relative" ref={menuRef}>
@@ -110,9 +110,13 @@ export function Transport({
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
           disabled={playDisabled || rendering}
-          className="rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+          className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30 sm:px-4"
         >
-          {rendering ? "Rendering…" : "Download ▾"}
+          {rendering ? "Rendering…" : (
+            <>
+              ⬇️ <span className="hidden sm:inline">Download</span> ▾
+            </>
+          )}
         </button>
         {menuOpen && (
           <div className="absolute left-0 top-full z-10 mt-1 w-40 overflow-hidden rounded-md border border-white/10 bg-slate-800 shadow-lg">
