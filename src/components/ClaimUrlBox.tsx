@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { LineData, serializeLines } from "@/lib/song";
 import { CustomSamples } from "@/lib/customSamples";
 import { clearDraft } from "@/lib/draftStorage";
+import { NO_PASSWORD_MANAGER_ATTRS } from "@/lib/formAttrs";
 
 export function ClaimUrlBox({
   bpm,
@@ -62,6 +63,7 @@ export function ClaimUrlBox({
         <span className="text-xs text-white/40">Get your own page:</span>
         <span className="text-xs text-white/40">/</span>
         <input
+          {...NO_PASSWORD_MANAGER_ATTRS}
           value={name}
           onChange={(e) => {
             setName(e.target.value);
@@ -70,7 +72,7 @@ export function ClaimUrlBox({
           }}
           placeholder="YourName"
           maxLength={24}
-          className="w-28 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none"
+          className="w-28 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-base text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none sm:text-xs"
         />
         <button
           type="submit"
@@ -82,11 +84,11 @@ export function ClaimUrlBox({
         {error && <span className="text-xs text-red-400">{error}</span>}
       </form>
       {takenName && (
-        <p className="text-xs text-white/40">
-          🔒 <span className="font-mono text-white/60">/{takenName}</span> is already someone&apos;s. Nothing&apos;s
-          locked around here, though —{" "}
+        <p className="mt-1 text-xs text-white/40">
+          <span className="font-mono text-white/60">/{takenName}</span>{" "}
+          is already someone&apos;s. Nothing&apos;s locked around here, though —{" "}
           <Link href={`/${takenName}`} className="font-semibold text-yellow-400 underline decoration-dotted hover:text-yellow-300">
-            😈 Be Sneaky and peek anyway
+            Be Sneaky and peek anyway
           </Link>
           .
         </p>

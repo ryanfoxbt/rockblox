@@ -154,7 +154,7 @@ export function FartRecorder({
         title="Record your own fart"
         className="rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
       >
-        🎙️ Record your own fart
+        Record your own fart
       </button>
 
       {open && (
@@ -164,7 +164,7 @@ export function FartRecorder({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">🎙️ Record your own fart</h2>
+              <h2 className="text-lg font-bold">Record your own fart</h2>
               <button
                 type="button"
                 onClick={close}

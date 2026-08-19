@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MAX_WALL_MESSAGE_LENGTH } from "@/lib/wallModeration";
+import { NO_PASSWORD_MANAGER_ATTRS } from "@/lib/formAttrs";
 
 interface WallMessage {
   id: number;
@@ -24,8 +25,12 @@ function colorFor(id: number): string {
   return INK_COLORS[id % INK_COLORS.length];
 }
 
+// Gentle tilt (-4..4deg) — enough to read as handwriting, restrained enough
+// that a padded wrapper (see the message list below) reliably keeps the
+// rotated text from visually reaching the scroll container's edge, which
+// otherwise clips it.
 function rotationDegFor(id: number): number {
-  return ((id * 37) % 13) - 6; // -6..6
+  return ((id * 31) % 9) - 4;
 }
 
 function sizeClassFor(id: number): string {
@@ -101,9 +106,9 @@ export function WallButton({ boardSlug }: { boardSlug: string }) {
         type="button"
         onClick={() => setOpen(true)}
         title="Read and add to this page's wall"
-        className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 sm:px-3"
+        className="block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
       >
-        🎨 <span className="hidden sm:inline">Wall</span>
+        Wall
       </button>
 
       {open && (
@@ -115,34 +120,40 @@ export function WallButton({ boardSlug }: { boardSlug: string }) {
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
               <div>
                 <h2 className="text-lg font-bold">
-                  🎨 The Wall — <span className="font-mono text-yellow-400">/{boardSlug}</span>
+                  The Wall — <span className="font-mono text-yellow-400">/{boardSlug}</span>
                 </h2>
                 <p className="text-xs text-white/40">Anyone who finds this URL can read this — and add to it.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                title="Close"
-                className="rounded-md px-2 py-0.5 text-white/50 transition hover:text-red-400"
+                title="Close the wall"
+                className="shrink-0 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
               >
-                ✕
+                Close
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-8">
               {messages === null ? (
                 <p className="text-sm text-white/40">Reading the wall…</p>
               ) : messages.length === 0 ? (
                 <p className="text-sm text-white/40">Nobody&apos;s tagged this wall yet. Be first.</p>
               ) : (
-                <div className="flex flex-wrap items-baseline gap-x-6 gap-y-4">
+                <div className="flex flex-wrap items-baseline">
                   {messages.map((m) => (
-                    <span
-                      key={m.id}
-                      style={{ transform: `rotate(${rotationDegFor(m.id)}deg)` }}
-                      className={`inline-block font-bold ${sizeClassFor(m.id)} ${colorFor(m.id)}`}
-                    >
-                      {m.message}
+                    // The inner span carries the rotation purely as paint — the
+                    // outer span's padding is real layout space, so the tilted
+                    // text's extra visual reach stays inside it instead of
+                    // reaching the scroll container's edge, which otherwise
+                    // clips it (overflow-y-auto forces overflow-x to clip too).
+                    <span key={m.id} className="inline-block px-3 py-4">
+                      <span
+                        style={{ transform: `rotate(${rotationDegFor(m.id)}deg)` }}
+                        className={`inline-block font-bold ${sizeClassFor(m.id)} ${colorFor(m.id)}`}
+                      >
+                        {m.message}
+                      </span>
                     </span>
                   ))}
                 </div>
@@ -153,6 +164,7 @@ export function WallButton({ boardSlug }: { boardSlug: string }) {
               {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
               <div className="flex gap-2">
                 <input
+                  {...NO_PASSWORD_MANAGER_ATTRS}
                   value={text}
                   onChange={(e) => {
                     setText(e.target.value);
@@ -163,7 +175,7 @@ export function WallButton({ boardSlug }: { boardSlug: string }) {
                   }}
                   maxLength={MAX_WALL_MESSAGE_LENGTH}
                   placeholder="Leave your mark…"
-                  className="flex-1 rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none"
+                  className="flex-1 rounded-md border border-white/15 bg-white/5 px-3 py-2 text-base text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none sm:text-sm"
                 />
                 <button
                   type="button"

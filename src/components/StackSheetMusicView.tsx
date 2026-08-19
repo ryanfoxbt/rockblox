@@ -184,7 +184,7 @@ export function StackSheetMusicView({
     <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white">
       <header className="flex items-center justify-between border-b border-white/10 px-6 py-4">
         <h2 className="text-lg font-bold">
-          🧱 Stack <span className="text-yellow-400">Sheet Music</span>
+          Stack <span className="text-yellow-400">Sheet Music</span>
         </h2>
         <button
           type="button"

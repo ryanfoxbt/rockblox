@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { NO_PASSWORD_MANAGER_ATTRS } from "@/lib/formAttrs";
 
 export function ComplainButton() {
   const [open, setOpen] = useState(false);
@@ -36,9 +37,9 @@ export function ComplainButton() {
         type="button"
         onClick={() => setOpen(true)}
         title="Complain"
-        className="fixed bottom-3 right-3 z-40 text-base opacity-25 grayscale transition hover:opacity-80 hover:grayscale-0"
+        className="fixed bottom-3 right-3 z-40 text-xs text-white/30 transition hover:text-yellow-400"
       >
-        😠
+        Complain
       </button>
 
       {open && (
@@ -51,7 +52,7 @@ export function ComplainButton() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">😠 Complain</h2>
+              <h2 className="text-lg font-bold">Complain</h2>
               <button
                 type="button"
                 onClick={close}
@@ -69,13 +70,14 @@ export function ComplainButton() {
             ) : (
               <>
                 <textarea
+                  {...NO_PASSWORD_MANAGER_ATTRS}
                   autoFocus
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Complain about anything"
                   rows={4}
                   maxLength={2000}
-                  className="w-full resize-none rounded-md border border-white/15 bg-white/5 p-2.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none"
+                  className="w-full resize-none rounded-md border border-white/15 bg-white/5 p-2.5 text-base text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none sm:text-sm"
                 />
                 {status === "error" && (
                   <p className="mt-1.5 text-xs text-red-400">Couldn&apos;t send, try again</p>

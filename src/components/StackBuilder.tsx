@@ -331,7 +331,7 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
             ← Back to /{board.displayName}
           </Link>
           <h1 className="mt-1 text-2xl font-black tracking-tight">
-            🧱 Stack <span className="text-yellow-400">Builder</span>
+            Stack <span className="text-yellow-400">Builder</span>
           </h1>
           <p className="mt-1 max-w-lg text-sm text-white/50">
             {isMobile
@@ -428,7 +428,7 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
               title="View sheet music"
               className="rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
             >
-              🎼 Sheet music
+              Sheet music
             </button>
 
             <button

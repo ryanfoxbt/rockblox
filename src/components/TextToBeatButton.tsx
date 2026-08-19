@@ -7,6 +7,7 @@ import { BoardData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
 import { DEFAULT_KIT } from "@/lib/drumKits";
 import { serializeLines } from "@/lib/song";
 import { generateBeatFromText, MAX_TEXT_LENGTH, MAX_TEXT_SLOTS, TextToBeatResult } from "@/lib/textToBeat";
+import { NO_PASSWORD_MANAGER_ATTRS } from "@/lib/formAttrs";
 import { RulesUsedPanel } from "./RulesUsedPanel";
 
 const GENERATED_BPM = 100;
@@ -21,7 +22,16 @@ const GENERATED_BPM = 100;
 // homepage (`board` undefined — nothing claimed yet), there's nowhere to
 // save to yet, so Save instead asks for a page name and creates the board
 // with all four slots already filled in one call.
-export function TextToBeatButton({ board }: { board?: BoardData }) {
+export function TextToBeatButton({
+  board,
+  variant = "button",
+}: {
+  board?: BoardData;
+  // "menuItem" renders as a plain full-width row for the header's
+  // consolidated tools menu (see Editor.tsx) instead of its own bordered
+  // pill button — same open/save logic either way.
+  variant?: "button" | "menuItem";
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
@@ -129,9 +139,13 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
         type="button"
         onClick={() => setOpen(true)}
         title="Turn pasted text into a beat"
-        className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 sm:px-3"
+        className={
+          variant === "menuItem"
+            ? "block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
+            : "shrink-0 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
+        }
       >
-        🐦 <span className="hidden sm:inline">Text to Beat</span>
+        Text to Beat
       </button>
 
       {open && (
@@ -141,7 +155,7 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">🐦 Text to Beat</h2>
+              <h2 className="text-lg font-bold">Text to Beat</h2>
               <button
                 type="button"
                 onClick={close}
@@ -159,6 +173,7 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
             </p>
 
             <textarea
+              {...NO_PASSWORD_MANAGER_ATTRS}
               value={text}
               onChange={(e) => {
                 setText(e.target.value);
@@ -168,7 +183,7 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
               maxLength={MAX_TEXT_LENGTH}
               rows={4}
               placeholder="She quickly discovered alternative conceptualizations."
-              className="w-full resize-none rounded-md border border-white/15 bg-white/5 p-2 text-sm text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none"
+              className="w-full resize-none rounded-md border border-white/15 bg-white/5 p-2 text-base text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none sm:text-sm"
             />
             <p className="mt-1 text-right text-xs text-white/40">
               {text.length}/{MAX_TEXT_LENGTH}
@@ -265,6 +280,7 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs text-white/40">/</span>
                             <input
+                              {...NO_PASSWORD_MANAGER_ATTRS}
                               value={claimName}
                               onChange={(e) => {
                                 setClaimName(e.target.value);
@@ -273,20 +289,20 @@ export function TextToBeatButton({ board }: { board?: BoardData }) {
                               }}
                               placeholder="YourName"
                               maxLength={24}
-                              className="flex-1 rounded-md border border-white/15 bg-white/5 px-2 py-1.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none"
+                              className="flex-1 rounded-md border border-white/15 bg-white/5 px-2 py-1.5 text-base text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none sm:text-sm"
                             />
                           </div>
                         </label>
                         {error && <p className="text-sm text-red-400">{error}</p>}
                         {takenName && (
-                          <p className="text-xs text-white/40">
-                            🔒 <span className="font-mono text-white/60">/{takenName}</span> is already someone&apos;s.
-                            Nothing&apos;s locked around here, though —{" "}
+                          <p className="mt-1 text-xs text-white/40">
+                            <span className="font-mono text-white/60">/{takenName}</span>{" "}
+                            is already someone&apos;s. Nothing&apos;s locked around here, though —{" "}
                             <Link
                               href={`/${takenName}`}
                               className="font-semibold text-yellow-400 underline decoration-dotted hover:text-yellow-300"
                             >
-                              😈 Be Sneaky and peek anyway
+                              Be Sneaky and peek anyway
                             </Link>
                             .
                           </p>

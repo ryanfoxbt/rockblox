@@ -21,10 +21,17 @@ export function RandomizeButton({
   variationSources,
   onGenerateNew,
   onGenerateVariation,
+  variant = "button",
 }: {
   variationSources: VariationSource[];
   onGenerateNew: (complexity: number) => void;
   onGenerateVariation: (sourceSlot: string, kind: VariationKind, complexity: number) => void;
+  // "menuItem" renders as a plain full-width row for the header's
+  // consolidated tools menu (see Editor.tsx) instead of its own icon button
+  // — used on board pages, where it joins Stack Builder/Text to
+  // Beat/Wall there. The homepage has no such menu (nothing else to group
+  // it with), so it stays a standalone icon button there.
+  variant?: "button" | "menuItem";
 }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"new" | "variation">("new");
@@ -57,9 +64,22 @@ export function RandomizeButton({
         type="button"
         onClick={handleOpen}
         title="Randomize this beat"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-base text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+        className={
+          variant === "menuItem"
+            ? "block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
+            : "flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+        }
       >
-        🎲
+        {variant === "menuItem" ? (
+          "Randomize"
+        ) : (
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+            <path d="M17 3 21 7 17 11" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M3 7h6a4 4 0 0 1 3.2 1.6L17 15" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M17 21 21 17 17 13" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M3 17h6a4 4 0 0 0 3.2-1.6L13 14" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
       </button>
 
       {open && (
@@ -72,7 +92,7 @@ export function RandomizeButton({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">🎲 Randomize</h2>
+              <h2 className="text-lg font-bold">Randomize</h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -175,7 +195,7 @@ export function RandomizeButton({
               onClick={generate}
               className="mt-4 w-full rounded-full bg-yellow-400 px-4 py-1.5 text-sm font-bold text-slate-900 transition hover:bg-yellow-300"
             >
-              {mode === "variation" ? "🧬 Generate Variation" : "🎲 Generate"}
+              {mode === "variation" ? "Generate Variation" : "Generate"}
             </button>
           </div>
         </div>

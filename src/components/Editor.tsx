@@ -119,6 +119,8 @@ export function Editor({
   const [playheadBeat, setPlayheadBeat] = useState<number | null>(null);
   const [activeTile, setActiveTile] = useState<RhythmTile | null>(null);
   const [showSheet, setShowSheet] = useState(false);
+  const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
+  const toolsMenuRef = useRef<HTMLDivElement>(null);
   const [armedTile, setArmedTile] = useState<RhythmTile | null>(null);
   const [movingFrom, setMovingFrom] = useState<{ lineId: string; index: number; tile: RhythmTile } | null>(null);
   const [kit, setKit] = useState<string>(() => {
@@ -213,6 +215,15 @@ export function Editor({
     setRestoreAttempted(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!toolsMenuOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (toolsMenuRef.current && !toolsMenuRef.current.contains(e.target as Node)) setToolsMenuOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [toolsMenuOpen]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -544,15 +555,46 @@ export function Editor({
                   </button>
                 ))}
               </div>
-              <Link
-                href={`/${board.displayName}/stack?from=${activeSlot}`}
-                title="Arrange your beats into a longer song"
-                className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 sm:px-3"
-              >
-                🧱 <span className="hidden sm:inline">Stack Builder</span>
-              </Link>
-              <TextToBeatButton board={board} />
-              <WallButton boardSlug={board.slug} />
+              <div className="relative" ref={toolsMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setToolsMenuOpen((v) => !v)}
+                  title="Stack Builder, Text to Beat, Wall, Randomize"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+                    <circle cx="5" cy="12" r="1.8" />
+                    <circle cx="12" cy="12" r="1.8" />
+                    <circle cx="19" cy="12" r="1.8" />
+                  </svg>
+                </button>
+                {toolsMenuOpen && (
+                  // No auto-close on item click: each item's own modal is a
+                  // child of this same panel, so closing the panel the
+                  // instant an item is clicked would unmount that modal
+                  // before it ever got to render. It's fine left open here —
+                  // the modal that opens covers it completely (higher
+                  // z-index), and the outside-click handler above closes it
+                  // on the next unrelated click.
+                  <div className="absolute right-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-md border border-white/10 bg-slate-800 shadow-lg">
+                    <Link
+                      href={`/${board.displayName}/stack?from=${activeSlot}`}
+                      title="Arrange your beats into a longer song"
+                      className="block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
+                    >
+                      Stack Builder
+                    </Link>
+                    <TextToBeatButton board={board} variant="menuItem" />
+                    <WallButton boardSlug={board.slug} />
+                    <RandomizeButton
+                      variant="menuItem"
+                      variationSources={variationSources}
+                      onGenerateNew={randomizeBeat}
+                      onGenerateVariation={randomizeVariation}
+                    />
+                  </div>
+                )}
+              </div>
               {/* Song import is temporarily hidden from the UI — see SongImportButton.tsx; the
                   upload/transcribe/import API routes are untouched, just not linked to from here. */}
             </div>
@@ -582,11 +624,13 @@ export function Editor({
                 <path d="M20 12H9a5 5 0 0 0 0 10h1" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            <RandomizeButton
-              variationSources={variationSources}
-              onGenerateNew={randomizeBeat}
-              onGenerateVariation={randomizeVariation}
-            />
+            {!board && (
+              <RandomizeButton
+                variationSources={variationSources}
+                onGenerateNew={randomizeBeat}
+                onGenerateVariation={randomizeVariation}
+              />
+            )}
             <button
               type="button"
               onClick={() => setShowSheet(true)}

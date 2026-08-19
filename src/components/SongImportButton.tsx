@@ -151,7 +151,7 @@ export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: s
         title="Transcribe a song's drums into its main beat(s) + fills"
         className="shrink-0 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
       >
-        🎧 Import a song
+        Import a song
       </button>
 
       {open && (
@@ -161,7 +161,7 @@ export function SongImportButton({ boardSlug, boardDisplayName }: { boardSlug: s
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">🎧 Import a song</h2>
+              <h2 className="text-lg font-bold">Import a song</h2>
               <button
                 type="button"
                 onClick={close}

@@ -110,13 +110,9 @@ export function Transport({
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
           disabled={playDisabled || rendering}
-          className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30 sm:px-4"
+          className="shrink-0 rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
         >
-          {rendering ? "Rendering…" : (
-            <>
-              ⬇️ <span className="hidden sm:inline">Download</span> ▾
-            </>
-          )}
+          {rendering ? "Rendering…" : "Download ▾"}
         </button>
         {menuOpen && (
           <div className="absolute left-0 top-full z-10 mt-1 w-40 overflow-hidden rounded-md border border-white/10 bg-slate-800 shadow-lg">
