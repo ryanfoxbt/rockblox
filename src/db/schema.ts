@@ -1,4 +1,4 @@
-import { boolean, index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { BoardSlotData } from "@/lib/board";
 import type { CustomSamples } from "@/lib/customSamples";
 import type { StackArrangement } from "@/lib/stack";
@@ -47,6 +47,29 @@ export const boards = pgTable("boards", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// A live "who's here right now" heartbeat for one board — upserted roughly
+// every 20s by each open tab (see PresenceIndicator.tsx), keyed by a random
+// per-tab id (sessionStorage, not tied to any account since there isn't
+// one). A row older than the API route's own activity window just reads as
+// "not here anymore" rather than being deleted — the client never needs a
+// distinct "they left" signal, only "who's active right now." `location` is
+// a coarse city/region string from Vercel's own geo headers, never the IP
+// itself and never anything more precise than that.
+export const boardPresence = pgTable(
+  "board_presence",
+  {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    boardSlug: text("board_slug").notNull(),
+    visitorId: text("visitor_id").notNull(),
+    location: text("location"),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("board_presence_board_visitor_idx").on(table.boardSlug, table.visitorId),
+    index("board_presence_board_slug_idx").on(table.boardSlug),
+  ]
+);
 
 // One scrawled line on a board's graffiti wall — like writing on a bathroom
 // stall or a tree trunk, except the "wall" is shared by everyone who visits
