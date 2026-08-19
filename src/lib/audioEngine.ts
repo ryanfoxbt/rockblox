@@ -243,6 +243,44 @@ export class RockBloxPlayer {
       this.recomputeBuffers();
     });
     document.addEventListener("visibilitychange", this.handleVisibilityChange);
+    // A context can go "suspended" mid-playback for reasons outside a tab
+    // visibility change too — most notably another app (or CarPlay/a
+    // Bluetooth speaker taking over the phone's audio session) briefly
+    // claiming the device's audio focus. Without this, playback would just
+    // silently stay dead until the user hit Play again; this resumes on its
+    // own as soon as focus is available.
+    this.ctx.onstatechange = () => {
+      if (this.ctx.state === "suspended" && this.playing) this.ctx.resume().catch(() => {});
+    };
+    this.setupMediaSession();
+  }
+
+  // Gives the OS a proper "Now Playing" entry for this tab — lock-screen and
+  // Bluetooth/CarPlay media controls, and Control Center's now-playing card,
+  // all key off the Media Session API rather than just "a tab is making
+  // sound." A page that never sets this can end up treated as a lesser
+  // audio source than a real media app (e.g. Spotify) still holding the
+  // previous "Now Playing" slot, which reads as "can't play over Bluetooth."
+  // A website still can't initiate Bluetooth pairing or pick a Sonos as an
+  // output device itself — that's entirely OS-level — this just makes sure
+  // RockBlocks plays properly and controllably through whatever output the
+  // OS already has active.
+  private setupMediaSession() {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: "RockBlocks",
+      artist: "Custom drum beat",
+      album: "RockBlocks",
+      artwork: [
+        { src: "/icon", sizes: "32x32", type: "image/png" },
+        { src: "/apple-icon", sizes: "180x180", type: "image/png" },
+      ],
+    });
+    navigator.mediaSession.setActionHandler("play", () => {
+      void this.play();
+    });
+    navigator.mediaSession.setActionHandler("pause", () => this.stop());
+    navigator.mediaSession.setActionHandler("stop", () => this.stop());
   }
 
   // Mobile browsers throttle or fully freeze this timer-driven lookahead
@@ -287,6 +325,12 @@ export class RockBloxPlayer {
     this.stop();
     document.removeEventListener("visibilitychange", this.handleVisibilityChange);
     this.ctx.close().catch(() => {});
+    if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+      navigator.mediaSession.setActionHandler("play", null);
+      navigator.mediaSession.setActionHandler("pause", null);
+      navigator.mediaSession.setActionHandler("stop", null);
+      navigator.mediaSession.playbackState = "none";
+    }
   }
 
   // Layers any recorded takes (currently Fart-kit-only) onto the freshly
@@ -367,6 +411,9 @@ export class RockBloxPlayer {
     this.playing = true;
     this.nextLoopTime = this.ctx.currentTime + 0.1;
     this.scheduleLoopAndNext();
+    if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = "playing";
+    }
   }
 
   stop() {
@@ -374,6 +421,9 @@ export class RockBloxPlayer {
     if (this.timerId !== null) {
       window.clearTimeout(this.timerId);
       this.timerId = null;
+    }
+    if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = "paused";
     }
   }
 

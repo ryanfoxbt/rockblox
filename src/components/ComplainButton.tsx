@@ -37,7 +37,13 @@ export function ComplainButton() {
         type="button"
         onClick={() => setOpen(true)}
         title="Complain"
-        className="fixed bottom-3 left-3 z-40 text-base text-white/30 transition hover:text-yellow-400"
+        // Plain `opacity` rather than a color-alpha class (e.g. text-white/30)
+        // — full-color emoji glyphs largely ignore the `color` property's
+        // alpha channel, and different browser engines handle that
+        // inconsistently, which is what made this look dimmer on desktop
+        // than on mobile. `opacity` is a compositing property applied to the
+        // whole rendered glyph, so it dims identically everywhere.
+        className="fixed bottom-3 left-3 z-40 text-[11px] opacity-30 transition hover:opacity-100"
       >
         😠
       </button>
@@ -52,7 +58,9 @@ export function ComplainButton() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">😠 Complain</h2>
+              <h2 className="text-lg font-bold">
+                <span className="text-[0.7em]">😠</span> Complain
+              </h2>
               <button
                 type="button"
                 onClick={close}
