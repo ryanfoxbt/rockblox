@@ -40,6 +40,7 @@ import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
 import { useHistoryState } from "@/lib/useHistoryState";
 import { BoardData, BoardSlotData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
 import { CustomSamples, arrayBufferToBase64 } from "@/lib/customSamples";
+import { loadDraft, saveDraft } from "@/lib/draftStorage";
 import { ClaimUrlBox } from "@/components/ClaimUrlBox";
 
 // Which slots have an actual beat in them, excluding `exclude` (typically
@@ -93,6 +94,12 @@ export function Editor({
   initialSlot?: SlotLetter;
   board?: BoardData;
 }) {
+  // The homepage with nothing claimed yet: the only editor mode with no
+  // board and no server-persisted pattern behind it, so it's the one case
+  // where a refresh (e.g. to fix stuck headphone audio) would otherwise
+  // silently wipe whatever's on screen — see draftStorage.ts.
+  const isScratchpad = !board && !initialSlug;
+
   const [activeSlot, setActiveSlot] = useState<SlotLetter>(
     () => initialSlot || (board && SLOT_LETTERS.find((l) => board.slots[l])) || "A"
   );
@@ -188,6 +195,39 @@ export function Editor({
     await playerRef.current.setCustomSample(instrument, arrayBuffer);
   }
 
+  // Gates the draft-save effect below until the mount-time restore attempt
+  // has actually committed. Without this, the save effect's first pass would
+  // still see the pre-restore blank lines/bpm/etc (setState from the restore
+  // effect hasn't flushed into a render yet within the same commit) and
+  // write that blank state over the real draft, permanently losing it before
+  // the restored values ever reach the screen.
+  const [restoreAttempted, setRestoreAttempted] = useState(!isScratchpad);
+
+  // Restore a scratchpad draft left over from before a refresh, deferred to
+  // an effect (client-only, runs after the first paint) rather than read
+  // during the initial render — localStorage doesn't exist on the server, so
+  // reading it in a useState initializer would make the client's first
+  // render disagree with the server-rendered HTML and trigger a hydration
+  // error. The brief flash from blank to restored is the tradeoff.
+  useEffect(() => {
+    if (!isScratchpad) return;
+    const draft = loadDraft();
+    if (draft) {
+      if (draft.lines.length > 0) resetLines(deserializeLines(draft.lines));
+      // One-time rehydration from an external store (localStorage) on mount
+      // — not derived from props/state, so there's no dependency to move
+      // these into render or a plain event handler instead.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setBpm(draft.bpm);
+      setCustomSamples(draft.customSamples);
+      playerRef.current?.clearCustomSamples();
+      if (Object.keys(draft.customSamples).length > 0) playerRef.current?.loadCustomSamples(draft.customSamples);
+      if (draft.kit !== kit) applyKit(draft.kit);
+    }
+    setRestoreAttempted(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const target = e.target as HTMLElement | null;
@@ -273,6 +313,14 @@ export function Editor({
     }, 800);
     return () => clearTimeout(handle);
   }, [lines, bpm, kit, customSamples, activeSlot, board]);
+
+  // The homepage scratchpad's equivalent of the autosave effect above, but
+  // to localStorage instead of the server — see draftStorage.ts and
+  // isScratchpad. Cleared once the beat is actually claimed (ClaimUrlBox).
+  useEffect(() => {
+    if (!isScratchpad || !restoreAttempted) return;
+    saveDraft({ bpm, lines: serializeLines(lines), kit, customSamples });
+  }, [isScratchpad, restoreAttempted, lines, bpm, kit, customSamples]);
 
   useEffect(() => {
     if (!isPlaying) return;

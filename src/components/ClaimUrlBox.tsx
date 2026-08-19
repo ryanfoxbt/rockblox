@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LineData, serializeLines } from "@/lib/song";
 import { CustomSamples } from "@/lib/customSamples";
+import { clearDraft } from "@/lib/draftStorage";
 
 export function ClaimUrlBox({
   bpm,
@@ -39,6 +40,7 @@ export function ClaimUrlBox({
         setLoading(false);
         return;
       }
+      clearDraft();
       router.push(`/${data.displayName}`);
     } catch {
       setError("Something went wrong");
