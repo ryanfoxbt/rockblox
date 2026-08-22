@@ -71,7 +71,16 @@ export interface TranscribedSong {
 
 const ONSET_FFT_SIZE = 2048;
 const ONSET_HOP_SIZE = 512;
-const ONSET_THRESHOLD_FACTOR = 1.6; // local mean + this * local std
+// local mean + this * local std. Lowered from 1.6 — an early, unverified
+// pass at "transcriptions feel sparse, quieter hits (ghost notes, softer
+// hi-hat taps) are being missed entirely" — a real hit's flux peak has to
+// clear this bar to become an onset at all, so this is the single biggest
+// lever on recall vs. precision here: too low and cymbal wash/bleed starts
+// registering as false onsets, too high and real-but-quiet hits never even
+// enter the onset list (no downstream fix, in classification or
+// quantization, can recover a hit that was never detected). Worth raising
+// back toward 1.6 if this starts producing false/noisy hits instead.
+const ONSET_THRESHOLD_FACTOR = 1.4;
 const ONSET_LOCAL_WINDOW_SECONDS = 0.5;
 const MIN_ONSET_GAP_SECONDS = 0.06;
 const MIN_ONSET_COUNT = 8;

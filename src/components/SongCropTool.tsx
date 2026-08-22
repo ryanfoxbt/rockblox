@@ -6,7 +6,7 @@ import { upload } from "@vercel/blob/client";
 import { DEFAULT_KIT } from "@/lib/drumKits";
 import { SLOT_LETTERS, SlotLetter } from "@/lib/board";
 import { InstrumentId } from "@/lib/instruments";
-import { MAX_BEATS, StoredLine } from "@/lib/song";
+import { StoredLine } from "@/lib/song";
 import { quantizeClipToLines } from "@/lib/quantizeClip";
 import { NO_PASSWORD_MANAGER_ATTRS } from "@/lib/formAttrs";
 
@@ -48,6 +48,12 @@ interface SlotCrop {
 const POLL_INTERVAL_MS = 3000;
 const PIXELS_PER_SECOND = 80;
 const WAVEFORM_HEIGHT = 120;
+// Deliberately *not* lib/song's MAX_BEATS (7) — the normal Editor and every
+// hand-built board stay capped at 7, but a manually-picked clip here is
+// allowed to run to a full 8-beat (2-bar) phrase. StoredLine.blocks isn't
+// fixed-length (LineRow renders however many blocks actually exist), so an
+// 8-block crop still displays and plays fine once saved to a real board.
+const CROP_MAX_BEATS = 8;
 // A single stray hit in a clip's window shouldn't earn a Rimshot line —
 // only a source that's actually doing something rhythmic within this
 // specific clip.
@@ -101,15 +107,15 @@ function xAtBeat(beat: number, gridOrigin: number, beatSeconds: number): number 
 }
 
 // Resolves a drag (anchor + current pointer position, both in beats) into a
-// selection — anchored at wherever the drag started, capped at MAX_BEATS
-// blocks in whichever direction it's dragged, rather than letting the near
-// edge slide once the far edge would exceed the cap.
+// selection — anchored at wherever the drag started, capped at
+// CROP_MAX_BEATS blocks in whichever direction it's dragged, rather than
+// letting the near edge slide once the far edge would exceed the cap.
 function resolveDragSelection(anchorBeat: number, hoveredBeat: number): { startBeat: number; blockCount: number } {
   const rounded = Math.round(hoveredBeat);
   if (rounded >= anchorBeat) {
-    return { startBeat: anchorBeat, blockCount: Math.min(MAX_BEATS, rounded - anchorBeat + 1) };
+    return { startBeat: anchorBeat, blockCount: Math.min(CROP_MAX_BEATS, rounded - anchorBeat + 1) };
   }
-  const blockCount = Math.min(MAX_BEATS, anchorBeat - rounded + 1);
+  const blockCount = Math.min(CROP_MAX_BEATS, anchorBeat - rounded + 1);
   return { startBeat: anchorBeat - blockCount + 1, blockCount };
 }
 
@@ -128,6 +134,13 @@ export function SongCropTool() {
   const [pipelineStatus, setPipelineStatus] = useState<PipelineStatus>("uploaded");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  // Nudges the detected beat grid earlier/later — a pickup note or an
+  // incomplete lead-in measure throws off automatic grid-phase estimation
+  // (it has no music-theory notion of "which hit is beat 1"), which then
+  // makes every clip's quantization land wrong-footed. Lets a drummer
+  // eyeball-align the grid overlay to the actual downbeats instead of being
+  // stuck with whatever the algorithm guessed.
+  const [gridOffsetSeconds, setGridOffsetSeconds] = useState(0);
 
   const [peaks, setPeaks] = useState<Float32Array | null>(null);
   const [waveformWidth, setWaveformWidth] = useState(0);
@@ -163,6 +176,15 @@ export function SongCropTool() {
       pollTimerRef.current = null;
     }
   }
+
+  // The grid origin every drawing/selection/quantization calculation below
+  // actually uses — analysis.gridOrigin adjusted by the manual nudge. Kept
+  // as one derived value rather than threading gridOffsetSeconds through
+  // every call site separately.
+  const effectiveGridOrigin = useMemo(
+    () => (analysis?.gridOrigin != null ? analysis.gridOrigin + gridOffsetSeconds : null),
+    [analysis?.gridOrigin, gridOffsetSeconds]
+  );
 
   useEffect(() => {
     if (phase !== "processing") return;
@@ -210,7 +232,7 @@ export function SongCropTool() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !peaks || !analysis?.gridOrigin || !analysis.beatSeconds) return;
+    if (!canvas || !peaks || effectiveGridOrigin == null || !analysis?.beatSeconds) return;
     canvas.width = waveformWidth;
     canvas.height = WAVEFORM_HEIGHT;
     const ctx = canvas.getContext("2d");
@@ -229,7 +251,8 @@ export function SongCropTool() {
 
     ctx.strokeStyle = "rgba(255,255,255,0.12)";
     ctx.lineWidth = 1;
-    const { gridOrigin, beatSeconds } = analysis;
+    const gridOrigin = effectiveGridOrigin;
+    const { beatSeconds } = analysis;
     let beatIndex = Math.ceil(-gridOrigin / beatSeconds);
     for (;;) {
       const x = Math.round(xAtBeat(beatIndex, gridOrigin, beatSeconds));
@@ -260,7 +283,7 @@ export function SongCropTool() {
         ctx.fillRect(x, 0, 1, 4);
       }
     }
-  }, [peaks, waveformWidth, analysis]);
+  }, [peaks, waveformWidth, analysis, effectiveGridOrigin]);
 
   // rAF playhead tracking — writes directly to the DOM rather than through
   // React state so a moving playhead doesn't re-render the whole tool 60x/s.
@@ -316,6 +339,7 @@ export function SongCropTool() {
     setPipelineStatus("uploaded");
     setElapsedSeconds(0);
     setAnalysis(null);
+    setGridOffsetSeconds(0);
     setPeaks(null);
     setWaveformWidth(0);
     setDecodeError(null);
@@ -393,7 +417,7 @@ export function SongCropTool() {
   );
 
   function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
-    if (!analysis?.gridOrigin || !analysis.beatSeconds || !containerRef.current) return;
+    if (effectiveGridOrigin == null || !analysis?.beatSeconds || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left + containerRef.current.scrollLeft;
     const seconds = x / PIXELS_PER_SECOND;
@@ -403,7 +427,7 @@ export function SongCropTool() {
     setPlayheadSeconds(seconds);
     if (playheadRef.current) playheadRef.current.style.left = `${x}px`;
 
-    const startBeat = Math.round(clampBeat(beatAtX(x, analysis.gridOrigin, analysis.beatSeconds)));
+    const startBeat = Math.round(clampBeat(beatAtX(x, effectiveGridOrigin, analysis.beatSeconds)));
     setDragStartBeat(startBeat);
     setDragHoveredBeat(startBeat);
     setDragging(true);
@@ -412,10 +436,10 @@ export function SongCropTool() {
   useEffect(() => {
     if (!dragging) return;
     function onMove(e: MouseEvent) {
-      if (dragStartBeat === null || !analysis?.gridOrigin || !analysis.beatSeconds || !containerRef.current) return;
+      if (dragStartBeat === null || effectiveGridOrigin == null || !analysis?.beatSeconds || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left + containerRef.current.scrollLeft;
-      setDragHoveredBeat(clampBeat(beatAtX(x, analysis.gridOrigin, analysis.beatSeconds)));
+      setDragHoveredBeat(clampBeat(beatAtX(x, effectiveGridOrigin, analysis.beatSeconds)));
     }
     function onUp() {
       setDragging(false);
@@ -428,7 +452,7 @@ export function SongCropTool() {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     };
-  }, [dragging, dragStartBeat, dragHoveredBeat, analysis, clampBeat]);
+  }, [dragging, dragStartBeat, dragHoveredBeat, analysis, clampBeat, effectiveGridOrigin]);
 
   function togglePlayback() {
     const audio = audioRef.current;
@@ -443,8 +467,8 @@ export function SongCropTool() {
 
   function previewSelection() {
     const audio = audioRef.current;
-    if (!audio || !selection || !analysis?.gridOrigin || !analysis.beatSeconds) return;
-    const start = analysis.gridOrigin + selection.startBeat * analysis.beatSeconds;
+    if (!audio || !selection || effectiveGridOrigin == null || !analysis?.beatSeconds) return;
+    const start = effectiveGridOrigin + selection.startBeat * analysis.beatSeconds;
     const end = start + selection.blockCount * analysis.beatSeconds;
     if (previewingSelection) {
       audio.pause();
@@ -458,8 +482,8 @@ export function SongCropTool() {
   }
 
   function assignSelectionToSlot() {
-    if (!selection || !analysis?.gridOrigin || !analysis.beatSeconds || !analysis.onsets) return;
-    const clipStartSeconds = analysis.gridOrigin + selection.startBeat * analysis.beatSeconds;
+    if (!selection || effectiveGridOrigin == null || !analysis?.beatSeconds || !analysis.onsets) return;
+    const clipStartSeconds = effectiveGridOrigin + selection.startBeat * analysis.beatSeconds;
     const clipEndSeconds = clipStartSeconds + selection.blockCount * analysis.beatSeconds;
 
     // Whichever non-drum stem is busiest within this specific clip (not the
@@ -488,7 +512,7 @@ export function SongCropTool() {
     }
 
     const combinedOnsets = extraOnsets.length > 0 ? [...analysis.onsets, ...extraOnsets] : analysis.onsets;
-    const lines = quantizeClipToLines(combinedOnsets, analysis.gridOrigin, analysis.beatSeconds, clipStartSeconds, selection.blockCount);
+    const lines = quantizeClipToLines(combinedOnsets, effectiveGridOrigin, analysis.beatSeconds, clipStartSeconds, selection.blockCount);
     setSlots((prev) => ({ ...prev, [activeSlot]: { startBeat: selection.startBeat, blockCount: selection.blockCount, lines, extraSource } }));
     const nextEmpty = SLOT_LETTERS.find((l) => l !== activeSlot && !slots[l]);
     if (nextEmpty) setActiveSlot(nextEmpty);
@@ -529,8 +553,8 @@ export function SongCropTool() {
   }
 
   const selectionLeft = useMemo(
-    () => (selection && analysis?.gridOrigin != null && analysis.beatSeconds ? xAtBeat(selection.startBeat, analysis.gridOrigin, analysis.beatSeconds) : null),
-    [selection, analysis]
+    () => (selection && effectiveGridOrigin != null && analysis?.beatSeconds ? xAtBeat(selection.startBeat, effectiveGridOrigin, analysis.beatSeconds) : null),
+    [selection, analysis, effectiveGridOrigin]
   );
   const selectionWidth = useMemo(
     () => (selection && analysis?.beatSeconds ? selection.blockCount * analysis.beatSeconds * PIXELS_PER_SECOND : 0),
@@ -541,8 +565,8 @@ export function SongCropTool() {
     return resolveDragSelection(dragStartBeat, dragHoveredBeat);
   }, [dragging, dragStartBeat, dragHoveredBeat]);
   const dragLeft = useMemo(
-    () => (liveDrag && analysis?.gridOrigin != null && analysis.beatSeconds ? xAtBeat(liveDrag.startBeat, analysis.gridOrigin, analysis.beatSeconds) : null),
-    [liveDrag, analysis]
+    () => (liveDrag && effectiveGridOrigin != null && analysis?.beatSeconds ? xAtBeat(liveDrag.startBeat, effectiveGridOrigin, analysis.beatSeconds) : null),
+    [liveDrag, analysis, effectiveGridOrigin]
   );
   const filledSlotCount = SLOT_LETTERS.filter((l) => slots[l]).length;
 
@@ -555,10 +579,12 @@ export function SongCropTool() {
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-white/50">
           Private harness, not linked from anywhere in the app. Upload a song, then pick up to 4 clips yourself —
-          drag on the waveform, snapped to the beat grid, up to 8 blocks each — and drop them into Slots A-D.
-          Nothing&apos;s guessed for you: you pick the main beat and fills exactly like covering the song by ear.
-          Vocals/bass/&quot;other&quot; are analyzed too (blue ticks along the top) — whichever&apos;s busiest within a
-          clip gets layered onto that clip&apos;s pattern as an extra Rimshot line.
+          drag on the waveform, snapped to the beat grid — and drop them into Slots A-D. Nothing&apos;s guessed for
+          you: you pick the main beat and fills exactly like covering the song by ear. Clips here can run up to 8
+          blocks (a full 2-bar phrase) — a one-off allowance just for this feature; every hand-built board and the
+          normal editor stay at the usual 7. Vocals/bass/&quot;other&quot; are analyzed too (blue ticks along the
+          top) — whichever&apos;s busiest within a clip gets layered onto that clip&apos;s pattern as an extra
+          Rimshot line.
         </p>
       </div>
 
@@ -684,6 +710,45 @@ export function SongCropTool() {
                 {formatTimestamp(playheadSeconds)} / {formatTimestamp(analysis.durationSeconds ?? 0)}
               </span>
               <span className="text-xs text-white/40">Click to seek · drag to select up to 8 blocks</span>
+            </div>
+
+            {/* Grid shift — a pickup note or incomplete lead-in measure can
+                throw off automatic grid-phase detection; this lets the grid
+                overlay (and everything quantized against it) be nudged to
+                actually line up with the downbeats. */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-white/50">Beat grid</span>
+              <button
+                type="button"
+                onClick={() => setGridOffsetSeconds((v) => v - (analysis.beatSeconds ?? 0.5) / 4)}
+                title="Shift the beat grid earlier by a sixteenth note"
+                className="rounded-md border border-white/15 px-2 py-1 text-xs text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+              >
+                ◀ Earlier
+              </button>
+              <button
+                type="button"
+                onClick={() => setGridOffsetSeconds((v) => v + (analysis.beatSeconds ?? 0.5) / 4)}
+                title="Shift the beat grid later by a sixteenth note"
+                className="rounded-md border border-white/15 px-2 py-1 text-xs text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+              >
+                Later ▶
+              </button>
+              {gridOffsetSeconds !== 0 && (
+                <>
+                  <span className="font-mono text-xs text-white/50">
+                    {gridOffsetSeconds > 0 ? "+" : ""}
+                    {Math.round(gridOffsetSeconds * 1000)}ms
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setGridOffsetSeconds(0)}
+                    className="text-xs text-white/40 underline decoration-dotted hover:text-yellow-400"
+                  >
+                    Reset
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Waveform */}

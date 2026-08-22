@@ -5,7 +5,7 @@
 // quantize instantly instead of round-tripping to the server per pick.
 import { InstrumentId } from "./instruments";
 import { RhythmHit, tileFromHits } from "./rhythm";
-import { MAX_BEATS, StoredLine } from "./song";
+import { StoredLine } from "./song";
 
 export interface ClipOnset {
   time: number;
@@ -15,8 +15,15 @@ export interface ClipOnset {
 // How close (as a fraction of one sixteenth-note) a hit has to land to a
 // grid slot to count as "on" that slot — an onset sitting roughly halfway
 // between two slots is genuinely ambiguous and gets dropped rather than
-// forced onto whichever one is a hair closer.
-const SLOT_MATCH_TOLERANCE = 0.35;
+// forced onto whichever one is a hair closer. Slightly looser than a strict
+// half-slot cutoff: the whole-song tempo/grid estimate is a single straight
+// line, so small drift accumulates the further an onset sits from the grid
+// origin — a real hit late in a long clip can end up a bit further from its
+// slot than one at the very start, even though it's clearly still meant for
+// that slot. The grid-shift control in SongCropTool corrects a constant
+// phase offset (e.g. a pickup note); this just adds a little slack for the
+// drift a single tempo estimate can't fully capture.
+const SLOT_MATCH_TOLERANCE = 0.42;
 
 const LINE_ORDER: InstrumentId[] = [
   "kick",
@@ -40,7 +47,10 @@ const LINE_ORDER: InstrumentId[] = [
  * @param clipStartSeconds Where the clip starts — snapped to the nearest
  *   sixteenth-note grid line rather than trusted exactly, so a selection
  *   UI's pixel math being a hair off doesn't misalign the whole pattern.
- * @param blockCount How many beat-blocks (1-7) the clip should fill.
+ * @param blockCount How many beat-blocks the clip should fill — not tied to
+ *   the app-wide MAX_BEATS cap (see song.ts); the crop tool enforces its own
+ *   limit before calling this, and the output array is sized to whatever
+ *   blockCount actually is.
  */
 export function quantizeClipToLines(
   onsets: ClipOnset[],
@@ -69,7 +79,7 @@ export function quantizeClipToLines(
     const slots = slotsByInstrument.get(instrument);
     if (!slots || slots.size === 0) continue;
 
-    const blocks: (string | null)[] = new Array(MAX_BEATS).fill(null);
+    const blocks: (string | null)[] = new Array(blockCount).fill(null);
     for (let beat = 0; beat < blockCount; beat++) {
       const hits: RhythmHit[] = [];
       for (let k = 0; k < 4; k++) {

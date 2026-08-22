@@ -80,7 +80,7 @@ export function LineRow({
         </button>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-8 md:flex md:flex-1 md:flex-nowrap md:gap-2 md:overflow-x-auto">
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-7 md:flex md:flex-1 md:flex-nowrap md:gap-2 md:overflow-x-auto">
         {blockButtons}
       </div>
 
