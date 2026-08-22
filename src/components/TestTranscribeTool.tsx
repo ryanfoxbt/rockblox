@@ -22,6 +22,57 @@ interface ImportStatus {
 
 const POLL_INTERVAL_MS = 3000;
 
+interface ArrangementSection {
+  // ["A"] for a plain repeated groove, ["A", "B"] for a 2-bar phrase that
+  // alternates between two slots, etc. — see collapseArrangementIntoSections.
+  motif: string[];
+  repeatCount: number;
+  startSeconds: number;
+  endSeconds: number;
+}
+
+// The point of the whole-song arrangement is "what does this section of the
+// song play" (verse, chorus, ...), not "here are 120 individual bars" — a
+// drummer thinks in sections, not bars. This collapses consecutive
+// arrangement steps into runs, checking a few short periods (1-4 bars) so a
+// groove that's really a repeating N-bar phrase (e.g. a beat that alternates
+// slightly every other bar) reads as one section — "A → B, ×6" — instead of
+// a dozen alternating single-bar chips. A period only wins if it actually
+// explains at least two full repeats; a lone A-then-B with nothing repeating
+// just stays two separate one-bar sections rather than being claimed as a
+// "phrase."
+const MAX_PHRASE_PERIOD = 4;
+
+function collapseArrangementIntoSections(steps: FullSongArrangementStep[]): ArrangementSection[] {
+  const sections: ArrangementSection[] = [];
+  let i = 0;
+  while (i < steps.length) {
+    let bestPeriod = 1;
+    let bestRunLength = 1;
+    const maxPeriod = Math.min(MAX_PHRASE_PERIOD, steps.length - i);
+    for (let period = 1; period <= maxPeriod; period++) {
+      let runLength = period;
+      while (i + runLength < steps.length && steps[i + runLength].slotLabel === steps[i + runLength - period].slotLabel) {
+        runLength++;
+      }
+      if (runLength >= period * 2 && runLength > bestRunLength) {
+        bestRunLength = runLength;
+        bestPeriod = period;
+      }
+    }
+    const motif = steps.slice(i, i + bestPeriod).map((s) => s.slotLabel);
+    const runSteps = steps.slice(i, i + bestRunLength);
+    sections.push({
+      motif,
+      repeatCount: bestRunLength / bestPeriod,
+      startSeconds: runSteps[0].startSeconds,
+      endSeconds: runSteps[runSteps.length - 1].endSeconds,
+    });
+    i += bestRunLength;
+  }
+  return sections;
+}
+
 function formatTimestamp(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds - m * 60);
@@ -278,6 +329,7 @@ export function TestTranscribeTool() {
 
   const grooveCount = useMemo(() => result?.slots?.filter((s) => s.kind === "groove").length ?? 0, [result]);
   const fillCount = useMemo(() => result?.slots?.filter((s) => s.kind === "fill").length ?? 0, [result]);
+  const sections = useMemo(() => (result?.arrangement ? collapseArrangementIntoSections(result.arrangement) : []), [result]);
   const playDisabled = samplesLoading || !result?.arrangement || result.arrangement.length === 0;
 
   return (
@@ -290,10 +342,11 @@ export function TestTranscribeTool() {
           Rhythm Detection <span className="text-yellow-400">Test</span>
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-white/50">
-          Private harness for the AI transcription pipeline — not linked from anywhere in the app. Upload an MP3 and
-          it isolates the drums and finds every genuinely distinct groove and fill the whole song has — as many
-          slots as it takes, not capped at four like a real page — then reconstructs the song&apos;s real structure
-          as a playable arrangement. Nothing here saves; drums only, no vocals/bass layering for now.
+          Private harness for the AI transcription pipeline — not linked from anywhere in the app. Built for how a
+          drummer actually covers a song: the main beat for each section (verse, chorus, pre-chorus, bridge, ...)
+          plus a few genuinely notable fills — not every statistically-distinct bar, and not sparse/partial ones.
+          Up to 8 slots, not capped at four like a real page, only if the song actually needs that many. Nothing
+          here saves; drums only, no vocals/bass layering for now.
         </p>
       </div>
 
@@ -450,17 +503,38 @@ export function TestTranscribeTool() {
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-1 overflow-x-auto">
-                {result.arrangement.map((step, i) => (
-                  <span
+              <div className="flex flex-col gap-1.5">
+                <p className="text-xs uppercase tracking-wide text-white/40">Song sections</p>
+                {sections.map((sec, i) => (
+                  <div
                     key={i}
-                    title={`Bar ${step.barIndex} — ${formatTimestamp(step.startSeconds)}–${formatTimestamp(step.endSeconds)}`}
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-white/10 bg-white/5 font-mono text-xs text-white/60"
+                    className="flex flex-wrap items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-sm"
                   >
-                    {step.slotLabel}
-                  </span>
+                    <span className="font-mono text-yellow-400">{sec.motif.join(" → ")}</span>
+                    <span className="text-white/40">
+                      {formatTimestamp(sec.startSeconds)}–{formatTimestamp(sec.endSeconds)}
+                    </span>
+                    {sec.repeatCount > 1 && <span className="text-white/40">×{sec.repeatCount}</span>}
+                  </div>
                 ))}
               </div>
+
+              <details>
+                <summary className="cursor-pointer text-xs text-white/40 hover:text-yellow-400">
+                  Bar-by-bar ({result.arrangement.length} bars)
+                </summary>
+                <div className="mt-2 flex flex-wrap gap-1 overflow-x-auto">
+                  {result.arrangement.map((step, i) => (
+                    <span
+                      key={i}
+                      title={`Bar ${step.barIndex} — ${formatTimestamp(step.startSeconds)}–${formatTimestamp(step.endSeconds)}`}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-white/10 bg-white/5 font-mono text-xs text-white/60"
+                    >
+                      {step.slotLabel}
+                    </span>
+                  ))}
+                </div>
+              </details>
             </section>
 
             {/* Per-slot detail: preview the synthesized pattern, or play the

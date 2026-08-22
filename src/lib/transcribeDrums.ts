@@ -349,20 +349,49 @@ export function transcribeDrums(wavBuffer: Buffer, extraStems?: ExtraInstrumentS
   };
 }
 
-// A generous safety ceiling, not a target — MIN_CLUSTER_REPEATS and the
-// similarity thresholds clustering already uses are what actually keep a
-// song's real structure from over-fragmenting into spurious "distinct"
-// slots. No real song should ever approach this; it just stops a
-// pathological/noisy input from producing an unbounded slot list.
-const MAX_FULL_SONG_SLOTS = 24;
+// The actual goal here isn't "detect every statistically distinct bar" —
+// it's "give a drummer covering this song the main beat for each of its
+// sections (verse, chorus, pre-chorus, bridge, ...) plus a few genuinely
+// notable fills," the same handful of ideas a drummer would actually learn.
+// A real song rarely has more than a handful of distinct sections, so this
+// is a firm cap, not a generous ceiling — MAX_FULL_SONG_GROOVES leaves room
+// for most songs' verse/chorus/pre/bridge/outro without inviting the
+// clustering to over-fragment into near-duplicates, and MAX_FULL_SONG_FILLS
+// keeps fills to "a few notable ones," not "one per remaining slot."
+const MAX_FULL_SONG_GROOVES = 6;
+const MAX_FULL_SONG_FILLS = 3;
+const MAX_FULL_SONG_SLOTS = MAX_FULL_SONG_GROOVES + MAX_FULL_SONG_FILLS;
 // A song bar has to be at least this similar (full-kit Jaccard) to a
 // discovered slot's own representative bar to count as "another occurrence
 // of it" during the whole-song assignment pass below — otherwise it's
 // transitional/unclassifiable material (a fill-in, a crash leading into a
 // section change) that doesn't cleanly belong to any one detected pattern,
 // and gets left out of the arrangement rather than forced into whichever
-// slot happens to score highest despite barely resembling it.
-const ASSIGNMENT_MIN_SIMILARITY = 0.2;
+// slot happens to score highest despite barely resembling it. Higher than
+// clustering's own CLUSTER_MEMBER_SIMILARITY on purpose: a bar earning a
+// spot on the actual song timeline should read as "yes, that's this beat,"
+// not just "closer to this one than the alternatives."
+const ASSIGNMENT_MIN_SIMILARITY = 0.35;
+// A real, playable groove has kick, snare, AND a cymbal voice all present —
+// a bar with only one or two of those, or barely any hits at all, is a
+// transition/pickup/half-there moment, not a beat a drummer would learn as
+// "the verse groove." Gates which bars are even eligible to become a
+// discovered groove in the first place (see grooveCandidateIndices below) —
+// distinct from OFF_KIT_FILL_INSTRUMENTS, which is about what makes a *fill*
+// notable, not what makes a groove complete.
+const CORE_GROOVE_MIN_HITS = 4;
+
+function isCompleteGrooveBar(bar: BarHit[]): boolean {
+  let hasKick = false;
+  let hasSnare = false;
+  let hasCymbal = false;
+  for (const hit of bar) {
+    if (hit.instrument === "kick") hasKick = true;
+    else if (hit.instrument === "snare") hasSnare = true;
+    else if (CYMBAL_VOICES.includes(hit.instrument)) hasCymbal = true;
+  }
+  return hasKick && hasSnare && hasCymbal && bar.length >= CORE_GROOVE_MIN_HITS;
+}
 
 export interface FullSongSlot {
   // "A", "B", "C", ... in order of first appearance across the whole song —
@@ -437,8 +466,15 @@ export function transcribeFullSong(wavBuffer: Buffer): FullSongTranscription {
   const beatsPerBar = estimateBeatsPerBar(classified, gridOrigin, beatSeconds);
   const bars = groupIntoBars(classified, gridOrigin, beatSeconds, beatsPerBar);
   const interiorIndices = bars.length > 4 ? bars.map((_, i) => i).slice(1, -1) : bars.map((_, i) => i);
+  // Only a complete, full-sounding bar (kick + snare + cymbal, not just a
+  // fragment of the beat) is eligible to define a groove — see
+  // isCompleteGrooveBar. A sparse/partial bar can still end up matched to a
+  // discovered groove later, during the whole-song assignment pass, if it's
+  // similar enough (ASSIGNMENT_MIN_SIMILARITY) — this only gates which bars
+  // get to originate one.
+  const grooveCandidateIndices = interiorIndices.filter((i) => isCompleteGrooveBar(bars[i]));
 
-  const clusters = clusterBeatBars(bars, interiorIndices, MAX_FULL_SONG_SLOTS);
+  const clusters = clusterBeatBars(bars, grooveCandidateIndices, MAX_FULL_SONG_GROOVES);
   clusters.sort((a, b) => Math.min(...a.memberIndices) - Math.min(...b.memberIndices));
 
   const dominantCluster =
@@ -453,9 +489,13 @@ export function transcribeFullSong(wavBuffer: Buffer): FullSongTranscription {
       }
     : { kick: [], snare: [], cymbal: defaultCymbalHits() };
 
+  // Fill candidates can come from any leftover bar (including the sparse
+  // ones grooves aren't eligible to use) — a fill's whole nature is a short,
+  // punchy break from the pattern, not a dense recurring groove.
   const claimed = new Set(clusters.flatMap((c) => c.memberIndices));
   const fillCandidateIndices = interiorIndices.filter((i) => !claimed.has(i));
-  const fillIndices = pickFillBars(bars, fillCandidateIndices, Math.max(0, MAX_FULL_SONG_SLOTS - clusters.length));
+  const fillBudget = Math.max(0, Math.min(MAX_FULL_SONG_FILLS, MAX_FULL_SONG_SLOTS - clusters.length));
+  const fillIndices = pickFillBars(bars, fillCandidateIndices, fillBudget);
 
   interface Discovered {
     firstBar: number;
