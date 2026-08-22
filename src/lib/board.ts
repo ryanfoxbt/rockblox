@@ -57,6 +57,7 @@ const RESERVED_NAMES = new Set([
   "signup",
   "signin",
   "songs",
+  "test",
   "about",
   "help",
   "static",

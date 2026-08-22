@@ -24,5 +24,6 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     patternB: row.patternB,
     patternC: row.patternC,
     patternD: row.patternD,
+    diagnostics: row.diagnostics,
   });
 }

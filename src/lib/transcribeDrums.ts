@@ -28,6 +28,17 @@ export interface PatternDiagnostics {
   instruments: string[];
 }
 
+export type ExtraInstrumentSourceStem = "vocals" | "bass" | "other";
+
+export interface ExtraInstrumentDiagnostics {
+  // Always "rimshot" today — the one kit voice the drum classifier itself
+  // never assigns, so a layered-in non-drum rhythm can't collide with a real
+  // drum hit. See EXTRA_INSTRUMENT_VOICE.
+  instrument: InstrumentId;
+  sourceStem: ExtraInstrumentSourceStem;
+  onsetCount: number;
+}
+
 export interface TranscribeDiagnostics {
   durationSeconds: number;
   onsetCount: number;
@@ -36,6 +47,11 @@ export interface TranscribeDiagnostics {
   patternB: PatternDiagnostics | null;
   patternC: PatternDiagnostics | null;
   patternD: PatternDiagnostics | null;
+  // Which non-drum stem (if any) had the busiest, most distinctly rhythmic
+  // part — its rhythm gets layered onto every pattern as an extra Rimshot
+  // line. Null when no extra stems were supplied, or none of them had
+  // enough onsets to bother with (see MIN_ONSET_COUNT).
+  extraInstrument: ExtraInstrumentDiagnostics | null;
 }
 
 export interface TranscribedSong {
@@ -159,7 +175,20 @@ const MIN_CLUSTER_REPEATS = 2;
 // from getting artificially split into two or three fake variations.
 const SAME_GROOVE_MERGE_SIMILARITY = 0.4;
 
-export function transcribeDrums(wavBuffer: Buffer): TranscribedSong {
+// The one kit voice the drum classifier (classifyOnset, above) never
+// assigns on its own — every real drum hit lands on kick/snare/hihat*/ride/
+// crash/*Tom, so this is the only spot free to carry a completely different
+// signal (another instrument's rhythm) without it reading as a misdetected
+// drum hit sitting on top of real ones.
+const EXTRA_INSTRUMENT_VOICE: InstrumentId = "rimshot";
+
+export interface ExtraInstrumentStems {
+  vocals?: Buffer;
+  bass?: Buffer;
+  other?: Buffer;
+}
+
+export function transcribeDrums(wavBuffer: Buffer, extraStems?: ExtraInstrumentStems): TranscribedSong {
   const wav = parseWav(wavBuffer);
   const mono = toMono(wav);
 
@@ -260,8 +289,34 @@ export function transcribeDrums(wavBuffer: Buffer): TranscribedSong {
     });
   }
 
-  const grooves = clusters.map((c) => renderBeatPattern(bars, c, fallback, beatsPerBar));
-  const fills = fillIndices.map((i) => barToStoredLines(bars[i], FILL_INSTRUMENT_ORDER, beatsPerBar));
+  const extraInstrument = extraStems
+    ? pickExtraInstrumentRhythm(extraStems, gridOrigin, beatSeconds, beatsPerBar)
+    : null;
+
+  const grooves = clusters.map((c) => {
+    const pattern = renderBeatPattern(bars, c, fallback, beatsPerBar);
+    if (extraInstrument) {
+      const slots = votedSlotsForInstrument(extraInstrument.bars, c, EXTRA_INSTRUMENT_VOICE);
+      if (slots.size > 0) {
+        pattern.push(
+          ...barToStoredLines(
+            [...slots].map((slot) => ({ slot, instrument: EXTRA_INSTRUMENT_VOICE })),
+            [EXTRA_INSTRUMENT_VOICE],
+            beatsPerBar
+          )
+        );
+      }
+    }
+    return pattern;
+  });
+  const fills = fillIndices.map((i) => {
+    const pattern = barToStoredLines(bars[i], FILL_INSTRUMENT_ORDER, beatsPerBar);
+    const extraHits = extraInstrument?.bars[i]?.filter((h) => h.instrument === EXTRA_INSTRUMENT_VOICE) ?? [];
+    if (extraHits.length > 0) {
+      pattern.push(...barToStoredLines(extraHits, [EXTRA_INSTRUMENT_VOICE], beatsPerBar));
+    }
+    return pattern;
+  });
   const slotPatterns: (StoredLine[] | null)[] = [...grooves, ...fills];
   while (slotPatterns.length < TOTAL_SLOTS) slotPatterns.push(null);
   const [patternA, patternB, patternC, patternD] = slotPatterns;
@@ -277,6 +332,9 @@ export function transcribeDrums(wavBuffer: Buffer): TranscribedSong {
     patternB: patternDiagnostics(patternB, slotIndices[1], gridOrigin, beatSeconds, beatsPerBar),
     patternC: patternDiagnostics(patternC, slotIndices[2], gridOrigin, beatSeconds, beatsPerBar),
     patternD: patternDiagnostics(patternD, slotIndices[3], gridOrigin, beatSeconds, beatsPerBar),
+    extraInstrument: extraInstrument
+      ? { instrument: EXTRA_INSTRUMENT_VOICE, sourceStem: extraInstrument.sourceStem, onsetCount: extraInstrument.onsetCount }
+      : null,
   };
 
   return {
@@ -289,6 +347,56 @@ export function transcribeDrums(wavBuffer: Buffer): TranscribedSong {
     patternD,
     diagnostics,
   };
+}
+
+interface ExtraInstrumentRhythm {
+  sourceStem: ExtraInstrumentSourceStem;
+  onsetCount: number;
+  // Every hit tagged EXTRA_INSTRUMENT_VOICE, bar-indexed against the exact
+  // same gridOrigin/beatSeconds/beatsPerBar as the drum stem's own `bars` —
+  // that shared indexing is what lets votedSlotsForInstrument/direct lookup
+  // pull "this stem's hits during that same groove/fill" below.
+  bars: BarHit[][];
+}
+
+// Which non-drum stem's rhythm (if any) is worth layering onto the drum
+// patterns as an extra Rimshot line — "most rhythmically busy" is a coarse
+// proxy (raw onset count clearing the same MIN_ONSET_COUNT floor real drum
+// transcription requires) for "most worth a listener's attention," but it's
+// the right kind of coarse: a syncopated vocal delivery (the Shaun Paul
+// "Temperature" case this was built for) or a driving bassline both produce
+// many onsets, while a stem that's mostly sustained pads/held notes barely
+// produces any — exactly the distinction that matters here. Picks one stem
+// rather than merging all three because they'd otherwise collide on the one
+// shared voice (EXTRA_INSTRUMENT_VOICE) and turn into unintelligible noise.
+function pickExtraInstrumentRhythm(
+  extraStems: ExtraInstrumentStems,
+  gridOrigin: number,
+  beatSeconds: number,
+  beatsPerBar: number
+): ExtraInstrumentRhythm | null {
+  const candidates: { key: ExtraInstrumentSourceStem; buffer: Buffer }[] = [];
+  if (extraStems.vocals) candidates.push({ key: "vocals", buffer: extraStems.vocals });
+  if (extraStems.bass) candidates.push({ key: "bass", buffer: extraStems.bass });
+  if (extraStems.other) candidates.push({ key: "other", buffer: extraStems.other });
+
+  let best: ExtraInstrumentRhythm | null = null;
+  for (const { key, buffer } of candidates) {
+    let mono: { sampleRate: number; samples: Float32Array };
+    try {
+      mono = toMono(parseWav(buffer));
+    } catch {
+      continue; // an unparseable/empty stem shouldn't fail the whole import
+    }
+    const rough = detectOnsets(mono);
+    if (rough.length < MIN_ONSET_COUNT) continue;
+    if (best && rough.length <= best.onsetCount) continue; // cheaper than refining a stem that can't win anyway
+    const refined = rough.map((t) => refineOnsetTime(mono, t));
+    const tagged = refined.map((time) => ({ time, instrument: EXTRA_INSTRUMENT_VOICE }));
+    const bars = groupIntoBars(tagged, gridOrigin, beatSeconds, beatsPerBar);
+    best = { sourceStem: key, onsetCount: refined.length, bars };
+  }
+  return best;
 }
 
 function round1(n: number): number {
@@ -1034,7 +1142,11 @@ function votedSlotsForInstrument(bars: BarHit[][], cluster: BeatCluster, instrum
   const slotVotes = new Map<number, number>();
   for (const idx of cluster.memberIndices) {
     const slotsSeenInThisBar = new Set<number>();
-    for (const hit of bars[idx]) {
+    // `bars` may be shorter here than the drum stem's own `bars` array — a
+    // non-drum stem grid-aligned against the drums' bar numbering (see
+    // pickExtraInstrumentRhythm) can simply run out of bars near the song's
+    // end if that stem goes quiet there.
+    for (const hit of bars[idx] ?? []) {
       if (hit.instrument !== instrument) continue;
       if (!slotsSeenInThisBar.has(hit.slot)) {
         slotsSeenInThisBar.add(hit.slot);

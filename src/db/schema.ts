@@ -132,7 +132,10 @@ export type SongImportStatus = "uploaded" | "processing" | "done" | "error";
 // the owner explicitly imports it.
 export const songImports = pgTable("song_imports", {
   id: text("id").primaryKey(),
-  boardSlug: text("board_slug").notNull(),
+  // Null for a scratch import run from /test (see app/test) — nothing to
+  // save into yet, just previewing the transcription; the owner picks a page
+  // to save to afterward if they keep the result.
+  boardSlug: text("board_slug"),
   status: text("status").$type<SongImportStatus>().notNull().default("uploaded"),
   originalFilename: text("original_filename").notNull(),
   blobUrl: text("blob_url").notNull(),

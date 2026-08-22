@@ -3,15 +3,17 @@ import { eq } from "drizzle-orm";
 import { get } from "@vercel/blob";
 import { getDb } from "@/db";
 import { songImports } from "@/db/schema";
-import { separateDrumStem } from "@/lib/stemSeparate";
+import { separateStems } from "@/lib/stemSeparate";
 import { transcribeDrums } from "@/lib/transcribeDrums";
 import { SongImportRequestedData, inngest } from "./client";
 
-// One durable job: fetch the uploaded song, isolate its drums (Replicate/
-// Demucs), transcribe up to three main grooves plus a fill, and save the
-// result — each step retried independently by Inngest rather than the whole
-// pipeline re-running on a transient blip. See lib/transcribeDrums.ts for why
-// this is a best-effort heuristic pipeline rather than a trained model.
+// One durable job: fetch the uploaded song, split it into stems (Replicate/
+// Demucs), transcribe up to three main grooves plus a fill from the drums,
+// layer in whichever non-drum stem is most rhythmically distinct as an extra
+// Rimshot line, and save the result — each step retried independently by
+// Inngest rather than the whole pipeline re-running on a transient blip. See
+// lib/transcribeDrums.ts for why this is a best-effort heuristic pipeline
+// rather than a trained model.
 export const importSong = inngest.createFunction(
   { id: "song-import", retries: 1, triggers: [{ event: "song/import.requested" }] },
   async ({ event, step }) => {
@@ -38,8 +40,8 @@ export const importSong = inngest.createFunction(
         if (!blob) throw new Error("Uploaded file is missing from storage");
         const audioBuffer = Buffer.from(await new Response(blob.stream).arrayBuffer());
 
-        const drumsWav = await separateDrumStem(audioBuffer);
-        return transcribeDrums(drumsWav);
+        const stems = await separateStems(audioBuffer);
+        return transcribeDrums(stems.drums, { vocals: stems.vocals, bass: stems.bass, other: stems.other });
       });
 
       // While the transcription pipeline is still being tuned: log what each
