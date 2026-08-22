@@ -36,18 +36,32 @@ const NOTE_CODE: Record<NoteName, string> = {
   eighthTriplet: "te",
   sixteenthTriplet: "ts",
 };
+type HitAccent = "accent" | "ghost";
+const ACCENT_CODE: Record<HitAccent, string> = { accent: "a", ghost: "g" };
 interface Hit {
   type: "note" | "rest";
   note: NoteName;
+  accent?: HitAccent;
 }
-function N(note: NoteName): Hit {
-  return { type: "note", note };
+// A real ghost/accent hit — not a whole quiet line — see rhythm.ts's
+// HitAccent/ACCENT_VELOCITY. Only meaningful on a note (a rest has nothing
+// to accent), matching cycleHitAccent's own rule there.
+function N(note: NoteName, accent?: HitAccent): Hit {
+  return { type: "note", note, accent };
 }
 function R(note: NoteName): Hit {
   return { type: "rest", note };
 }
 function custom(...hits: Hit[]): string {
-  return "c:" + hits.map((h) => `${h.type === "rest" ? "r" : "n"}${NOTE_CODE[h.note]}`).join("-");
+  return (
+    "c:" +
+    hits
+      .map((h) => {
+        const base = `${h.type === "rest" ? "r" : "n"}${NOTE_CODE[h.note]}`;
+        return h.accent ? `${base}:${ACCENT_CODE[h.accent]}` : base;
+      })
+      .join("-")
+  );
 }
 
 function slot(bpm: number, lines: StoredLine[]): BoardSlotData {
@@ -82,9 +96,17 @@ const CRASH_BEAT1 = measure("n-quarter", null, null, null);
 // backbone of the shuffle groove in Lesson 16.
 const SHUFFLE_TILE = custom(N("eighthTriplet"), R("eighthTriplet"), N("eighthTriplet"));
 const SHUFFLE_HIHAT = measure(SHUFFLE_TILE, SHUFFLE_TILE, SHUFFLE_TILE, SHUFFLE_TILE);
-// A single quiet hit on the last sixteenth ("a") of a beat — a ghost note,
-// meant to sit at low volume behind a loud backbeat hit elsewhere in the bar.
-const GHOST_TILE = custom(R("sixteenth"), R("sixteenth"), R("sixteenth"), N("sixteenth"));
+// The train beat's "chugga-chugga" feel: an accented downbeat eighth
+// followed by a normal-velocity "and" — real per-hit dynamics (see
+// rhythm.ts's HitAccent), not just two identical eighth notes.
+const TRAIN_TILE = custom(N("eighth", "accent"), N("eighth"));
+const TRAIN_SNARE = measure(TRAIN_TILE, TRAIN_TILE, TRAIN_TILE, TRAIN_TILE);
+// A single ghost hit on the last sixteenth ("a") of a beat — real per-hit
+// dynamics (see rhythm.ts's HitAccent), not a separate quiet line. Paired
+// with a normal backbeat quarter on the beats in between, this is the
+// stock "ghost note before the backbeat" pattern used in Lessons 12 and 17.
+const GHOST_TAIL = custom(R("sixteenth"), R("sixteenth"), R("sixteenth"), N("sixteenth", "ghost"));
+const GHOST_BACKBEAT_SNARE = measure(GHOST_TAIL, "n-quarter", GHOST_TAIL, "n-quarter");
 
 // Reused across several lessons from 11 on, same way a working drummer reuses
 // a small vocabulary of stock fills across many songs rather than inventing
@@ -307,17 +329,11 @@ const SEEDS: LessonSeed[] = [
     ...bundle(
       12,
       88,
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", GHOST_BACKBEAT_SNARE), line("kick", KICK_1_AND_3)],
       [
         line("hihatClosed", HIHAT_EIGHTHS),
-        line("snare", BACKBEAT_SNARE),
+        line("snare", GHOST_BACKBEAT_SNARE),
         line("kick", KICK_1_AND_3),
-        line("snare", measure(GHOST_TILE, null, GHOST_TILE, null), 35),
-      ],
-      [
-        line("hihatClosed", HIHAT_EIGHTHS),
-        line("snare", BACKBEAT_SNARE),
-        line("kick", KICK_1_AND_3),
-        line("snare", measure(GHOST_TILE, null, GHOST_TILE, null), 35),
         line("crash", CRASH_BEAT1),
       ]
     ),
@@ -326,13 +342,13 @@ const SEEDS: LessonSeed[] = [
     slug: "lesson-13-train-beat",
     lessonNumber: 13,
     title: "The Train Beat",
-    teaches: "A driving eighth-note pattern voiced on the snare itself, not the hi-hat.",
+    teaches: "A driving eighth-note pattern voiced on the snare, with the downbeat of each pair accented for a chugging feel.",
     ...bundle(
       13,
       140,
-      [line("snare", HIHAT_EIGHTHS), line("hihatClosed", HIHAT_QUARTERS), line("kick", KICK_1_AND_3)],
+      [line("snare", TRAIN_SNARE), line("hihatClosed", HIHAT_QUARTERS), line("kick", KICK_1_AND_3)],
       [
-        line("snare", HIHAT_EIGHTHS),
+        line("snare", TRAIN_SNARE),
         line("hihatClosed", HIHAT_QUARTERS),
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
@@ -420,8 +436,7 @@ const SEEDS: LessonSeed[] = [
             null
           )
         ),
-        line("snare", BACKBEAT_SNARE),
-        line("snare", measure(GHOST_TILE, null, GHOST_TILE, null), 35),
+        line("snare", GHOST_BACKBEAT_SNARE),
       ],
       [
         line("hihatClosed", HIHAT_SIXTEENTHS),
@@ -434,8 +449,7 @@ const SEEDS: LessonSeed[] = [
             null
           )
         ),
-        line("snare", BACKBEAT_SNARE),
-        line("snare", measure(GHOST_TILE, null, GHOST_TILE, null), 35),
+        line("snare", GHOST_BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ],
       TOM_RUN_FILL,

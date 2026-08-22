@@ -15,6 +15,7 @@ export function Block({
   onClear,
   onTap,
   onToggleHit,
+  onCycleAccent,
   onPickUp,
 }: {
   id: string;
@@ -27,6 +28,7 @@ export function Block({
   onClear: () => void;
   onTap: () => void;
   onToggleHit: (hitIndex: number) => void;
+  onCycleAccent: (hitIndex: number) => void;
   onPickUp: () => void;
 }) {
   const { isOver, setNodeRef: setDropRef } = useDroppable({ id });
@@ -48,12 +50,12 @@ export function Block({
 
   const title = isMobile
     ? tile
-      ? "Tap a hit to toggle it as a rest — tap ✕ to clear"
+      ? "Tap a hit to toggle it as a rest, double-tap to cycle accent/ghost — tap ✕ to clear"
       : "Tap to place the selected tile here"
     : tile
       ? picked
         ? "Click another block to drop it here, or click the grip again to cancel"
-        : "Click a hit to toggle it as a rest, drag to move, click the grip to pick it up, or click ✕ to clear"
+        : "Click a hit to toggle it as a rest, double-click to cycle accent/ghost, drag to move, click the grip to pick it up, or click ✕ to clear"
       : movePending
         ? "Click here to drop the picked-up block"
         : "Drop a rhythm tile here";
@@ -83,7 +85,7 @@ export function Block({
     >
       {tile ? (
         <>
-          <TileVisual tile={tile} height={44} onToggleHit={onToggleHit} />
+          <TileVisual tile={tile} height={44} onToggleHit={onToggleHit} onCycleAccent={onCycleAccent} />
           {!isMobile && (
             <button
               type="button"

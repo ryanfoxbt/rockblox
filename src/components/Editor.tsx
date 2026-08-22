@@ -23,7 +23,7 @@ import { RandomizeButton, VariationKind } from "@/components/RandomizeButton";
 import { TextToBeatButton } from "@/components/TextToBeatButton";
 import { WallButton } from "@/components/WallButton";
 import { PresenceIndicator } from "@/components/PresenceIndicator";
-import { RhythmTile, toggleHitRest } from "@/lib/rhythm";
+import { cycleHitAccent, RhythmTile, toggleHitRest } from "@/lib/rhythm";
 import { generateFillVariation, generateGrooveVariation, generateRandomBeat } from "@/lib/randomBeat";
 import { InstrumentId } from "@/lib/instruments";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -493,6 +493,19 @@ export function Editor({
     );
   }
 
+  function handleCycleAccent(lineId: string, index: number, hitIndex: number) {
+    setLines((prev) =>
+      prev.map((line) =>
+        line.id === lineId
+          ? {
+              ...line,
+              blocks: line.blocks.map((b, i) => (i === index && b ? cycleHitAccent(b, hitIndex) : b)),
+            }
+          : line
+      )
+    );
+  }
+
   function addLine() {
     setLines((prev) => [...prev, createLine(prev.length)]);
   }
@@ -582,8 +595,8 @@ export function Editor({
           </Link>
           <p className="hidden text-sm text-white/50 sm:block">
             {isMobile
-              ? `Tap a tile, then tap up to ${MAX_BEATS} beat blocks per line to build a drum groove. Tap a hit again to rest it.`
-              : `Drag rhythmic values into up to ${MAX_BEATS} beat blocks per line to build a drum groove, or click a tile then click a block to place it — handy on a trackpad. Click a hit to rest it, or click a block's grip handle to pick it up and move it elsewhere.`}
+              ? `Tap a tile, then tap up to ${MAX_BEATS} beat blocks per line to build a drum groove. Tap a hit again to rest it, or double-tap it to cycle accent → ghost → normal.`
+              : `Drag rhythmic values into up to ${MAX_BEATS} beat blocks per line to build a drum groove, or click a tile then click a block to place it — handy on a trackpad. Click a hit to rest it, double-click it to cycle accent → ghost → normal, or click a block's grip handle to pick it up and move it elsewhere.`}
           </p>
           {board ? (
             <>
@@ -808,6 +821,7 @@ export function Editor({
                   onClearBlock={(i) => clearBlock(line.id, i)}
                   onBlockTap={(i) => handleBlockTap(line.id, i)}
                   onToggleHit={(i, hitIndex) => handleToggleHit(line.id, i, hitIndex)}
+                  onCycleAccent={(i, hitIndex) => handleCycleAccent(line.id, i, hitIndex)}
                   onRemoveLine={() => removeLine(line.id)}
                   onPickUp={(i) => {
                     const t = line.blocks[i];

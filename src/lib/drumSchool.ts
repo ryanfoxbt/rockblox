@@ -23,7 +23,7 @@ export const DRUM_LESSONS: DrumLesson[] = [
   { slug: "lesson-10-put-it-together", lessonNumber: 10, title: "Put It Together", teaches: "Verse, chorus, and fills arranged into one song." },
   { slug: "lesson-11-sixteenth-note-hihat", lessonNumber: 11, title: "Sixteenth-Note Hi-Hat", teaches: "Subdividing the hi-hat into sixteenths for a smoother, busier feel." },
   { slug: "lesson-12-ghost-notes", lessonNumber: 12, title: "Ghost Notes", teaches: "Quiet snare hits between the backbeat, for texture instead of volume." },
-  { slug: "lesson-13-train-beat", lessonNumber: 13, title: "The Train Beat", teaches: "A driving eighth-note pattern voiced on the snare itself, not the hi-hat." },
+  { slug: "lesson-13-train-beat", lessonNumber: 13, title: "The Train Beat", teaches: "A driving eighth-note pattern voiced on the snare, with the downbeat of each pair accented for a chugging feel." },
   { slug: "lesson-14-halftime-groove", lessonNumber: 14, title: "Halftime Groove", teaches: "Moving the snare to just beat 3 for a laid-back, spacious feel." },
   { slug: "lesson-15-double-time-feel", lessonNumber: 15, title: "Double-Time Feel", teaches: "The same basic rock beat, played fast enough to feel like a different gear." },
   { slug: "lesson-16-the-shuffle", lessonNumber: 16, title: "The Shuffle", teaches: "A swung, triplet-based hi-hat feel instead of straight time." },

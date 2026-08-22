@@ -27,9 +27,14 @@ export const NOTE_SHORT_LABEL: Record<NoteName, string> = {
   sixteenthTriplet: "16th Trip",
 };
 
+// A note's dynamic level — undefined/omitted means normal velocity. Only
+// meaningful on "note" hits; a rest is never accented or ghosted.
+export type HitAccent = "accent" | "ghost";
+
 export interface RhythmHit {
   type: "note" | "rest";
   note: NoteName;
+  accent?: HitAccent;
 }
 
 export interface RhythmTile {
@@ -43,9 +48,41 @@ function hit(type: "note" | "rest", note: NoteName): RhythmHit {
   return { type, note };
 }
 
+// How much louder/quieter a hit plays relative to its line's own volume —
+// see audioEngine.ts's triggerInstrument, which multiplies the line volume
+// by this before computing gain. Calibrated so a ghost note reads as
+// "barely there" and an accent reads as "dug in," without either clipping
+// or disappearing entirely against a 100-volume line.
+export const ACCENT_VELOCITY: Record<"normal" | HitAccent, number> = {
+  normal: 1,
+  accent: 1.3,
+  ghost: 0.35,
+};
+
+export function hitVelocityMultiplier(accent?: HitAccent): number {
+  return ACCENT_VELOCITY[accent ?? "normal"];
+}
+
+// Cycles a single note's dynamic level: normal -> accent -> ghost -> normal.
+// A no-op on a rest (rests have nothing to accent) — returns the same tile
+// unchanged, matching the shape of toggleHitRest's contract below.
+export function cycleHitAccent(t: RhythmTile, index: number): RhythmTile {
+  const target = t.hits[index];
+  if (!target || target.type === "rest") return t;
+  const next: HitAccent | undefined =
+    target.accent === undefined ? "accent" : target.accent === "accent" ? "ghost" : undefined;
+  const hits = t.hits.map((h, i) => (i === index ? { ...h, accent: next } : h));
+  return tileFromHits(hits);
+}
+
 function label(hits: RhythmHit[]): string {
   return hits
-    .map((h) => (h.type === "rest" ? `${NOTE_SHORT_LABEL[h.note]} rest` : NOTE_SHORT_LABEL[h.note]))
+    .map((h) => {
+      if (h.type === "rest") return `${NOTE_SHORT_LABEL[h.note]} rest`;
+      if (h.accent === "accent") return `${NOTE_SHORT_LABEL[h.note]} (accent)`;
+      if (h.accent === "ghost") return `${NOTE_SHORT_LABEL[h.note]} (ghost)`;
+      return NOTE_SHORT_LABEL[h.note];
+    })
     .join(" + ");
 }
 
@@ -265,18 +302,34 @@ const CODE_TO_NOTE: Record<string, NoteName> = Object.fromEntries(
   Object.entries(NOTE_CODE).map(([note, code]) => [code, note as NoteName])
 );
 
+const ACCENT_CODE: Record<HitAccent, string> = { accent: "a", ghost: "g" };
+const CODE_TO_ACCENT: Record<string, HitAccent> = Object.fromEntries(
+  Object.entries(ACCENT_CODE).map(([accent, code]) => [code, accent as HitAccent])
+);
+
 function encodeHits(hits: RhythmHit[]): string {
-  return "c:" + hits.map((h) => `${h.type === "rest" ? "r" : "n"}${NOTE_CODE[h.note]}`).join("-");
+  return (
+    "c:" +
+    hits
+      .map((h) => {
+        const base = `${h.type === "rest" ? "r" : "n"}${NOTE_CODE[h.note]}`;
+        return h.accent ? `${base}:${ACCENT_CODE[h.accent]}` : base;
+      })
+      .join("-")
+  );
 }
 
 function decodeHits(id: string): RhythmHit[] | undefined {
   if (!id.startsWith("c:")) return undefined;
   const hits: RhythmHit[] = [];
   for (const part of id.slice(2).split("-")) {
-    const type = part[0] === "r" ? "rest" : part[0] === "n" ? "note" : undefined;
-    const note = CODE_TO_NOTE[part.slice(1)];
+    const [main, accentCode] = part.split(":");
+    const type = main[0] === "r" ? "rest" : main[0] === "n" ? "note" : undefined;
+    const note = CODE_TO_NOTE[main.slice(1)];
     if (!type || !note) return undefined;
-    hits.push({ type, note });
+    const accent = accentCode ? CODE_TO_ACCENT[accentCode] : undefined;
+    if (accentCode && !accent) return undefined;
+    hits.push(accent && type === "note" ? { type, note, accent } : { type, note });
   }
   return hits.length > 0 ? hits : undefined;
 }
@@ -290,7 +343,7 @@ export function tileFromHits(hits: RhythmHit[]): RhythmTile {
   const match = [...NOTE_TILES, ...TRIPLET_TILES].find(
     (t) =>
       t.hits.length === hits.length &&
-      t.hits.every((h, i) => h.note === hits[i].note && h.type === hits[i].type)
+      t.hits.every((h, i) => h.note === hits[i].note && h.type === hits[i].type && !hits[i].accent)
   );
   if (match) return match;
   return {
@@ -302,7 +355,16 @@ export function tileFromHits(hits: RhythmHit[]): RhythmTile {
 }
 
 export function toggleHitRest(t: RhythmTile, index: number): RhythmTile {
-  const hits = t.hits.map((h, i) => (i === index ? hit(h.type === "rest" ? "note" : "rest", h.note) : h));
+  // Preserves the hit's accent (spread, not the plain hit() constructor) —
+  // a double-click/double-tap's two preliminary clicks flip a note to a
+  // rest and back before its dblclick handler cycles the accent (see
+  // TileVisual.tsx), and without this that round-trip would silently drop
+  // whatever accent/ghost state was already there.
+  const hits = t.hits.map((h, i) => {
+    if (i !== index) return h;
+    const type: "note" | "rest" = h.type === "rest" ? "note" : "rest";
+    return { ...h, type };
+  });
   return tileFromHits(hits);
 }
 

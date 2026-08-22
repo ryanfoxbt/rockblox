@@ -1,6 +1,6 @@
 import type * as VexflowModule from "vexflow";
 import { InstrumentId } from "./instruments";
-import { NoteName, NOTE_FRACTION, RhythmTile } from "./rhythm";
+import { HitAccent, NoteName, NOTE_FRACTION, RhythmTile } from "./rhythm";
 
 export type VF = typeof VexflowModule;
 
@@ -89,11 +89,19 @@ const STAVE_MARGIN_X = 10;
 const STAVE_Y = 110;
 const CANVAS_HEIGHT = 280;
 
+// One instrument's onset at a given tick, carrying its dynamic level along
+// so the notehead can be marked with an accent (">") or wrapped in
+// parentheses (ghost) the same way a real drum chart would.
+interface OnsetHit {
+  instrument: InstrumentId;
+  accent?: HitAccent;
+}
+
 // A slot within a beat: either a chord of simultaneous instrument hits, or a
 // rest covering a stretch where nothing on the kit sounds.
 interface Segment {
   ticks: number;
-  instruments: InstrumentId[] | null;
+  instruments: OnsetHit[] | null;
 }
 
 // Draws one measure's worth of stave/voice/beams/tuplets at the given
@@ -136,7 +144,7 @@ function drawStave(
     // Collect every note onset in this beat, across all instrument lines,
     // keyed by its tick offset — so hits that land on the same tick become
     // one chord instead of independently-positioned noteheads.
-    const onsetsByTick = new Map<number, InstrumentId[]>();
+    const onsetsByTick = new Map<number, OnsetHit[]>();
     let anyTilePlaced = false;
     let anyRealNote = false;
 
@@ -152,9 +160,11 @@ function drawStave(
           anyRealNote = true;
           const existing = onsetsByTick.get(cursor);
           if (existing) {
-            if (!existing.includes(line.instrument)) existing.push(line.instrument);
+            if (!existing.some((o) => o.instrument === line.instrument)) {
+              existing.push({ instrument: line.instrument, accent: hit.accent });
+            }
           } else {
-            onsetsByTick.set(cursor, [line.instrument]);
+            onsetsByTick.set(cursor, [{ instrument: line.instrument, accent: hit.accent }]);
           }
         }
         cursor += ticks;
@@ -201,14 +211,14 @@ function drawStave(
         continue;
       }
 
-      const keys = seg.instruments.map((inst) => {
+      const keys = seg.instruments.map(({ instrument: inst }) => {
         const pos = INSTRUMENT_POSITION[inst];
         return pos.noteheadCode ? `${pos.key}/${pos.noteheadCode}` : pos.key;
       });
       const staveNote = new VF.StaveNote({ keys, duration: code, dots });
       if (dots > 0) VF.Dot.buildAndAttach([staveNote], { all: true });
       staveNote.setStemDirection(STEM_DIRECTION);
-      seg.instruments.forEach((inst, i) => {
+      seg.instruments.forEach(({ instrument: inst, accent }, i) => {
         const annotation = INSTRUMENT_POSITION[inst].annotation;
         if (annotation) {
           staveNote.addModifier(
@@ -216,7 +226,16 @@ function drawStave(
             i
           );
         }
+        // ">" above the notehead for an accented hit — same articulation a
+        // real drum chart would use.
+        if (accent === "accent") staveNote.addModifier(new VF.Articulation("a>"), i);
       });
+      // Parentheses around the whole chord for a ghost note — only when
+      // every instrument sounding at this instant is ghosted, since VexFlow
+      // parenthesizes a note as a whole rather than one key within a chord.
+      if (seg.instruments.every((o) => o.accent === "ghost")) {
+        VF.Parenthesis.buildAndAttach([staveNote]);
+      }
       notes.push(staveNote);
       beatNotes.push(staveNote);
     }

@@ -16,6 +16,7 @@ export function LineRow({
   onClearBlock,
   onBlockTap,
   onToggleHit,
+  onCycleAccent,
   onRemoveLine,
   onPickUp,
   canRemove,
@@ -31,6 +32,7 @@ export function LineRow({
   onClearBlock: (index: number) => void;
   onBlockTap: (index: number) => void;
   onToggleHit: (index: number, hitIndex: number) => void;
+  onCycleAccent: (index: number, hitIndex: number) => void;
   onRemoveLine: () => void;
   onPickUp: (index: number) => void;
   canRemove: boolean;
@@ -50,6 +52,7 @@ export function LineRow({
       onClear={() => onClearBlock(i)}
       onTap={() => onBlockTap(i)}
       onToggleHit={(hitIndex) => onToggleHit(i, hitIndex)}
+      onCycleAccent={(hitIndex) => onCycleAccent(i, hitIndex)}
       onPickUp={() => onPickUp(i)}
     />
   ));

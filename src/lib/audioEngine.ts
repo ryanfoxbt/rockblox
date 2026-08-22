@@ -1,5 +1,5 @@
 import { InstrumentId } from "./instruments";
-import { NOTE_FRACTION, RhythmTile } from "./rhythm";
+import { hitVelocityMultiplier, NOTE_FRACTION, RhythmTile } from "./rhythm";
 import { DEFAULT_KIT, sampleUrlsForKit } from "./drumKits";
 import { loadFartBuffers } from "./fartKit";
 import { CustomSamples, base64ToArrayBuffer } from "./customSamples";
@@ -138,7 +138,8 @@ export function scheduleLoopEvents(
       for (const h of t.hits) {
         if (h.type === "note") {
           const time = loopStart + beatIndex * beatSeconds + beatOffset * beatSeconds;
-          const src = triggerInstrument(ctx, dest, buffers, line.instrument, time, line.volume);
+          const volume = line.volume * hitVelocityMultiplier(h.accent);
+          const src = triggerInstrument(ctx, dest, buffers, line.instrument, time, volume);
           if (src) sources.push(src);
         }
         beatOffset += NOTE_FRACTION[h.note];
