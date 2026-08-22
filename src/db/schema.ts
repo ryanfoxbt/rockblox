@@ -2,7 +2,7 @@ import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex }
 import type { BoardSlotData } from "@/lib/board";
 import type { CustomSamples } from "@/lib/customSamples";
 import type { StackArrangement } from "@/lib/stack";
-import type { TranscribeDiagnostics } from "@/lib/transcribeDrums";
+import type { FullSongArrangementStep, FullSongSlot, TranscribeDiagnostics } from "@/lib/transcribeDrums";
 
 export interface StoredLine {
   instrument: string;
@@ -154,6 +154,27 @@ export const songImports = pgTable("song_imports", {
   // lets a human jump to the exact part of the song each pattern came from
   // and judge accuracy by ear, without digging through logs.
   diagnostics: jsonb("diagnostics").$type<TranscribeDiagnostics>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// The /test-only counterpart to songImports above (see transcribeFullSong in
+// transcribeDrums.ts): not tied to a board at all — there's no owner, no
+// slot cap, just a whole song's worth of detected grooves/fills and the
+// bar-by-bar arrangement reconstructing how they actually play through the
+// song, for previewing/playing back on /test. Drums only, no vocals/bass/
+// "other" layering.
+export const fullSongImports = pgTable("full_song_imports", {
+  id: text("id").primaryKey(),
+  status: text("status").$type<SongImportStatus>().notNull().default("uploaded"),
+  originalFilename: text("original_filename").notNull(),
+  blobUrl: text("blob_url").notNull(),
+  errorMessage: text("error_message"),
+  bpm: integer("bpm"),
+  measureLength: integer("measure_length"),
+  durationSeconds: integer("duration_seconds"),
+  slots: jsonb("slots").$type<FullSongSlot[]>(),
+  arrangement: jsonb("arrangement").$type<FullSongArrangementStep[]>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

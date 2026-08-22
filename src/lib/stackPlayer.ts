@@ -1,4 +1,3 @@
-import { SlotLetter } from "./board";
 import { CustomSamples } from "./customSamples";
 import {
   BufferMap,
@@ -9,14 +8,20 @@ import {
   scheduleLoopEvents,
 } from "./audioEngine";
 
+// `slot` is a plain string, not lib/board's SlotLetter ("A"-"D") — a real
+// board's Stack is always built from exactly those four, but this player is
+// also reused by /test's full-song preview, which can have as many
+// arbitrarily-labeled slots as a song actually needs (see
+// transcribeDrums.ts's transcribeFullSong). A SlotLetter is itself a valid
+// string, so every existing board-Stack call site keeps working unchanged.
 export interface StackSlotSource {
-  slot: SlotLetter;
+  slot: string;
   kit: string;
   customSamples?: CustomSamples;
 }
 
 export interface StackStepSource {
-  slot: SlotLetter;
+  slot: string;
   lines: LineState[];
   measureLength: number;
 }
@@ -38,7 +43,7 @@ const LOOKAHEAD_SECONDS = 0.15;
 export class StackPlayer {
   private ctx: AudioContext;
   private master: GainNode;
-  private slotBuffers = new Map<SlotLetter, BufferMap>();
+  private slotBuffers = new Map<string, BufferMap>();
   private sources: AudioBufferSourceNode[] = [];
   private playing = false;
   private loop = false;

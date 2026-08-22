@@ -349,6 +349,190 @@ export function transcribeDrums(wavBuffer: Buffer, extraStems?: ExtraInstrumentS
   };
 }
 
+// A generous safety ceiling, not a target — MIN_CLUSTER_REPEATS and the
+// similarity thresholds clustering already uses are what actually keep a
+// song's real structure from over-fragmenting into spurious "distinct"
+// slots. No real song should ever approach this; it just stops a
+// pathological/noisy input from producing an unbounded slot list.
+const MAX_FULL_SONG_SLOTS = 24;
+// A song bar has to be at least this similar (full-kit Jaccard) to a
+// discovered slot's own representative bar to count as "another occurrence
+// of it" during the whole-song assignment pass below — otherwise it's
+// transitional/unclassifiable material (a fill-in, a crash leading into a
+// section change) that doesn't cleanly belong to any one detected pattern,
+// and gets left out of the arrangement rather than forced into whichever
+// slot happens to score highest despite barely resembling it.
+const ASSIGNMENT_MIN_SIMILARITY = 0.2;
+
+export interface FullSongSlot {
+  // "A", "B", "C", ... in order of first appearance across the whole song —
+  // not capped at D like a real board's slots (see MAX_FULL_SONG_SLOTS).
+  label: string;
+  kind: "groove" | "fill";
+  lines: StoredLine[];
+  // How many bars across the whole song matched this slot closely enough to
+  // count as another occurrence of it (see ASSIGNMENT_MIN_SIMILARITY) — a
+  // rough "how central is this to the song" signal.
+  repeatCount: number;
+  // One representative, listenable clip (same 4-8s window logic as
+  // patternDiagnostics/representativeBarWindow) drawn from every bar this
+  // slot was actually matched to across the song, not just its original
+  // discovery bars — a slot found from two early repeats but matched to ten
+  // more later on gets a clip informed by all twelve.
+  sampleRange: [number, number] | null;
+}
+
+export interface FullSongArrangementStep {
+  slotLabel: string;
+  barIndex: number;
+  startSeconds: number;
+  endSeconds: number;
+}
+
+export interface FullSongTranscription {
+  bpm: number;
+  measureLength: number;
+  durationSeconds: number;
+  slots: FullSongSlot[];
+  arrangement: FullSongArrangementStep[];
+}
+
+// The /test-only counterpart to transcribeDrums above: instead of capping
+// output at Slots A-D (a real board's hard limit), finds every genuinely
+// distinct groove and fill the whole song actually has and reconstructs the
+// song's real structure as a bar-by-bar arrangement across however many
+// slots that takes — see FullSongSlot/FullSongArrangementStep. Drums only,
+// deliberately: no vocals/bass/"other" layering (see transcribeDrums's
+// ExtraInstrumentStems) while that side of the pipeline is still being
+// tuned independently.
+export function transcribeFullSong(wavBuffer: Buffer): FullSongTranscription {
+  const wav = parseWav(wavBuffer);
+  const mono = toMono(wav);
+
+  const roughOnsetTimes = detectOnsets(mono);
+  if (roughOnsetTimes.length < MIN_ONSET_COUNT) {
+    throw new Error("Couldn't find enough distinct drum hits in this track to transcribe a pattern.");
+  }
+  const onsetTimes = roughOnsetTimes.map((t) => refineOnsetTime(mono, t));
+
+  const totalDurationSeconds = mono.samples.length / mono.sampleRate;
+  const bpm = estimateTempo(onsetTimes, totalDurationSeconds);
+  const beatSeconds = 60 / bpm;
+  const gridOrigin = estimateGridPhase(onsetTimes, beatSeconds);
+
+  const features = onsetTimes.map((time, i) => {
+    const gap = i + 1 < onsetTimes.length ? onsetTimes[i + 1] - time : Infinity;
+    return extractOnsetFeatures(mono, time, gap);
+  });
+  const medianPeak = median(features.map((f) => f.peakRms));
+  const tomDecay: TomDecayThresholds = {
+    low: tomDecayThreshold(features.filter((f) => broadBand(f) === "low").map((f) => f.decayRatio)),
+    mid: tomDecayThreshold(features.filter((f) => broadBand(f) === "mid").map((f) => f.decayRatio)),
+  };
+  const classified = onsetTimes.map((time, i) => ({
+    time,
+    instrument: classifyOnset(features[i], medianPeak, tomDecay),
+  }));
+
+  const beatsPerBar = estimateBeatsPerBar(classified, gridOrigin, beatSeconds);
+  const bars = groupIntoBars(classified, gridOrigin, beatSeconds, beatsPerBar);
+  const interiorIndices = bars.length > 4 ? bars.map((_, i) => i).slice(1, -1) : bars.map((_, i) => i);
+
+  const clusters = clusterBeatBars(bars, interiorIndices, MAX_FULL_SONG_SLOTS);
+  clusters.sort((a, b) => Math.min(...a.memberIndices) - Math.min(...b.memberIndices));
+
+  const dominantCluster =
+    clusters.length > 0
+      ? clusters.reduce((best, c) => (c.memberIndices.length > best.memberIndices.length ? c : best))
+      : null;
+  const fallback: CoreFallbacks = dominantCluster
+    ? {
+        kick: coreHitsForCluster(bars, dominantCluster, "kick"),
+        snare: coreHitsForCluster(bars, dominantCluster, "snare"),
+        cymbal: cymbalHitsForCluster(bars, dominantCluster) ?? defaultCymbalHits(),
+      }
+    : { kick: [], snare: [], cymbal: defaultCymbalHits() };
+
+  const claimed = new Set(clusters.flatMap((c) => c.memberIndices));
+  const fillCandidateIndices = interiorIndices.filter((i) => !claimed.has(i));
+  const fillIndices = pickFillBars(bars, fillCandidateIndices, Math.max(0, MAX_FULL_SONG_SLOTS - clusters.length));
+
+  interface Discovered {
+    firstBar: number;
+    kind: "groove" | "fill";
+    lines: StoredLine[];
+    signature: Set<string>;
+  }
+  const discovered: Discovered[] = [
+    ...clusters.map((c) => ({
+      firstBar: Math.min(...c.memberIndices),
+      kind: "groove" as const,
+      lines: renderBeatPattern(bars, c, fallback, beatsPerBar),
+      signature: flattenFullKit(bars[c.medoidIndex]),
+    })),
+    ...fillIndices.map((i) => ({
+      firstBar: i,
+      kind: "fill" as const,
+      lines: barToStoredLines(bars[i], FILL_INSTRUMENT_ORDER, beatsPerBar),
+      signature: flattenFullKit(bars[i]),
+    })),
+  ].sort((a, b) => a.firstBar - b.firstBar);
+
+  const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const labels = discovered.map((_, i) => LETTERS[i] ?? `S${i + 1}`);
+
+  // Whole-song assignment pass: every bar with any hits at all (including
+  // the edge bars the discovery pass above skips as noise-prone — they're
+  // fine to include here now that they're only being matched, not used to
+  // define a slot in the first place), matched to its nearest slot. This is
+  // what turns "here are the distinct patterns" into "here is the song."
+  const barSeconds = beatsPerBar * beatSeconds;
+  const assignedBarsBySlot: number[][] = discovered.map(() => []);
+  const arrangement: FullSongArrangementStep[] = [];
+  for (let i = 0; i < bars.length; i++) {
+    if (bars[i].length === 0) continue;
+    const flat = flattenFullKit(bars[i]);
+    let bestIndex = -1;
+    let bestScore = -Infinity;
+    for (let s = 0; s < discovered.length; s++) {
+      const score = jaccardSimilarity(flat, discovered[s].signature);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = s;
+      }
+    }
+    if (bestIndex === -1 || bestScore < ASSIGNMENT_MIN_SIMILARITY) continue;
+    assignedBarsBySlot[bestIndex].push(i);
+    const start = gridOrigin + i * barSeconds;
+    arrangement.push({
+      slotLabel: labels[bestIndex],
+      barIndex: i,
+      startSeconds: round1(start),
+      endSeconds: round1(start + barSeconds),
+    });
+  }
+
+  const slots: FullSongSlot[] = discovered.map((d, i) => {
+    const assigned = assignedBarsBySlot[i];
+    const sample = assigned.length > 0 ? representativeBarWindow(assigned, bars.length, barSeconds) : null;
+    return {
+      label: labels[i],
+      kind: d.kind,
+      lines: d.lines,
+      repeatCount: assigned.length,
+      sampleRange: sample ? [round1(gridOrigin + sample[0] * barSeconds), round1(gridOrigin + sample[1] * barSeconds)] : null,
+    };
+  });
+
+  return {
+    bpm: Math.round(bpm),
+    measureLength: beatsPerBar,
+    durationSeconds: round1(totalDurationSeconds),
+    slots,
+    arrangement,
+  };
+}
+
 interface ExtraInstrumentRhythm {
   sourceStem: ExtraInstrumentSourceStem;
   onsetCount: number;

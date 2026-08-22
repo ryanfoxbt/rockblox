@@ -5,3 +5,7 @@ export const inngest = new Inngest({ id: "rockblox" });
 export interface SongImportRequestedData {
   importId: string;
 }
+
+export interface FullSongImportRequestedData {
+  importId: string;
+}
