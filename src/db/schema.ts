@@ -119,7 +119,12 @@ export const complaints = pgTable("complaints", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export type SongImportStatus = "uploaded" | "processing" | "done" | "error";
+// "transcribing" is a same-step status ping (see importFullSong in
+// inngest/functions.ts) — not a distinct pipeline stage of its own, just a
+// way for /test's status bar to distinguish "still separating drums on
+// Replicate" (usually the long part) from "computing the pattern"
+// (seconds) instead of one opaque "processing" the whole time.
+export type SongImportStatus = "uploaded" | "processing" | "transcribing" | "done" | "error";
 
 // Tracks one "turn a song into a RockBlocks beat" job: an uploaded MP3 run
 // through the Inngest pipeline (Replicate/Demucs drum-stem separation, then

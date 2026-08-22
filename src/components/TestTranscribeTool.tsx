@@ -8,9 +8,10 @@ import { StackPlayer, StackStepSource } from "@/lib/stackPlayer";
 import type { FullSongArrangementStep, FullSongSlot } from "@/lib/transcribeDrums";
 
 type Phase = "idle" | "uploading" | "processing" | "done" | "error";
+type PipelineStatus = "uploaded" | "processing" | "transcribing" | "done" | "error";
 
 interface ImportStatus {
-  status: "uploaded" | "processing" | "done" | "error";
+  status: PipelineStatus;
   errorMessage: string | null;
   bpm: number | null;
   measureLength: number | null;
@@ -43,6 +44,8 @@ export function TestTranscribeTool() {
   const [result, setResult] = useState<ImportStatus | null>(null);
   const [filename, setFilename] = useState("");
   const [importId, setImportId] = useState<string | null>(null);
+  const [pipelineStatus, setPipelineStatus] = useState<PipelineStatus>("uploaded");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [samplesLoading, setSamplesLoading] = useState(false);
   const [loop, setLoop] = useState(true);
   const [isPlayingArrangement, setIsPlayingArrangement] = useState(false);
@@ -63,6 +66,16 @@ export function TestTranscribeTool() {
       pollTimerRef.current = null;
     }
   }
+
+  // Ticks once a second while waiting on the server so the status bar keeps
+  // visibly moving even between polls — the one thing that actually answers
+  // "is this stuck?" when the backend has nothing new to report yet.
+  useEffect(() => {
+    if (phase !== "processing") return;
+    const start = Date.now();
+    const id = window.setInterval(() => setElapsedSeconds(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => window.clearInterval(id);
+  }, [phase]);
 
   useEffect(() => {
     const player = new StackPlayer();
@@ -202,12 +215,14 @@ export function TestTranscribeTool() {
     setResult(null);
     setFilename("");
     setImportId(null);
+    setPipelineStatus("uploaded");
   }
 
   async function handleFile(file: File) {
     setPhase("uploading");
     setErrorMessage(null);
     setFilename(file.name);
+    setPipelineStatus("uploaded");
     try {
       const blob = await upload(file.name, file, {
         access: "private",
@@ -226,6 +241,7 @@ export function TestTranscribeTool() {
       }
       const { id } = (await res.json()) as { id: string };
       setImportId(id);
+      setElapsedSeconds(0);
       setPhase("processing");
       poll(id);
     } catch (err) {
@@ -250,6 +266,7 @@ export function TestTranscribeTool() {
           setPhase("error");
           return;
         }
+        setPipelineStatus(data.status);
         pollTimerRef.current = window.setTimeout(tick, POLL_INTERVAL_MS);
       } catch (err) {
         setErrorMessage(err instanceof Error ? err.message : "Lost track of this import");
@@ -313,11 +330,62 @@ export function TestTranscribeTool() {
         )}
 
         {phase === "processing" && (
-          <div className="flex flex-col items-start gap-2">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-yellow-400" />
+          <div className="flex max-w-md flex-col items-start gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-6 w-6 shrink-0 animate-spin rounded-full border-2 border-white/20 border-t-yellow-400" />
+              <span className="font-mono text-sm text-white/70">{formatTimestamp(elapsedSeconds)} elapsed</span>
+            </div>
+
+            <ol className="flex w-full items-center gap-1.5">
+              {[
+                { label: "Separating drums", active: pipelineStatus === "uploaded" || pipelineStatus === "processing", done: pipelineStatus === "transcribing" },
+                { label: "Transcribing rhythm", active: pipelineStatus === "transcribing", done: false },
+              ].map((step, i) => (
+                <li key={step.label} className="flex flex-1 items-center gap-1.5">
+                  <span
+                    className={[
+                      "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
+                      step.done
+                        ? "bg-yellow-400 text-slate-900"
+                        : step.active
+                          ? "border border-yellow-400 text-yellow-400"
+                          : "border border-white/20 text-white/30",
+                    ].join(" ")}
+                  >
+                    {step.done ? "✓" : i + 1}
+                  </span>
+                  <span className={step.active || step.done ? "text-xs text-white/80" : "text-xs text-white/30"}>{step.label}</span>
+                  {i === 0 && <span className="h-px flex-1 bg-white/10" />}
+                </li>
+              ))}
+            </ol>
+
             <p className="text-xs text-white/50">
-              Separating drums and analyzing the whole song — this can take a minute or two…
+              {pipelineStatus === "transcribing"
+                ? "Drums separated — computing the pattern now, this part is quick."
+                : "Isolating the drum track on Replicate — usually the slow part, often a minute or two for a full song."}
             </p>
+
+            {elapsedSeconds >= 90 && elapsedSeconds < 240 && (
+              <p className="text-xs text-yellow-400/80">
+                Still going — longer songs can take a few minutes here. No news is fine.
+              </p>
+            )}
+            {elapsedSeconds >= 240 && (
+              <div className="flex flex-col items-start gap-2 rounded-md border border-red-400/30 bg-red-400/5 px-3 py-2">
+                <p className="text-xs text-red-300">
+                  This is taking much longer than usual. It may have stalled (the job silently died server-side
+                  without recording an error) rather than actually still working.
+                </p>
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="rounded-md border border-white/15 px-3 py-1 text-xs text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+                >
+                  Cancel and try again
+                </button>
+              </div>
+            )}
           </div>
         )}
 

@@ -126,6 +126,21 @@ export const importFullSong = inngest.createFunction(
         const audioBuffer = Buffer.from(await new Response(blob.stream).arrayBuffer());
 
         const drumsWav = await separateDrumStem(audioBuffer);
+
+        // A plain status ping, not its own step — the audio buffer above
+        // can't safely cross a step boundary (Inngest persists step output
+        // for replay, and a multi-MB Buffer either bloats that badly or
+        // round-trips through JSON as a plain {type,data} object, not a
+        // real Buffer). This just lets /test's status bar distinguish
+        // "still separating drums" (usually the long part) from
+        // "computing the pattern" (seconds) instead of one opaque
+        // "processing" for the whole run.
+        const db = getDb();
+        await db
+          .update(fullSongImports)
+          .set({ status: "transcribing", updatedAt: new Date() })
+          .where(eq(fullSongImports.id, importId));
+
         return transcribeFullSong(drumsWav);
       });
 
