@@ -75,6 +75,28 @@ export const songs = pgTable("songs", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// A curated, staff-written beginner drum lesson — shaped just like `songs`
+// (slots A-D plus a Stack Builder arrangement, same read-only Editor/
+// StackBuilder UI) but served from /school/[slug] instead of /songs/[slug],
+// and ordered/numbered as a stepwise curriculum rather than a flat list. See
+// scripts/seedLessons.mts, which writes each lesson's pattern directly
+// (hand-authored in code, not captured from a hand-built board) since the
+// content is original teaching material rather than a transcription of an
+// existing recording.
+export const lessons = pgTable("lessons", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  slug: text("slug").notNull().unique(),
+  lessonNumber: integer("lesson_number").notNull(),
+  title: text("title").notNull(),
+  teaches: text("teaches").notNull(),
+  slotA: jsonb("slot_a").$type<BoardSlotData>(),
+  slotB: jsonb("slot_b").$type<BoardSlotData>(),
+  slotC: jsonb("slot_c").$type<BoardSlotData>(),
+  slotD: jsonb("slot_d").$type<BoardSlotData>(),
+  stack: jsonb("stack").$type<StackArrangement>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // A live "who's here right now" heartbeat for one board — upserted roughly
 // every 20s by each open tab (see PresenceIndicator.tsx), keyed by a random
 // per-tab id (sessionStorage, not tied to any account since there isn't

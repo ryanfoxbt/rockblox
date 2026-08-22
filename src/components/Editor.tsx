@@ -44,6 +44,7 @@ import { BoardData, BoardSlotData, SLOT_LETTERS, SlotLetter } from "@/lib/board"
 import { CustomSamples, arrayBufferToBase64 } from "@/lib/customSamples";
 import { loadDraft, saveDraft } from "@/lib/draftStorage";
 import { ClaimUrlBox } from "@/components/ClaimUrlBox";
+import { SaveCopyButton } from "@/components/SaveCopyButton";
 
 // Which slots have an actual beat in them, excluding `exclude` (typically
 // the slot on screen) — what the Variation popover offers as "base this
@@ -294,6 +295,17 @@ export function Editor({
     playerRef.current?.clearCustomSamples();
     if (Object.keys(nextCustomSamples).length > 0) playerRef.current?.loadCustomSamples(nextCustomSamples);
     if (nextKit !== kit) applyKit(nextKit);
+  }
+
+  // What Save a Copy sends: every slot as currently on screen, including
+  // whatever's in the active slot right now (which hasn't been flushed into
+  // slotsRef yet — that only happens on switchSlot/unmount) — see
+  // SaveCopyButton, only ever rendered for a read-only board.
+  function currentSlotsSnapshot(): Record<SlotLetter, BoardSlotData | null> {
+    return {
+      ...slotsRef.current,
+      [activeSlot]: { bpm, lines: serializeLines(lines), kit, customSamples },
+    };
   }
 
   // Autosave the active slot to this board's page whenever the pattern
@@ -647,7 +659,7 @@ export function Editor({
               <button
                 type="button"
                 onClick={() => setToolsMenuOpen((v) => !v)}
-                title={board.readOnly ? "Stacks, Inspiration" : "Stacks, TextyBeat, Wall, Inspiration"}
+                title={board.readOnly ? "Stacks, Save a copy, Inspiration" : "Stacks, TextyBeat, Wall, Inspiration"}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
@@ -677,6 +689,13 @@ export function Editor({
                       <TextToBeatButton board={board} variant="menuItem" />
                       <WallButton boardSlug={board.slug} />
                     </>
+                  )}
+                  {board.readOnly && (
+                    <SaveCopyButton
+                      variant="menuItem"
+                      getSlots={currentSlotsSnapshot}
+                      getStack={() => board.stack ?? null}
+                    />
                   )}
                   <RandomizeButton
                     variant="menuItem"

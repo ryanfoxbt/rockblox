@@ -18,6 +18,7 @@ import {
   totalStackSeconds,
 } from "@/lib/stack";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { SaveCopyButton } from "@/components/SaveCopyButton";
 import { StackPaletteBlock } from "./StackPaletteBlock";
 import { StackStepChip } from "./StackStepChip";
 import { StackSheetMusicView } from "./StackSheetMusicView";
@@ -344,9 +345,17 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
                 : "Drag a beat onto the timeline to add it — drag it in again to repeat it. One tempo plays the whole song."}
           </p>
         </div>
-        <span className="w-16 shrink-0 text-right text-xs text-white/40">
-          {saveStatus === "saving" ? "Saving…" : saveStatus === "error" ? "Error" : saveStatus === "saved" ? "Saved" : ""}
-        </span>
+        {board.readOnly ? (
+          <SaveCopyButton
+            variant="button"
+            getSlots={() => board.slots}
+            getStack={() => ({ bpm, steps, kitOverride })}
+          />
+        ) : (
+          <span className="w-16 shrink-0 text-right text-xs text-white/40">
+            {saveStatus === "saving" ? "Saving…" : saveStatus === "error" ? "Error" : saveStatus === "saved" ? "Saved" : ""}
+          </span>
+        )}
       </header>
 
       {showSheet && (

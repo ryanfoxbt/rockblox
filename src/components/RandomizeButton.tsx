@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { DEFAULT_COMPLEXITY, MAX_COMPLEXITY, MIN_COMPLEXITY } from "@/lib/randomBeat";
 import { FAMOUS_SONGS } from "@/lib/famousSongs";
+import { DRUM_LESSONS } from "@/lib/drumSchool";
 
 export interface VariationSource {
   slot: string;
@@ -210,6 +211,18 @@ export function RandomizeButton({
               <p className="mt-2 text-center text-sm text-yellow-400">
                 {mode === "variation" ? "Variation created!" : "Beat created!"}
               </p>
+            )}
+
+            {DRUM_LESSONS.length > 0 && (
+              <div className="mt-4 border-t border-white/10 pt-3">
+                <p className="mb-1.5 text-xs uppercase tracking-wide text-white/40">New to drumming?</p>
+                <Link
+                  href="/school"
+                  className="block truncate rounded-md px-1.5 py-1 text-sm text-white/70 transition hover:bg-white/10 hover:text-yellow-400"
+                >
+                  Drum School <span className="text-white/40">— {DRUM_LESSONS.length} stepwise lessons</span>
+                </Link>
+              </div>
             )}
 
             {FAMOUS_SONGS.length > 0 && (
