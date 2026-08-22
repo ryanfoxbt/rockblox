@@ -328,10 +328,10 @@ export function transcribeDrums(wavBuffer: Buffer, extraStems?: ExtraInstrumentS
     durationSeconds: round1(totalDurationSeconds),
     onsetCount: onsetTimes.length,
     barCount: bars.length,
-    patternA: patternDiagnostics(patternA, slotIndices[0], gridOrigin, beatSeconds, beatsPerBar),
-    patternB: patternDiagnostics(patternB, slotIndices[1], gridOrigin, beatSeconds, beatsPerBar),
-    patternC: patternDiagnostics(patternC, slotIndices[2], gridOrigin, beatSeconds, beatsPerBar),
-    patternD: patternDiagnostics(patternD, slotIndices[3], gridOrigin, beatSeconds, beatsPerBar),
+    patternA: patternDiagnostics(patternA, slotIndices[0], gridOrigin, beatSeconds, beatsPerBar, bars.length),
+    patternB: patternDiagnostics(patternB, slotIndices[1], gridOrigin, beatSeconds, beatsPerBar, bars.length),
+    patternC: patternDiagnostics(patternC, slotIndices[2], gridOrigin, beatSeconds, beatsPerBar, bars.length),
+    patternD: patternDiagnostics(patternD, slotIndices[3], gridOrigin, beatSeconds, beatsPerBar, bars.length),
     extraInstrument: extraInstrument
       ? { instrument: EXTRA_INSTRUMENT_VOICE, sourceStem: extraInstrument.sourceStem, onsetCount: extraInstrument.onsetCount }
       : null,
@@ -403,26 +403,81 @@ function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
 
-// Every repeat's [start, end] a detected pattern came from, so a human can
-// jump to (or clip/concatenate) exactly that audio and compare it by ear,
-// since nothing in this pipeline can actually listen.
+// A single bar (one repeat) is too short a clip to judge a groove by ear —
+// at a typical tempo that's ~2 seconds, often less. Long enough to actually
+// listen to and compare against the rendered pattern, short enough to still
+// be "one clip," not a full song excerpt.
+const MIN_SAMPLE_SECONDS = 4;
+const MAX_SAMPLE_SECONDS = 8;
+
+// Picks one contiguous, listenable window of the song to represent a
+// pattern — the longest run of *consecutive* bars this pattern's own bars
+// actually cover (i.e. where it plays several times in a row, not just
+// recurs with other material between repeats), trimmed to MAX_SAMPLE_SECONDS
+// if that run is long, or padded out with whatever bars sit around it if the
+// run alone falls short of MIN_SAMPLE_SECONDS. Padding uses neighboring bars
+// regardless of whether they're this same pattern — for a fill (a single
+// bar by construction) that's the whole story, and even for a groove a
+// couple of bars of surrounding context read as normal song continuity, not
+// noise, to a human listener.
+function representativeBarWindow(barIndices: number[], totalBarCount: number, barSeconds: number): [number, number] {
+  const minBars = Math.max(1, Math.ceil(MIN_SAMPLE_SECONDS / barSeconds));
+  const maxBars = Math.max(minBars, Math.floor(MAX_SAMPLE_SECONDS / barSeconds));
+
+  const sorted = [...barIndices].sort((a, b) => a - b);
+  let bestStart = sorted[0];
+  let bestLen = 1;
+  let runStart = sorted[0];
+  let runLen = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === sorted[i - 1] + 1) {
+      runLen++;
+    } else {
+      if (runLen > bestLen) {
+        bestLen = runLen;
+        bestStart = runStart;
+      }
+      runStart = sorted[i];
+      runLen = 1;
+    }
+  }
+  if (runLen > bestLen) {
+    bestLen = runLen;
+    bestStart = runStart;
+  }
+
+  let windowStart: number;
+  let windowLen: number;
+  if (bestLen >= minBars) {
+    windowStart = bestStart;
+    windowLen = Math.min(bestLen, maxBars);
+  } else {
+    windowLen = Math.min(minBars, totalBarCount);
+    const runCenter = bestStart + (bestLen - 1) / 2;
+    windowStart = Math.round(runCenter - (windowLen - 1) / 2);
+  }
+  windowStart = Math.max(0, Math.min(windowStart, totalBarCount - windowLen));
+  return [windowStart, windowStart + windowLen];
+}
+
+// The [start, end] of a single representative clip a detected pattern came
+// from, so a human can play (or clip/concatenate) exactly that audio and
+// compare it by ear, since nothing in this pipeline can actually listen.
 function patternDiagnostics(
   pattern: StoredLine[] | null,
   barIndices: number[] | null,
   gridOrigin: number,
   beatSeconds: number,
-  beatsPerBar: number
+  beatsPerBar: number,
+  totalBarCount: number
 ): PatternDiagnostics | null {
   if (pattern === null || barIndices === null || barIndices.length === 0) return null;
   const barSeconds = beatsPerBar * beatSeconds;
-  const sourceRanges: [number, number][] = [...barIndices]
-    .sort((a, b) => a - b)
-    .map((i) => {
-      const start = gridOrigin + i * barSeconds;
-      return [round1(start), round1(start + barSeconds)];
-    });
+  const [windowStartBar, windowEndBar] = representativeBarWindow(barIndices, totalBarCount, barSeconds);
+  const start = gridOrigin + windowStartBar * barSeconds;
+  const end = gridOrigin + windowEndBar * barSeconds;
   return {
-    sourceRanges,
+    sourceRanges: [[round1(start), round1(end)]],
     instruments: pattern.map((l) => l.instrument),
   };
 }
