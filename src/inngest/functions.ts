@@ -212,7 +212,7 @@ export const analyzeSongCrop = inngest.createFunction(
         if (!blob) throw new Error("Uploaded file is missing from storage");
         const audioBuffer = Buffer.from(await new Response(blob.stream).arrayBuffer());
 
-        const drumsWav = await separateDrumStem(audioBuffer);
+        const stems = await separateStems(audioBuffer);
 
         // Plain status ping, not its own step — see the equivalent comment
         // in importFullSong above for why the buffer above can't cross a
@@ -223,7 +223,7 @@ export const analyzeSongCrop = inngest.createFunction(
           .set({ status: "transcribing", updatedAt: new Date() })
           .where(eq(songAnalyses.id, analysisId));
 
-        return analyzeSongForCropping(drumsWav);
+        return analyzeSongForCropping(stems.drums, { vocals: stems.vocals, bass: stems.bass, other: stems.other });
       });
 
       await step.run("save-result", async () => {
@@ -237,6 +237,7 @@ export const analyzeSongCrop = inngest.createFunction(
             gridOrigin: result.gridOrigin,
             durationSeconds: result.durationSeconds,
             onsets: result.onsets,
+            otherOnsets: result.otherOnsets,
             updatedAt: new Date(),
           })
           .where(eq(songAnalyses.id, analysisId));

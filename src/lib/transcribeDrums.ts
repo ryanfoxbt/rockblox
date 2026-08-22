@@ -578,6 +578,15 @@ export interface SongOnset {
   instrument: InstrumentId;
 }
 
+export interface OtherRhythmOnset {
+  time: number;
+  // Which non-drum stem this hit came from — not classified into a drum
+  // voice (that would be meaningless for a sung/played note), just tagged
+  // by source so the crop tool can label it and pick per-clip which one to
+  // layer in. See ExtraInstrumentSourceStem.
+  source: ExtraInstrumentSourceStem;
+}
+
 export interface SongCropAnalysis {
   // Unrounded — grid math (see lib/quantizeClip.ts) needs full precision;
   // even a fraction of a BPM off compounds into audible drift over a whole
@@ -592,14 +601,22 @@ export interface SongCropAnalysis {
   // client-side (see lib/quantizeClip.ts) so picking clips feels instant
   // rather than waiting on a job per slot.
   onsets: SongOnset[];
+  // Vocals/bass/"other" onsets across the whole song, for the same
+  // client-side per-clip treatment — see SongCropTool: whichever source is
+  // busiest within a given clip gets layered onto that clip's pattern as an
+  // extra Rimshot line, the one kit voice the drum classifier never assigns
+  // on its own.
+  otherOnsets: OtherRhythmOnset[];
 }
 
-// Backs /test's manual-crop workflow: isolates the drums (same slow,
-// Replicate-backed step as transcribeDrums/transcribeFullSong above) and
-// classifies every hit in the whole song, but does none of transcribeDrums's
+// Backs /test's manual-crop workflow: isolates every stem (same slow,
+// Replicate-backed step as transcribeDrums/transcribeFullSong above),
+// classifies every drum hit in the whole song, and detects (but doesn't
+// classify — there's no "kick vs snare" equivalent for a voice) every
+// vocals/bass/"other" onset too. Does none of transcribeDrums's
 // bar-grouping, clustering, or fill-picking — the human picks which clips
 // matter by ear, this just hands back what to quantize them against.
-export function analyzeSongForCropping(wavBuffer: Buffer): SongCropAnalysis {
+export function analyzeSongForCropping(wavBuffer: Buffer, extraStems?: ExtraInstrumentStems): SongCropAnalysis {
   const wav = parseWav(wavBuffer);
   const mono = toMono(wav);
 
@@ -628,7 +645,24 @@ export function analyzeSongForCropping(wavBuffer: Buffer): SongCropAnalysis {
     instrument: classifyOnset(features[i], medianPeak, tomDecay),
   }));
 
-  return { bpm, beatSeconds, gridOrigin, durationSeconds: totalDurationSeconds, onsets };
+  const otherOnsets: OtherRhythmOnset[] = [];
+  const otherStems: { key: ExtraInstrumentSourceStem; buffer: Buffer }[] = [];
+  if (extraStems?.vocals) otherStems.push({ key: "vocals", buffer: extraStems.vocals });
+  if (extraStems?.bass) otherStems.push({ key: "bass", buffer: extraStems.bass });
+  if (extraStems?.other) otherStems.push({ key: "other", buffer: extraStems.other });
+  for (const { key, buffer } of otherStems) {
+    let stemMono: { sampleRate: number; samples: Float32Array };
+    try {
+      stemMono = toMono(parseWav(buffer));
+    } catch {
+      continue; // an unparseable/empty stem shouldn't fail the whole analysis
+    }
+    const rough = detectOnsets(stemMono);
+    for (const t of rough) otherOnsets.push({ time: refineOnsetTime(stemMono, t), source: key });
+  }
+  otherOnsets.sort((a, b) => a.time - b.time);
+
+  return { bpm, beatSeconds, gridOrigin, durationSeconds: totalDurationSeconds, onsets, otherOnsets };
 }
 
 interface ExtraInstrumentRhythm {

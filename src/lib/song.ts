@@ -1,7 +1,7 @@
 import { InstrumentId, defaultInstrumentFor } from "./instruments";
 import { RhythmTile, getTileById } from "./rhythm";
 
-export const MAX_BEATS = 7;
+export const MAX_BEATS = 8;
 
 export const DEFAULT_VOLUME = 100;
 

@@ -2,7 +2,13 @@ import { boolean, doublePrecision, index, integer, jsonb, pgTable, text, timesta
 import type { BoardSlotData } from "@/lib/board";
 import type { CustomSamples } from "@/lib/customSamples";
 import type { StackArrangement } from "@/lib/stack";
-import type { FullSongArrangementStep, FullSongSlot, SongOnset, TranscribeDiagnostics } from "@/lib/transcribeDrums";
+import type {
+  FullSongArrangementStep,
+  FullSongSlot,
+  OtherRhythmOnset,
+  SongOnset,
+  TranscribeDiagnostics,
+} from "@/lib/transcribeDrums";
 
 export interface StoredLine {
   instrument: string;
@@ -188,10 +194,11 @@ export const fullSongImports = pgTable("full_song_imports", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Backs /test's manual-crop workflow: separates the drum stem once (the
-// slow, Replicate-backed part) and classifies every hit in the whole song,
-// then hands the browser a beat grid (bpm/gridOrigin/beatSeconds) plus the
-// raw classified onset list — cropping and quantizing a clip into a Slot's
+// Backs /test's manual-crop workflow: separates every stem once (the slow,
+// Replicate-backed part) and classifies every drum hit in the whole song
+// plus every vocals/bass/"other" onset (unclassified — just tagged by
+// source), then hands the browser a beat grid (bpm/gridOrigin/beatSeconds)
+// plus both onset lists — cropping and quantizing a clip into a Slot's
 // pattern happens entirely client-side from there (see lib/quantizeClip.ts),
 // so picking 4 clips feels instant instead of waiting on a job per slot.
 export const songAnalyses = pgTable("song_analyses", {
@@ -205,6 +212,7 @@ export const songAnalyses = pgTable("song_analyses", {
   gridOrigin: doublePrecision("grid_origin"),
   durationSeconds: doublePrecision("duration_seconds"),
   onsets: jsonb("onsets").$type<SongOnset[]>(),
+  otherOnsets: jsonb("other_onsets").$type<OtherRhythmOnset[]>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

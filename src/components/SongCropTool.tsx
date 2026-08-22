@@ -18,6 +18,13 @@ interface AnalysisOnset {
   instrument: InstrumentId;
 }
 
+type OtherRhythmSource = "vocals" | "bass" | "other";
+
+interface OtherAnalysisOnset {
+  time: number;
+  source: OtherRhythmSource;
+}
+
 interface AnalysisResult {
   status: PipelineStatus;
   errorMessage: string | null;
@@ -26,17 +33,25 @@ interface AnalysisResult {
   gridOrigin: number | null;
   durationSeconds: number | null;
   onsets: AnalysisOnset[] | null;
+  otherOnsets: OtherAnalysisOnset[] | null;
 }
 
 interface SlotCrop {
   startBeat: number;
   blockCount: number;
   lines: StoredLine[];
+  // Which non-drum stem (if any) was busy enough within this specific clip
+  // to layer its rhythm onto Rimshot — see MIN_OTHER_ONSETS_TO_LAYER.
+  extraSource: OtherRhythmSource | null;
 }
 
 const POLL_INTERVAL_MS = 3000;
 const PIXELS_PER_SECOND = 80;
 const WAVEFORM_HEIGHT = 120;
+// A single stray hit in a clip's window shouldn't earn a Rimshot line —
+// only a source that's actually doing something rhythmic within this
+// specific clip.
+const MIN_OTHER_ONSETS_TO_LAYER = 2;
 
 function formatTimestamp(seconds: number): string {
   if (!Number.isFinite(seconds)) return "0:00";
@@ -86,9 +101,9 @@ function xAtBeat(beat: number, gridOrigin: number, beatSeconds: number): number 
 }
 
 // Resolves a drag (anchor + current pointer position, both in beats) into a
-// selection — anchored at wherever the drag started, capped at 7 blocks in
-// whichever direction it's dragged, rather than letting the near edge slide
-// once the far edge would exceed the cap.
+// selection — anchored at wherever the drag started, capped at MAX_BEATS
+// blocks in whichever direction it's dragged, rather than letting the near
+// edge slide once the far edge would exceed the cap.
 function resolveDragSelection(anchorBeat: number, hoveredBeat: number): { startBeat: number; blockCount: number } {
   const rounded = Math.round(hoveredBeat);
   if (rounded >= anchorBeat) {
@@ -101,7 +116,7 @@ function resolveDragSelection(anchorBeat: number, hoveredBeat: number): { startB
 // The manual-crop harness: upload a song, isolate the drums and detect its
 // beat grid once (the one slow, Replicate-backed step), then let a drummer
 // pick up to 4 clips by ear — dragging directly on the waveform, snapped to
-// the beat grid, up to 7 blocks each — and quantize each into a Slot's
+// the beat grid, up to 8 blocks each — and quantize each into a Slot's
 // pattern. From there it's the normal RockBlocks experience: save a name
 // and land on a real, fully editable page.
 export function SongCropTool() {
@@ -233,6 +248,16 @@ export function SongCropTool() {
       for (const onset of analysis.onsets) {
         const x = Math.round(onset.time * PIXELS_PER_SECOND);
         ctx.fillRect(x, WAVEFORM_HEIGHT - 4, 1, 4);
+      }
+    }
+    // A second row of ticks (top edge) for vocals/bass/"other" — spotting
+    // where those get busy is exactly what helps pick a clip where layering
+    // one onto Rimshot is actually worth doing.
+    if (analysis.otherOnsets) {
+      ctx.fillStyle = "rgba(96,165,250,0.7)";
+      for (const onset of analysis.otherOnsets) {
+        const x = Math.round(onset.time * PIXELS_PER_SECOND);
+        ctx.fillRect(x, 0, 1, 4);
       }
     }
   }, [peaks, waveformWidth, analysis]);
@@ -435,8 +460,36 @@ export function SongCropTool() {
   function assignSelectionToSlot() {
     if (!selection || !analysis?.gridOrigin || !analysis.beatSeconds || !analysis.onsets) return;
     const clipStartSeconds = analysis.gridOrigin + selection.startBeat * analysis.beatSeconds;
-    const lines = quantizeClipToLines(analysis.onsets, analysis.gridOrigin, analysis.beatSeconds, clipStartSeconds, selection.blockCount);
-    setSlots((prev) => ({ ...prev, [activeSlot]: { startBeat: selection.startBeat, blockCount: selection.blockCount, lines } }));
+    const clipEndSeconds = clipStartSeconds + selection.blockCount * analysis.beatSeconds;
+
+    // Whichever non-drum stem is busiest within this specific clip (not the
+    // whole song — different sections can feature different instruments)
+    // gets layered onto Rimshot, same "pick one so multiple unrelated
+    // rhythms don't collide on the one free voice" reasoning as the earlier
+    // whole-song version of this idea (see transcribeDrums.ts).
+    let extraSource: OtherRhythmSource | null = null;
+    let extraOnsets: AnalysisOnset[] = [];
+    if (analysis.otherOnsets) {
+      const inClip = analysis.otherOnsets.filter((o) => o.time >= clipStartSeconds && o.time < clipEndSeconds);
+      const counts = new Map<OtherRhythmSource, number>();
+      for (const o of inClip) counts.set(o.source, (counts.get(o.source) ?? 0) + 1);
+      let bestCount = 0;
+      for (const [source, count] of counts) {
+        if (count > bestCount) {
+          bestCount = count;
+          extraSource = source;
+        }
+      }
+      if (extraSource && bestCount >= MIN_OTHER_ONSETS_TO_LAYER) {
+        extraOnsets = inClip.filter((o) => o.source === extraSource).map((o) => ({ time: o.time, instrument: "rimshot" as InstrumentId }));
+      } else {
+        extraSource = null;
+      }
+    }
+
+    const combinedOnsets = extraOnsets.length > 0 ? [...analysis.onsets, ...extraOnsets] : analysis.onsets;
+    const lines = quantizeClipToLines(combinedOnsets, analysis.gridOrigin, analysis.beatSeconds, clipStartSeconds, selection.blockCount);
+    setSlots((prev) => ({ ...prev, [activeSlot]: { startBeat: selection.startBeat, blockCount: selection.blockCount, lines, extraSource } }));
     const nextEmpty = SLOT_LETTERS.find((l) => l !== activeSlot && !slots[l]);
     if (nextEmpty) setActiveSlot(nextEmpty);
     setSelection(null);
@@ -502,8 +555,10 @@ export function SongCropTool() {
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-white/50">
           Private harness, not linked from anywhere in the app. Upload a song, then pick up to 4 clips yourself —
-          drag on the waveform, snapped to the beat grid, up to 7 blocks each — and drop them into Slots A-D.
+          drag on the waveform, snapped to the beat grid, up to 8 blocks each — and drop them into Slots A-D.
           Nothing&apos;s guessed for you: you pick the main beat and fills exactly like covering the song by ear.
+          Vocals/bass/&quot;other&quot; are analyzed too (blue ticks along the top) — whichever&apos;s busiest within a
+          clip gets layered onto that clip&apos;s pattern as an extra Rimshot line.
         </p>
       </div>
 
@@ -628,7 +683,7 @@ export function SongCropTool() {
               <span className="font-mono text-sm text-white/60">
                 {formatTimestamp(playheadSeconds)} / {formatTimestamp(analysis.durationSeconds ?? 0)}
               </span>
-              <span className="text-xs text-white/40">Click to seek · drag to select up to 7 blocks</span>
+              <span className="text-xs text-white/40">Click to seek · drag to select up to 8 blocks</span>
             </div>
 
             {/* Waveform */}
@@ -721,6 +776,7 @@ export function SongCropTool() {
                       <span className="text-white/60">
                         {crop.blockCount} block{crop.blockCount === 1 ? "" : "s"} · {crop.lines.length} instrument
                         {crop.lines.length === 1 ? "" : "s"}
+                        {crop.extraSource && <> · +{crop.extraSource} on Rimshot</>}
                       </span>
                     ) : (
                       <span className="text-white/30">Not set</span>
