@@ -50,9 +50,10 @@ function AppendDropZone({ index, onTap }: { index: number; onTap: () => void }) 
 
 export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSlot?: SlotLetter }) {
   const isMobile = useIsMobile();
+  const basePath = board.basePath ?? `/${board.displayName}`;
   // Send the user back to whichever slot they were editing before they came
   // here, rather than always landing back on the editor's default slot.
-  const editorHref = `/${board.displayName}${returnSlot ? `?slot=${returnSlot}` : ""}`;
+  const editorHref = `${basePath}${returnSlot ? `?slot=${returnSlot}` : ""}`;
 
   const slotInfo = useMemo(() => {
     const info = {} as Record<SlotLetter, SlotInfo>;
@@ -132,8 +133,10 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
     player.loadSlots(sources).then(() => setSamplesLoading(false));
   }, [slotInfo, kitOverride]);
 
-  // Autosave, same debounced-PUT-on-change pattern as the main editor's board autosave.
+  // Autosave, same debounced-PUT-on-change pattern as the main editor's board
+  // autosave — skipped entirely for a read-only /songs page, same as Editor's.
   useEffect(() => {
+    if (board.readOnly) return;
     const payload = JSON.stringify({ bpm, steps, kitOverride });
     if (lastSavedRef.current === null) {
       lastSavedRef.current = payload;
@@ -161,7 +164,7 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
       }
     }, 800);
     return () => clearTimeout(handle);
-  }, [bpm, steps, kitOverride, board.slug]);
+  }, [bpm, steps, kitOverride, board.slug, board.readOnly]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -328,15 +331,17 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 px-6 py-4">
         <div>
           <Link href={editorHref} className="text-xs text-white/40 underline decoration-dotted hover:text-yellow-400">
-            ← Back to /{board.displayName}
+            ← Back to {board.readOnly ? board.subtitle : `/${board.displayName}`}
           </Link>
           <h1 className="mt-1 text-2xl font-black tracking-tight">
             Stack<span className="text-yellow-400">s</span>
           </h1>
           <p className="mt-1 max-w-lg text-sm text-white/50">
-            {isMobile
-              ? "Tap a beat below, then tap a spot on the timeline to add it. Repeat a beat by adding it again."
-              : "Drag a beat onto the timeline to add it — drag it in again to repeat it. One tempo plays the whole song."}
+            {board.readOnly
+              ? "This is how it's arranged — mess with the tempo or timeline all you want, nothing here saves."
+              : isMobile
+                ? "Tap a beat below, then tap a spot on the timeline to add it. Repeat a beat by adding it again."
+                : "Drag a beat onto the timeline to add it — drag it in again to repeat it. One tempo plays the whole song."}
           </p>
         </div>
         <span className="w-16 shrink-0 text-right text-xs text-white/40">

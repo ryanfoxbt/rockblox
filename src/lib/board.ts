@@ -26,6 +26,19 @@ export interface BoardData {
   stack?: StackArrangement | null;
   // Whether Text to Beat's preview shows the "rules used" breakdown.
   textToBeatShowRules?: boolean;
+  // Curated /songs content rendered through this same board UI: playable
+  // and editable in the browser, but never autosaved back — every visitor
+  // always sees the original mapping. Also suppresses per-owner features
+  // (TextyBeat's save, the Wall, presence) that don't make sense on a page
+  // nobody claimed. See src/app/songs/[slug]/page.tsx.
+  readOnly?: boolean;
+  // Where this board's own links point — "/DisplayName" for a normal
+  // claimed board, "/songs/slug" for a read-only song. Only ever differs
+  // from the default when readOnly is set.
+  basePath?: string;
+  // Shown instead of the normal "Your page: /X" + save-status row when
+  // readOnly, e.g. "Blitzkrieg Bop — The Ramones".
+  subtitle?: string;
 }
 
 const NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]{1,23}$/;
@@ -43,6 +56,7 @@ const RESERVED_NAMES = new Set([
   "logout",
   "signup",
   "signin",
+  "songs",
   "about",
   "help",
   "static",

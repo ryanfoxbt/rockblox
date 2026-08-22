@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getDb } from "@/db";
 import { boards } from "@/db/schema";
 import { isReservedBoardName, isValidBoardName, normalizeBoardSlug, SLOT_LETTERS } from "@/lib/board";
+import { buildShareMetadata } from "@/lib/shareMetadata";
 import { Editor } from "@/components/Editor";
 import { ClaimBoard } from "@/components/ClaimBoard";
 
@@ -26,15 +27,11 @@ export async function generateMetadata({
     .limit(1);
   if (!board) return {};
 
-  const title = `${board.displayName}'s Beat`;
-  const description = `${board.displayName}'s drum beat, built on RockBlocks — a free, browser-based drum machine. Play it, or make your own free at rockblocks.app.`;
-  return {
-    title,
-    description,
-    alternates: { canonical: `/${board.displayName}` },
-    openGraph: { title, description, url: `/${board.displayName}` },
-    twitter: { title, description },
-  };
+  return buildShareMetadata({
+    title: `${board.displayName}'s Beat`,
+    description: `${board.displayName}'s drum beat, built on RockBlocks — a free, browser-based drum machine. Play it, or make your own free at rockblocks.app.`,
+    path: `/${board.displayName}`,
+  });
 }
 
 export default async function BoardPage({

@@ -208,6 +208,7 @@ export function TextToBeatButton({
                   </p>
                 ) : (
                   <>
+                    <p className="text-sm text-yellow-400">Beat created!</p>
                     {result.totalSentences > MAX_TEXT_SLOTS && (
                       <p className="text-xs text-white/50">
                         Using the first {MAX_TEXT_SLOTS} of {result.totalSentences} sentences.

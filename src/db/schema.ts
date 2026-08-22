@@ -48,6 +48,27 @@ export const boards = pgTable("boards", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// A curated, staff-picked drum mapping of a famous song — e.g. the Ramones'
+// "Blitzkrieg Bop" — shaped just like `boards` (slots A-D plus a Stack
+// Builder arrangement) so the same Editor/StackBuilder UI can render it, but
+// served read-only from /songs/[slug] instead of a claimable board: no
+// autosave, no claiming, no per-board features like TextyBeat or the Wall.
+// Seeded by hand (see scripts/), not written through any API route, so
+// every visitor always sees the same original mapping regardless of what
+// they mess around with in their own browser session.
+export const songs = pgTable("songs", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  artist: text("artist").notNull(),
+  slotA: jsonb("slot_a").$type<BoardSlotData>(),
+  slotB: jsonb("slot_b").$type<BoardSlotData>(),
+  slotC: jsonb("slot_c").$type<BoardSlotData>(),
+  slotD: jsonb("slot_d").$type<BoardSlotData>(),
+  stack: jsonb("stack").$type<StackArrangement>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // A live "who's here right now" heartbeat for one board — upserted roughly
 // every 20s by each open tab (see PresenceIndicator.tsx), keyed by a random
 // per-tab id (sessionStorage, not tied to any account since there isn't

@@ -86,6 +86,9 @@ export function Editor({
   // where a refresh (e.g. to fix stuck headphone audio) would otherwise
   // silently wipe whatever's on screen — see draftStorage.ts.
   const isScratchpad = !board && !initialSlug;
+  // A song's own links point at /songs/slug instead of the normal
+  // /DisplayName — see BoardData.basePath.
+  const basePath = board ? board.basePath ?? `/${board.displayName}` : "";
 
   const [activeSlot, setActiveSlot] = useState<SlotLetter>(
     () => initialSlot || (board && SLOT_LETTERS.find((l) => board.slots[l])) || "A"
@@ -123,6 +126,15 @@ export function Editor({
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
   const toolsMenuRef = useRef<HTMLDivElement>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  // Remembers the board the user was last on so the homepage (reached by
+  // clicking the logo) can offer a way straight back to it — sessionStorage
+  // rather than state because it needs to survive the full navigation to "/".
+  const [lastBoardName] = useState<string | null>(() =>
+    board ? null : typeof window !== "undefined" ? window.sessionStorage.getItem("rockblocks:lastBoard") : null
+  );
+  useEffect(() => {
+    if (board && !board.readOnly) window.sessionStorage.setItem("rockblocks:lastBoard", board.displayName);
+  }, [board]);
   const [armedTile, setArmedTile] = useState<RhythmTile | null>(null);
   const [movingFrom, setMovingFrom] = useState<{ lineId: string; index: number; tile: RhythmTile } | null>(null);
   const [kit, setKit] = useState<string>(() => {
@@ -257,7 +269,7 @@ export function Editor({
     // switching slots doesn't pile up back-button history) — this is what
     // lets the browser's actual back button, not just the in-app link,
     // return to the same slot after a trip to Stacks.
-    router.replace(`/${board.displayName}?slot=${slot}`, { scroll: false });
+    router.replace(`${basePath}?slot=${slot}`, { scroll: false });
 
     const data = slotsRef.current[slot];
     const nextLines = data && data.lines.length > 0 ? deserializeLines(data.lines) : [createLine(0)];
@@ -288,7 +300,7 @@ export function Editor({
   // changes, so a personalized URL always reflects what's on screen without
   // needing an explicit save action.
   useEffect(() => {
-    if (!board) return;
+    if (!board || board.readOnly) return;
     const payload = JSON.stringify({ slot: activeSlot, bpm, lines: serializeLines(lines), kit, customSamples });
     if (lastSavedRef.current === null) {
       lastSavedRef.current = payload;
@@ -551,9 +563,11 @@ export function Editor({
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
         <div className="max-w-xl">
-          <h1 className="text-xl font-black tracking-tight sm:text-2xl">
-            Rock<span className="text-yellow-400">Blocks</span>
-          </h1>
+          <Link href="/" title="Home" className="inline-block">
+            <h1 className="text-xl font-black tracking-tight transition hover:text-yellow-400 sm:text-2xl">
+              Rock<span className="text-yellow-400">Blocks</span>
+            </h1>
+          </Link>
           <p className="hidden text-sm text-white/50 sm:block">
             {isMobile
               ? `Tap a tile, then tap up to ${MAX_BEATS} beat blocks per line to build a drum groove. Tap a hit again to rest it.`
@@ -562,24 +576,33 @@ export function Editor({
           {board ? (
             <>
               <div className="mt-1 flex flex-wrap items-center text-xs">
-                <button
-                  type="button"
-                  onClick={copyBoardLink}
-                  title="Copy this page's link"
-                  className="text-left text-white/40 transition hover:text-yellow-400"
-                >
-                  Your page: <span className="font-mono text-yellow-400">/{board.displayName}</span>
-                  {linkCopied ? (
-                    <span className="ml-2 text-yellow-400">Copied!</span>
-                  ) : (
-                    saveStatus !== "idle" && (
-                      <span className="ml-2">
-                        {saveStatus === "saving" ? "· Saving…" : saveStatus === "error" ? "· Error" : "· Saved"}
-                      </span>
-                    )
-                  )}
-                </button>
-                <PresenceIndicator boardSlug={board.slug} />
+                {board.readOnly ? (
+                  <span className="text-white/40">
+                    🎵 {board.subtitle} —{" "}
+                    <span className="text-yellow-400">mess around all you want, nothing here saves</span>
+                  </span>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={copyBoardLink}
+                      title="Copy this page's link"
+                      className="text-left text-white/40 transition hover:text-yellow-400"
+                    >
+                      Your page: <span className="font-mono text-yellow-400">/{board.displayName}</span>
+                      {linkCopied ? (
+                        <span className="ml-2 text-yellow-400">Copied!</span>
+                      ) : (
+                        saveStatus !== "idle" && (
+                          <span className="ml-2">
+                            {saveStatus === "saving" ? "· Saving…" : saveStatus === "error" ? "· Error" : "· Saved"}
+                          </span>
+                        )
+                      )}
+                    </button>
+                    <PresenceIndicator boardSlug={board.slug} />
+                  </>
+                )}
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <div className="flex overflow-hidden rounded-md border border-white/15">
@@ -607,6 +630,14 @@ export function Editor({
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <ClaimUrlBox bpm={bpm} lines={lines} kit={kit} customSamples={customSamples} />
               <TextToBeatButton />
+              {lastBoardName && (
+                <Link
+                  href={`/${lastBoardName}`}
+                  className="text-xs text-white/40 transition hover:text-yellow-400"
+                >
+                  ← Back to /{lastBoardName}
+                </Link>
+              )}
             </div>
           )}
         </div>
@@ -616,7 +647,7 @@ export function Editor({
               <button
                 type="button"
                 onClick={() => setToolsMenuOpen((v) => !v)}
-                title="Stacks, TextyBeat, Wall, Inspiration"
+                title={board.readOnly ? "Stacks, Inspiration" : "Stacks, TextyBeat, Wall, Inspiration"}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
@@ -635,14 +666,18 @@ export function Editor({
                 // on the next unrelated click.
                 <div className="absolute right-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-md border border-white/10 bg-slate-800 shadow-lg">
                   <Link
-                    href={`/${board.displayName}/stack?from=${activeSlot}`}
+                    href={`${basePath}/stack?from=${activeSlot}`}
                     title="Arrange your beats into a longer song"
                     className="block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
                   >
                     Stacks
                   </Link>
-                  <TextToBeatButton board={board} variant="menuItem" />
-                  <WallButton boardSlug={board.slug} />
+                  {!board.readOnly && (
+                    <>
+                      <TextToBeatButton board={board} variant="menuItem" />
+                      <WallButton boardSlug={board.slug} />
+                    </>
+                  )}
                   <RandomizeButton
                     variant="menuItem"
                     variationSources={variationSources}

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
-    "analyze-songs": "dotenv -e .env.local -- tsx scripts/analyzeSongs.mts"
+    "analyze-songs": "dotenv -e .env.local -- tsx scripts/analyzeSongs.mts",
+    "seed-songs": "dotenv -e .env.local -- tsx scripts/seedSongs.mts"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",

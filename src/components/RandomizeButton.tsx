@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { DEFAULT_COMPLEXITY, MAX_COMPLEXITY, MIN_COMPLEXITY } from "@/lib/randomBeat";
+import { FAMOUS_SONGS } from "@/lib/famousSongs";
 
 export interface VariationSource {
   slot: string;
@@ -38,6 +40,10 @@ export function RandomizeButton({
   const [complexity, setComplexity] = useState(DEFAULT_COMPLEXITY);
   const [sourceSlot, setSourceSlot] = useState<string | null>(null);
   const [variationKind, setVariationKind] = useState<VariationKind>("groove");
+  // Modal stays open after Generate (so re-rolling is one click), so without
+  // this the only sign anything happened is the beat silently changing
+  // underneath the popover.
+  const [justGenerated, setJustGenerated] = useState(false);
 
   const hasSources = variationSources.length > 0;
   const effectiveSourceSlot = sourceSlot ?? variationSources[0]?.slot ?? null;
@@ -47,6 +53,7 @@ export function RandomizeButton({
     // common ask once a first beat already exists — but always leave "New"
     // one click away.
     setMode(hasSources ? "variation" : "new");
+    setJustGenerated(false);
     setOpen(true);
   }
 
@@ -56,6 +63,8 @@ export function RandomizeButton({
     } else {
       onGenerateNew(complexity);
     }
+    setJustGenerated(true);
+    setTimeout(() => setJustGenerated(false), 2000);
   }
 
   return (
@@ -197,6 +206,29 @@ export function RandomizeButton({
             >
               {mode === "variation" ? "Generate Variation" : "Generate"}
             </button>
+            {justGenerated && (
+              <p className="mt-2 text-center text-sm text-yellow-400">
+                {mode === "variation" ? "Variation created!" : "Beat created!"}
+              </p>
+            )}
+
+            {FAMOUS_SONGS.length > 0 && (
+              <div className="mt-4 border-t border-white/10 pt-3">
+                <p className="mb-1.5 text-xs uppercase tracking-wide text-white/40">Or get inspired by a song</p>
+                <ul className="flex flex-col gap-1">
+                  {FAMOUS_SONGS.map((song) => (
+                    <li key={song.slug}>
+                      <Link
+                        href={`/songs/${song.slug}`}
+                        className="block truncate rounded-md px-1.5 py-1 text-sm text-white/70 transition hover:bg-white/10 hover:text-yellow-400"
+                      >
+                        {song.title} <span className="text-white/40">— {song.artist}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       )}
