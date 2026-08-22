@@ -40,6 +40,12 @@ function slotLabel(index: number, mainBeatCount: number, fillCount: number): str
   return fillCount === 1 ? "Fill" : `Fill ${fillNumber}`;
 }
 
+function formatTimestamp(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds - m * 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 // The /test harness for the AI rhythm-detection pipeline: upload an MP3,
 // isolate every stem (Replicate/Demucs), transcribe the drums into up to
 // three main grooves + fills, and layer in whichever non-drum stem (vocals,
@@ -55,14 +61,23 @@ export function TestTranscribeTool() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [result, setResult] = useState<ImportStatus | null>(null);
   const [filename, setFilename] = useState("");
+  const [importId, setImportId] = useState<string | null>(null);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [claimName, setClaimName] = useState("");
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [takenName, setTakenName] = useState<string | null>(null);
+  // Which clip's "Play" button is the currently-playing one, e.g. "A-0" for
+  // Slot A's first source range — drives the button's own label/highlight,
+  // not shared audio playback state (only one clip plays at a time).
+  const [playingClip, setPlayingClip] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollTimerRef = useRef<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  // Where the currently-playing clip should stop — checked on every
+  // `timeupdate` tick since <audio> has no built-in "play this range" API.
+  const stopAtRef = useRef<number | null>(null);
 
   function clearPoll() {
     if (pollTimerRef.current !== null) {
@@ -72,13 +87,56 @@ export function TestTranscribeTool() {
   }
   useEffect(() => clearPoll, []);
 
+  // Auto-stops playback once the clip's end time is reached, since <audio>
+  // only knows how to play from a point onward, never "until."
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    function onTimeUpdate() {
+      if (stopAtRef.current !== null && audio!.currentTime >= stopAtRef.current) {
+        audio!.pause();
+        stopAtRef.current = null;
+        setPlayingClip(null);
+      }
+    }
+    function onEnded() {
+      stopAtRef.current = null;
+      setPlayingClip(null);
+    }
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("ended", onEnded);
+    return () => {
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("ended", onEnded);
+    };
+  }, []);
+
+  function playClip(clipKey: string, startSeconds: number, endSeconds: number) {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playingClip === clipKey) {
+      audio.pause();
+      stopAtRef.current = null;
+      setPlayingClip(null);
+      return;
+    }
+    stopAtRef.current = endSeconds;
+    audio.currentTime = startSeconds;
+    audio.play();
+    setPlayingClip(clipKey);
+  }
+
   function reset() {
     clearPoll();
+    audioRef.current?.pause();
+    stopAtRef.current = null;
+    setPlayingClip(null);
     setPhase("idle");
     setProgress(0);
     setErrorMessage(null);
     setResult(null);
     setFilename("");
+    setImportId(null);
     setShowDiagnostics(false);
     setClaimName("");
     setClaiming(false);
@@ -107,6 +165,7 @@ export function TestTranscribeTool() {
         throw new Error(data?.error ?? "Couldn't start the import");
       }
       const { id } = (await res.json()) as { id: string };
+      setImportId(id);
       setPhase("processing");
       poll(id);
     } catch (err) {
@@ -194,6 +253,11 @@ export function TestTranscribeTool() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
+      {/* Always mounted (not gated behind phase === "done") so the timeupdate/
+          ended listener effect above — which runs once, on mount — actually
+          has an element to attach to. src is empty until an import exists;
+          an <audio> with no src is inert. */}
+      <audio ref={audioRef} src={importId ? `/api/imports/${importId}/audio` : undefined} preload="none" />
       <div className="border-b border-white/10 px-4 py-4 sm:px-6">
         <h1 className="text-xl font-black tracking-tight sm:text-2xl">
           Rhythm Detection <span className="text-yellow-400">Test</span>
@@ -286,22 +350,42 @@ export function TestTranscribeTool() {
               </button>
             </div>
 
-            <ul className="flex flex-wrap gap-1.5">
+            <ul className="flex flex-col gap-1.5">
               {SLOT_KEYS.map(({ key, slot }, index) => {
                 const pattern = result[key];
                 const mainBeatCount = result.mainBeatCount ?? 0;
                 const fillCount = SLOT_KEYS.length - mainBeatCount;
                 const label = slotLabel(index, mainBeatCount, fillCount);
+                const ranges = result.diagnostics?.[key]?.sourceRanges ?? [];
                 return (
-                  <li
-                    key={slot}
-                    className="flex items-center gap-2 rounded-md border border-white/10 px-3 py-1.5 text-sm"
-                  >
+                  <li key={slot} className="flex flex-wrap items-center gap-2 rounded-md border border-white/10 px-3 py-1.5 text-sm">
                     <span className="font-mono text-yellow-400">Slot {slot}</span>
                     <span className="text-white/60">{label}</span>
                     <span className="text-white/40">
                       {pattern ? `${pattern.length} instrument${pattern.length === 1 ? "" : "s"}` : "not detected"}
                     </span>
+                    {importId &&
+                      ranges.map(([start, end], rangeIndex) => {
+                        const clipKey = `${slot}-${rangeIndex}`;
+                        const isPlaying = playingClip === clipKey;
+                        return (
+                          <button
+                            key={clipKey}
+                            type="button"
+                            onClick={() => playClip(clipKey, start, end)}
+                            title={`Play the audio this pattern was drawn from (${formatTimestamp(start)}–${formatTimestamp(end)})`}
+                            className={[
+                              "rounded-md border px-2 py-0.5 font-mono text-xs transition",
+                              isPlaying
+                                ? "border-yellow-400 bg-yellow-400/10 text-yellow-400"
+                                : "border-white/15 text-white/60 hover:border-yellow-400 hover:text-yellow-400",
+                            ].join(" ")}
+                          >
+                            {isPlaying ? "■ " : "▶ "}
+                            {formatTimestamp(start)}–{formatTimestamp(end)}
+                          </button>
+                        );
+                      })}
                   </li>
                 );
               })}
