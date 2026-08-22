@@ -1,8 +1,8 @@
-import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, doublePrecision, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { BoardSlotData } from "@/lib/board";
 import type { CustomSamples } from "@/lib/customSamples";
 import type { StackArrangement } from "@/lib/stack";
-import type { FullSongArrangementStep, FullSongSlot, TranscribeDiagnostics } from "@/lib/transcribeDrums";
+import type { FullSongArrangementStep, FullSongSlot, SongOnset, TranscribeDiagnostics } from "@/lib/transcribeDrums";
 
 export interface StoredLine {
   instrument: string;
@@ -169,6 +169,10 @@ export const songImports = pgTable("song_imports", {
 // bar-by-bar arrangement reconstructing how they actually play through the
 // song, for previewing/playing back on /test. Drums only, no vocals/bass/
 // "other" layering.
+// Superseded by songAnalyses below — automatic whole-song clustering didn't
+// match what a drummer actually wants (the main beat per section, picked by
+// ear, not an algorithm's guess at "distinct"). Left in place, unused by any
+// UI, rather than dropped outright.
 export const fullSongImports = pgTable("full_song_imports", {
   id: text("id").primaryKey(),
   status: text("status").$type<SongImportStatus>().notNull().default("uploaded"),
@@ -180,6 +184,27 @@ export const fullSongImports = pgTable("full_song_imports", {
   durationSeconds: integer("duration_seconds"),
   slots: jsonb("slots").$type<FullSongSlot[]>(),
   arrangement: jsonb("arrangement").$type<FullSongArrangementStep[]>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Backs /test's manual-crop workflow: separates the drum stem once (the
+// slow, Replicate-backed part) and classifies every hit in the whole song,
+// then hands the browser a beat grid (bpm/gridOrigin/beatSeconds) plus the
+// raw classified onset list — cropping and quantizing a clip into a Slot's
+// pattern happens entirely client-side from there (see lib/quantizeClip.ts),
+// so picking 4 clips feels instant instead of waiting on a job per slot.
+export const songAnalyses = pgTable("song_analyses", {
+  id: text("id").primaryKey(),
+  status: text("status").$type<SongImportStatus>().notNull().default("uploaded"),
+  originalFilename: text("original_filename").notNull(),
+  blobUrl: text("blob_url").notNull(),
+  errorMessage: text("error_message"),
+  bpm: doublePrecision("bpm"),
+  beatSeconds: doublePrecision("beat_seconds"),
+  gridOrigin: doublePrecision("grid_origin"),
+  durationSeconds: doublePrecision("duration_seconds"),
+  onsets: jsonb("onsets").$type<SongOnset[]>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

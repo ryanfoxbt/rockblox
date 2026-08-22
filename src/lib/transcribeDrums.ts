@@ -573,6 +573,64 @@ export function transcribeFullSong(wavBuffer: Buffer): FullSongTranscription {
   };
 }
 
+export interface SongOnset {
+  time: number;
+  instrument: InstrumentId;
+}
+
+export interface SongCropAnalysis {
+  // Unrounded — grid math (see lib/quantizeClip.ts) needs full precision;
+  // even a fraction of a BPM off compounds into audible drift over a whole
+  // song's worth of beats. Round only for display.
+  bpm: number;
+  beatSeconds: number;
+  gridOrigin: number;
+  durationSeconds: number;
+  // Every classified hit across the whole song — cropping a clip and
+  // quantizing it into a Slot's pattern is just filtering this list to a
+  // time range and bucketing onto that clip's own beat grid, done entirely
+  // client-side (see lib/quantizeClip.ts) so picking clips feels instant
+  // rather than waiting on a job per slot.
+  onsets: SongOnset[];
+}
+
+// Backs /test's manual-crop workflow: isolates the drums (same slow,
+// Replicate-backed step as transcribeDrums/transcribeFullSong above) and
+// classifies every hit in the whole song, but does none of transcribeDrums's
+// bar-grouping, clustering, or fill-picking — the human picks which clips
+// matter by ear, this just hands back what to quantize them against.
+export function analyzeSongForCropping(wavBuffer: Buffer): SongCropAnalysis {
+  const wav = parseWav(wavBuffer);
+  const mono = toMono(wav);
+
+  const roughOnsetTimes = detectOnsets(mono);
+  if (roughOnsetTimes.length < MIN_ONSET_COUNT) {
+    throw new Error("Couldn't find enough distinct drum hits in this track to help with cropping.");
+  }
+  const onsetTimes = roughOnsetTimes.map((t) => refineOnsetTime(mono, t));
+
+  const totalDurationSeconds = mono.samples.length / mono.sampleRate;
+  const bpm = estimateTempo(onsetTimes, totalDurationSeconds);
+  const beatSeconds = 60 / bpm;
+  const gridOrigin = estimateGridPhase(onsetTimes, beatSeconds);
+
+  const features = onsetTimes.map((time, i) => {
+    const gap = i + 1 < onsetTimes.length ? onsetTimes[i + 1] - time : Infinity;
+    return extractOnsetFeatures(mono, time, gap);
+  });
+  const medianPeak = median(features.map((f) => f.peakRms));
+  const tomDecay: TomDecayThresholds = {
+    low: tomDecayThreshold(features.filter((f) => broadBand(f) === "low").map((f) => f.decayRatio)),
+    mid: tomDecayThreshold(features.filter((f) => broadBand(f) === "mid").map((f) => f.decayRatio)),
+  };
+  const onsets: SongOnset[] = onsetTimes.map((time, i) => ({
+    time,
+    instrument: classifyOnset(features[i], medianPeak, tomDecay),
+  }));
+
+  return { bpm, beatSeconds, gridOrigin, durationSeconds: totalDurationSeconds, onsets };
+}
+
 interface ExtraInstrumentRhythm {
   sourceStem: ExtraInstrumentSourceStem;
   onsetCount: number;

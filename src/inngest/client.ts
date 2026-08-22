@@ -9,3 +9,7 @@ export interface SongImportRequestedData {
 export interface FullSongImportRequestedData {
   importId: string;
 }
+
+export interface SongCropAnalysisRequestedData {
+  analysisId: string;
+}

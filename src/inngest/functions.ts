@@ -2,10 +2,10 @@ import { NonRetriableError } from "inngest";
 import { eq } from "drizzle-orm";
 import { get } from "@vercel/blob";
 import { getDb } from "@/db";
-import { fullSongImports, songImports } from "@/db/schema";
+import { fullSongImports, songAnalyses, songImports } from "@/db/schema";
 import { separateDrumStem, separateStems } from "@/lib/stemSeparate";
-import { transcribeDrums, transcribeFullSong } from "@/lib/transcribeDrums";
-import { FullSongImportRequestedData, SongImportRequestedData, inngest } from "./client";
+import { analyzeSongForCropping, transcribeDrums, transcribeFullSong } from "@/lib/transcribeDrums";
+import { FullSongImportRequestedData, SongCropAnalysisRequestedData, SongImportRequestedData, inngest } from "./client";
 
 // One durable job: fetch the uploaded song, split it into stems (Replicate/
 // Demucs), transcribe up to three main grooves plus a fill from the drums,
@@ -175,6 +175,82 @@ export const importFullSong = inngest.createFunction(
           .update(fullSongImports)
           .set({ status: "error", errorMessage: message, updatedAt: new Date() })
           .where(eq(fullSongImports.id, importId));
+      });
+      return { ok: false as const, error: message };
+    }
+  }
+);
+
+// Backs /test's manual-crop workflow: isolate the drums and classify every
+// hit in the whole song (the one slow, Replicate-backed step), then hand the
+// result to the browser — cropping and quantizing individual clips happens
+// entirely client-side from there (see lib/quantizeClip.ts), so it only has
+// to wait on this once, not once per slot.
+export const analyzeSongCrop = inngest.createFunction(
+  { id: "song-crop-analysis", retries: 1, triggers: [{ event: "song/crop-analysis.requested" }] },
+  async ({ event, step }) => {
+    const { analysisId } = event.data as SongCropAnalysisRequestedData;
+
+    const row = await step.run("load-analysis", async () => {
+      const db = getDb();
+      const [r] = await db.select().from(songAnalyses).where(eq(songAnalyses.id, analysisId)).limit(1);
+      if (!r) throw new NonRetriableError(`Song analysis ${analysisId} not found`);
+      return r;
+    });
+
+    await step.run("mark-processing", async () => {
+      const db = getDb();
+      await db
+        .update(songAnalyses)
+        .set({ status: "processing", updatedAt: new Date() })
+        .where(eq(songAnalyses.id, analysisId));
+    });
+
+    try {
+      const result = await step.run("separate-and-analyze", async () => {
+        const blob = await get(row.blobUrl, { access: "private" });
+        if (!blob) throw new Error("Uploaded file is missing from storage");
+        const audioBuffer = Buffer.from(await new Response(blob.stream).arrayBuffer());
+
+        const drumsWav = await separateDrumStem(audioBuffer);
+
+        // Plain status ping, not its own step — see the equivalent comment
+        // in importFullSong above for why the buffer above can't cross a
+        // step boundary.
+        const db = getDb();
+        await db
+          .update(songAnalyses)
+          .set({ status: "transcribing", updatedAt: new Date() })
+          .where(eq(songAnalyses.id, analysisId));
+
+        return analyzeSongForCropping(drumsWav);
+      });
+
+      await step.run("save-result", async () => {
+        const db = getDb();
+        await db
+          .update(songAnalyses)
+          .set({
+            status: "done",
+            bpm: result.bpm,
+            beatSeconds: result.beatSeconds,
+            gridOrigin: result.gridOrigin,
+            durationSeconds: result.durationSeconds,
+            onsets: result.onsets,
+            updatedAt: new Date(),
+          })
+          .where(eq(songAnalyses.id, analysisId));
+      });
+
+      return { ok: true as const };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong analyzing this song.";
+      await step.run("save-error", async () => {
+        const db = getDb();
+        await db
+          .update(songAnalyses)
+          .set({ status: "error", errorMessage: message, updatedAt: new Date() })
+          .where(eq(songAnalyses.id, analysisId));
       });
       return { ok: false as const, error: message };
     }
