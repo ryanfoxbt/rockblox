@@ -5,7 +5,9 @@ import { InstrumentId } from "@/lib/instruments";
 import { LineState, RockBloxPlayer } from "@/lib/audioEngine";
 import { CustomSamples } from "@/lib/customSamples";
 import { computeHitEvents, DrumHitEvent, Limb } from "@/lib/drumRig";
+import { NotationLayout, renderNotation, VF } from "@/lib/notation";
 import { LineData } from "@/lib/song";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 // Teaching-first default: slow enough to actually watch each hit land,
 // with the tempo slider (below) always one drag away from real speed.
@@ -103,6 +105,12 @@ const RISE_DURATION_S = 0.9;
 const WOBBLE_DURATION_S = 0.5;
 const WOBBLE_FREQ_HZ = 5.5;
 const WOBBLE_AMP_DEG = 9;
+
+// How fast the beanie's propeller spins, in degrees per second of "since the
+// fart landed" time — scaled by reactAmount so it winds up as the stink
+// reaches his face and winds back down as the reaction fades, rather than
+// snapping on and off.
+const PROPELLER_SPIN_DEG_PER_S = 900;
 
 function velocityPeak(accent?: "accent" | "ghost"): number {
   return accent === "accent" ? 1 : accent === "ghost" ? 0.55 : 0.8;
@@ -322,9 +330,13 @@ export function DrumTeacherView({
   const fartCloudRef = useRef<SVGGElement>(null);
   const headEmojiRef = useRef<SVGTextElement>(null);
   const stinkLinesRef = useRef<SVGGElement>(null);
+  const propellerRef = useRef<SVGGElement>(null);
   const overlayRefs = useRef<Partial<Record<VisualPiece, SVGElement>>>({});
   const flamingoRefs = useRef<Partial<Record<VisualPiece, SVGGElement>>>({});
   const snareTongueRef = useRef<SVGRectElement>(null);
+  const notationContainerRef = useRef<HTMLDivElement>(null);
+  const notationHighlightRef = useRef<HTMLDivElement>(null);
+  const notationLayoutRef = useRef<NotationLayout | null>(null);
 
   const [bpm, setBpm] = useState(DEFAULT_TEACHER_BPM);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -332,6 +344,12 @@ export function DrumTeacherView({
   // Off by default — the ferret/skunk/monkey-butt kit is fun but a lot to
   // look at while you're trying to actually learn a beat.
   const [unhinged, setUnhinged] = useState(false);
+  // Split view (sheet music alongside the rig) is desktop-only — there's
+  // just not enough width on a phone to make two panels worthwhile — so the
+  // toggle itself is hidden on mobile and this stays false there.
+  const [showNotation, setShowNotation] = useState(false);
+  const [notationReady, setNotationReady] = useState(false);
+  const isMobile = useIsMobile();
   const playerRef = useRef<RockBloxPlayer | null>(null);
 
   // This view owns its own player entirely separate from the main editor's —
@@ -361,15 +379,16 @@ export function DrumTeacherView({
   useEffect(() => {
     const el = containerRef.current;
     el?.requestFullscreen?.().catch(() => {});
-    function onFullscreenChange() {
-      if (document.fullscreenElement !== el) onClose();
-    }
-    document.addEventListener("fullscreenchange", onFullscreenChange);
+    // Deliberately not closing the view on fullscreenchange: the browser
+    // drops fullscreen on its own when a link (e.g. the Albums Anonymous
+    // logo) opens a new tab, and that shouldn't blow away this view — it's
+    // a `fixed inset-0` overlay regardless, so it still reads as fullscreen
+    // even if the native Fullscreen API bows out. Only the Close button and
+    // Escape (below) actually close it, so the user's place in it — lesson,
+    // kit toggle, tempo — is still there if they switch back to this tab.
     return () => {
-      document.removeEventListener("fullscreenchange", onFullscreenChange);
       if (document.fullscreenElement === el) document.exitFullscreen().catch(() => {});
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -379,6 +398,43 @@ export function DrumTeacherView({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
+
+  // Draws the split view's sheet-music panel — same VexFlow pipeline as
+  // SheetMusicView, just scoped to only run while that panel is actually
+  // shown. Its playhead highlight isn't driven from here, though — see the
+  // main pose-driving effect below, which updates it imperatively every
+  // frame off this view's own player, same as the rig.
+  useEffect(() => {
+    if (!showNotation) return;
+    let cancelled = false;
+    let vfModule: VF | null = null;
+    let lastWidth = -1;
+
+    async function draw(width: number) {
+      if (!vfModule) vfModule = await import("vexflow");
+      await document.fonts.ready;
+      const target = notationContainerRef.current;
+      if (cancelled || !target) return;
+      notationLayoutRef.current = renderNotation(vfModule, target, lines, measureLength, width);
+      setNotationReady(true);
+    }
+
+    const target = notationContainerRef.current;
+    if (!target) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width || target.clientWidth || 500;
+      if (Math.abs(width - lastWidth) < 1) return;
+      lastWidth = width;
+      draw(width);
+    });
+    observer.observe(target);
+
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
+  }, [showNotation, lines, measureLength]);
 
   async function togglePlay() {
     const player = playerRef.current;
@@ -523,6 +579,14 @@ export function DrumTeacherView({
       const reactAmount = rampWindow(riseT, 0.45, 0.6, 0.82, 0.95);
       if (headEmoji) headEmoji.textContent = reactAmount > 0.5 ? "🤢" : "💩";
       if (stinkLines) stinkLines.style.opacity = String(reactAmount);
+
+      // The beanie's propeller winds up as the stink hits his face and winds
+      // back down as the reaction fades, rather than spinning constantly.
+      const propeller = propellerRef.current;
+      if (propeller) {
+        const spinDeg = Number.isFinite(sinceKickS) ? (sinceKickS * PROPELLER_SPIN_DEG_PER_S * reactAmount) % 360 : 0;
+        propeller.setAttribute("transform", `translate(0 -16) rotate(${spinDeg})`);
+      }
     }
 
     for (const shape of DRUM_SHAPES) {
@@ -548,6 +612,27 @@ export function DrumTeacherView({
       // The snare's monkey face sticks its tongue out on every hit.
       if (shape.id === "snare") {
         snareTongueRef.current?.setAttribute("height", String(Math.max(0, fade) * 16));
+      }
+    }
+
+    // Split view's sheet-music highlight — same box-per-beat approach as
+    // SheetMusicView, just positioned imperatively here off this view's own
+    // player instead of through a prop-driven effect, so it stays exactly
+    // as tight to the rig's timing as everything else on this page.
+    const highlight = notationHighlightRef.current;
+    const layout = notationLayoutRef.current;
+    if (highlight) {
+      const beat = abs === null ? null : Math.floor(abs);
+      if (beat === null || !layout) {
+        highlight.style.opacity = "0";
+      } else {
+        const x0 = layout.beatBoundariesX[beat] ?? 0;
+        const x1 = layout.beatBoundariesX[beat + 1] ?? x0 + 20;
+        highlight.style.opacity = "1";
+        highlight.style.left = `${x0 - 4}px`;
+        highlight.style.width = `${Math.max(x1 - x0 + 4, 8)}px`;
+        highlight.style.top = `${layout.staveTopY}px`;
+        highlight.style.height = `${layout.staveBottomY - layout.staveTopY}px`;
       }
     }
   }
@@ -627,11 +712,53 @@ export function DrumTeacherView({
         >
           🦩 Unhinged Kit {unhinged ? "On" : "Off"}
         </button>
+        {!isMobile && (
+          <button
+            type="button"
+            onClick={() => {
+              setShowNotation((v) => !v);
+              setNotationReady(false);
+            }}
+            title="Show the sheet music side-by-side with the rig — desktop only, there's not enough width for it on a phone"
+            aria-pressed={showNotation}
+            className={[
+              "rounded-full border px-4 py-1.5 text-sm font-medium transition",
+              showNotation
+                ? "border-yellow-400 bg-yellow-400/20 text-yellow-300"
+                : "border-white/15 bg-white/5 text-white/70 hover:border-yellow-400 hover:text-yellow-400",
+            ].join(" ")}
+          >
+            📄 Split with Sheet Music {showNotation ? "On" : "Off"}
+          </button>
+        )}
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 overflow-auto p-6">
-        <div className="w-full max-w-2xl rounded-lg bg-gradient-to-b from-slate-800 to-slate-900 p-4 shadow-xl">
-          <svg viewBox="0 0 640 610" className="w-full">
+      <div className="flex flex-1 flex-col items-center gap-2 overflow-auto p-6">
+        <div
+          className={[
+            "flex w-full max-w-6xl gap-4",
+            showNotation ? "flex-col lg:flex-row lg:items-stretch" : "flex-col items-center justify-center",
+          ].join(" ")}
+        >
+          {showNotation && (
+            <div className="relative min-h-[240px] flex-1 self-stretch rounded-lg bg-white p-4 shadow-xl">
+              <div className="relative w-full" style={{ visibility: notationReady ? "visible" : "hidden" }}>
+                <div ref={notationContainerRef} className="w-full" />
+                <div
+                  ref={notationHighlightRef}
+                  className="pointer-events-none absolute rounded bg-yellow-400/40 opacity-0 transition-opacity"
+                />
+              </div>
+              {!notationReady && (
+                <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
+                  Loading notation…
+                </div>
+              )}
+            </div>
+          )}
+          <div className={showNotation ? "w-full flex-1 lg:max-w-2xl" : "w-full max-w-2xl"}>
+            <div className="rounded-lg bg-gradient-to-b from-slate-800 to-slate-900 p-4 shadow-xl">
+              <svg viewBox="0 0 640 610" className="w-full">
             <defs>
               <radialGradient id="cymbalGrad" cx="35%" cy="35%" r="75%">
                 <stop offset="0%" stopColor="#fde68a" />
@@ -666,7 +793,20 @@ export function DrumTeacherView({
             <rect x={310} y={230} width={20} height={40} fill="#334155" />
             <line x1={HIP.left.x} y1={HIP.left.y} x2={LEFT_FOOT.x} y2={LEFT_FOOT.y} stroke="#94a3b8" strokeWidth={16} strokeLinecap="round" />
             <line x1={HIP.right.x} y1={HIP.right.y} x2={KICK_PEDAL_FOOT_REST.x} y2={KICK_PEDAL_FOOT_REST.y} stroke="#94a3b8" strokeWidth={16} strokeLinecap="round" />
-            <rect x={TORSO.x - TORSO.w / 2} y={TORSO.y - TORSO.h / 2} width={TORSO.w} height={TORSO.h} rx={28} fill="#38bdf8" />
+            <rect x={TORSO.x - TORSO.w / 2} y={TORSO.y - TORSO.h / 2} width={TORSO.w} height={TORSO.h} rx={28} fill="#0a0a0a" stroke="#52525b" strokeWidth={2} />
+            {/* The drummer's sponsor plug — real link, matches the one on
+                the Fart kit's transport bar. Logo sized to sit fully inside
+                the shirt rect (TORSO.w=84, TORSO.h=106). */}
+            <a href="https://albumsanonymous.com/" target="_blank" rel="noopener noreferrer">
+              <image
+                href="/albums-anonymous-logo.png"
+                x={TORSO.x - 39}
+                y={TORSO.y - 39}
+                width={78}
+                height={78}
+                preserveAspectRatio="xMidYMid meet"
+              />
+            </a>
             {unhinged ? (
               <>
                 <text
@@ -684,6 +824,26 @@ export function DrumTeacherView({
                 <g ref={stinkLinesRef} style={{ opacity: 0 }}>
                   <path d={`M ${HEAD.x - 34} ${HEAD.y - 6} q -8 -10 0 -20 q 8 -10 0 -20`} stroke="#a3e635" strokeWidth={3} fill="none" strokeLinecap="round" />
                   <path d={`M ${HEAD.x + 34} ${HEAD.y - 6} q 8 -10 0 -20 q -8 -10 0 -20`} stroke="#a3e635" strokeWidth={3} fill="none" strokeLinecap="round" />
+                </g>
+                {/* An Adult Propeller Beanie, because he's earned it. */}
+                <g transform={`translate(${HEAD.x} ${HEAD.y - HEAD.r * 0.7})`}>
+                  <path
+                    d={`M ${-HEAD.r * 0.88} 0 A ${HEAD.r * 0.88} ${HEAD.r * 0.6} 0 0 1 ${HEAD.r * 0.88} 0 Z`}
+                    fill="#ef4444"
+                    stroke="#0f172a"
+                    strokeWidth={1.5}
+                  />
+                  <path d={`M ${-HEAD.r * 0.6} -2 Q 0 ${-HEAD.r * 0.7} ${HEAD.r * 0.6} -2`} stroke="#facc15" strokeWidth={3} fill="none" />
+                  <circle cx={-HEAD.r * 0.4} cy={-3} r={4} fill="#22c55e" stroke="#0f172a" strokeWidth={1} />
+                  <circle cx={HEAD.r * 0.4} cy={-3} r={4} fill="#3b82f6" stroke="#0f172a" strokeWidth={1} />
+                  <line x1={0} y1={-2} x2={0} y2={-16} stroke="#57534e" strokeWidth={2.5} strokeLinecap="round" />
+                  {/* Spins on impact — see applyPose's propellerRef block,
+                      which winds it up and back down with reactAmount. */}
+                  <g ref={propellerRef} transform="translate(0 -16)">
+                    <ellipse cx={0} cy={0} rx={13} ry={3.5} fill="#facc15" stroke="#a16207" strokeWidth={1} />
+                    <ellipse cx={0} cy={0} rx={3.5} ry={13} fill="#f97316" stroke="#9a3412" strokeWidth={1} />
+                    <circle cx={0} cy={0} r={2.2} fill="#78350f" />
+                  </g>
                 </g>
               </>
             ) : (
@@ -758,6 +918,26 @@ export function DrumTeacherView({
                       fill="none"
                       strokeLinecap="round"
                     />
+                    {/* Gross butt hair — a scatter of scraggly tufts across
+                        the hips and cheeks, because nature is not tidy. */}
+                    {[
+                      [-0.78, -0.18], [-0.55, -0.32], [-0.2, -0.38], [0.15, -0.36], [0.5, -0.28], [0.75, -0.14],
+                      [-0.6, 0.05], [-0.3, 0.5], [0.05, 0.58], [0.35, 0.48], [0.62, 0.1], [-0.05, 0.1],
+                    ].map(([fx, fy], i) => {
+                      const hx = p.cx + fx * p.rx;
+                      const hy = p.cy + fy * p.ry;
+                      return (
+                        <path
+                          key={`hair-${i}`}
+                          d={`M ${hx} ${hy} q ${2 - (i % 3)} -6 ${(i % 2 === 0 ? 1 : -1) * 3} -11`}
+                          stroke="#3f2a14"
+                          strokeWidth={1.4}
+                          fill="none"
+                          strokeLinecap="round"
+                          opacity={0.85}
+                        />
+                      );
+                    })}
                   </>
                 ) : p.kind === "drum" ? (
                   <>
@@ -788,7 +968,7 @@ export function DrumTeacherView({
                   opacity={0}
                 />
                 <text x={p.cx} y={p.cy + p.labelDy} textAnchor="middle" fontSize={13} fill="#e2e8f0" className="select-none" style={{ paintOrder: "stroke", stroke: "#0f172a", strokeWidth: 3 }}>
-                  {p.id === "kick" && unhinged ? "Kick (a Snow Monkey's Butt)" : p.label}
+                  {p.label}
                 </text>
               </g>
             ))}
@@ -832,14 +1012,16 @@ export function DrumTeacherView({
             <AnimalStick elRef={leftArmRef} variant={unhinged ? "skunk" : "classic"} />
             <AnimalStick elRef={rightArmRef} variant={unhinged ? "ferret" : "classic"} />
           </svg>
+            </div>
+          </div>
         </div>
         <p className="max-w-2xl text-center text-xs text-white/40">
           {unhinged ? (
             <>
               The left hand&apos;s skunk plays the snare/floor tom, the right hand&apos;s ferret crosses over for
-              the hi-hat plus ride/crash/toms, and the right foot kicks a snow monkey&apos;s butt where the bass
-              drum usually goes — one common way to play it. Real drummers vary their sticking (and typically
-              don&apos;t use animals).
+              the hi-hat plus ride/crash/toms, and the right foot works the kick pedal, which happens to be
+              standing in for the bass drum today — one common way to play it. Real drummers vary their sticking
+              (and typically don&apos;t use animals).
             </>
           ) : (
             <>
