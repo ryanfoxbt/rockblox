@@ -16,6 +16,7 @@ import { TilePalette } from "@/components/TilePalette";
 import { LineRow } from "@/components/LineRow";
 import { Transport } from "@/components/Transport";
 import { SheetMusicView } from "@/components/SheetMusicView";
+import { DrumTeacherView } from "@/components/DrumTeacherView";
 import { TileVisual } from "@/components/TileVisual";
 import { FartRecorder } from "@/components/FartRecorder";
 import { RandomizeButton, VariationKind } from "@/components/RandomizeButton";
@@ -128,6 +129,7 @@ export function Editor({
   const [playheadBeat, setPlayheadBeat] = useState<number | null>(null);
   const [activeTile, setActiveTile] = useState<RhythmTile | null>(null);
   const [showSheet, setShowSheet] = useState(false);
+  const [showDrumTeacher, setShowDrumTeacher] = useState(false);
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
   const toolsMenuRef = useRef<HTMLDivElement>(null);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -786,6 +788,19 @@ export function Editor({
                 <line x1="11" y1="17.5" x2="11" y2="9" />
               </svg>
             </button>
+            <button
+              type="button"
+              onClick={() => setShowDrumTeacher(true)}
+              disabled={measureLength < 1}
+              title="Watch how to play this on a real kit"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <ellipse cx="12" cy="16" rx="8" ry="4" />
+                <path d="M6 8 17 19" strokeLinecap="round" />
+                <path d="M17 8 6 19" strokeLinecap="round" />
+              </svg>
+            </button>
           </div>
         </div>
       </header>
@@ -799,6 +814,16 @@ export function Editor({
           playheadBeat={isPlaying ? playheadBeat : null}
           onTogglePlay={togglePlay}
           onClose={() => setShowSheet(false)}
+        />
+      )}
+
+      {showDrumTeacher && (
+        <DrumTeacherView
+          lines={lines}
+          kit={kit}
+          customSamples={customSamples}
+          measureLength={measureLength}
+          onClose={() => setShowDrumTeacher(false)}
         />
       )}
 
