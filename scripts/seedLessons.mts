@@ -183,6 +183,350 @@ const SIXTEENTH_SNARE_FILL: StoredLine[] = [
   line("snare", measure(null, "n-quarter", null, "n-s-s-s-s")),
 ];
 
+// --- A wider, difficulty-tiered fill vocabulary ----------------------------
+// bundle()'s fillC/fillD defaults (TOM_RUN_FILL/EIGHTH_FILL) are fine for a
+// handful of early lessons but were getting reused verbatim across dozens of
+// lessons that never bothered to override them — every fill sounding like
+// plain quarter notes. These give every lesson a fill matched to where it
+// sits in the course. Roughly ordered easiest to hardest; see the bundle()
+// call sites below for which lesson uses which.
+//
+// Rudiment approximations: the engine has no true near-zero-duration grace
+// note, so a flam (one grace note before the main hit) or drag (two grace
+// notes) is approximated as one or two short ghost hits immediately before
+// an accented main hit, using the shortest available subdivisions
+// (sixteenth or sixteenth-triplet) — a simplification, not a claim of exact
+// rudiment timing.
+
+// Tier 2 (~roughly Lessons 10-20): still simple, but more shapes than just
+// the default tom-run/eighth fill so this stretch doesn't sound identical
+// lesson to lesson.
+const TOM_RUN_REVERSE_FILL: StoredLine[] = [
+  line("lowTom", measure("n-quarter", null, null, null)),
+  line("midTom", measure(null, "n-quarter", null, null)),
+  line("highTom", measure(null, null, "n-quarter", null)),
+  line("snare", measure(null, null, null, "n-quarter")),
+];
+const SNARE_BUILD_FILL: StoredLine[] = [line("snare", measure(null, "n-quarter", "n-quarter", "n-e-e"))];
+const KICK_SNARE_TRADE_FILL: StoredLine[] = [
+  line("kick", measure("n-quarter", null, "n-quarter", null)),
+  line("snare", measure(null, "n-quarter", null, "n-e-e")),
+];
+
+// Tier 3 (~roughly Lessons 21-35): sixteenth-note-based, single-stroke-roll
+// shapes — a steady run of alternating single hits.
+const SIXTEENTH_TOM_CASCADE_FILL: StoredLine[] = [
+  line("highTom", measure("n-s-s-s-s", null, null, null)),
+  line("midTom", measure(null, "n-s-s-s-s", null, null)),
+  line("lowTom", measure(null, null, "n-s-s-s-s", null)),
+  line("snare", measure(null, null, null, "n-s-s-s-s")),
+];
+const ALTERNATING_SIXTEENTH_FILL: StoredLine[] = [
+  line(
+    "snare",
+    measure(
+      custom(N("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")),
+      custom(N("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")),
+      custom(N("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")),
+      custom(N("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth"))
+    )
+  ),
+  line(
+    "highTom",
+    measure(
+      custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), N("sixteenth")),
+      custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), N("sixteenth")),
+      custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), N("sixteenth")),
+      custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), N("sixteenth"))
+    )
+  ),
+];
+
+// Tier 4 (~roughly Lessons 36-50): rudiment-flavored — flams, drags, and
+// roll shapes (see the approximation note above).
+const FLAM_ACCENT_FILL: StoredLine[] = [
+  line(
+    "snare",
+    measure(
+      custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")),
+      custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")),
+      null,
+      null
+    )
+  ),
+  line("highTom", measure(null, null, custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")), null)),
+  line("lowTom", measure(null, null, null, custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")))),
+];
+const DRAG_TAP_CELL = custom(
+  N("sixteenthTriplet", "ghost"),
+  N("sixteenthTriplet", "ghost"),
+  N("sixteenthTriplet", "accent"),
+  R("sixteenthTriplet"),
+  R("sixteenthTriplet"),
+  R("sixteenthTriplet")
+);
+const DRAG_TAP_FILL: StoredLine[] = [
+  line("snare", measure(DRAG_TAP_CELL, null, DRAG_TAP_CELL, null)),
+  line("highTom", measure(null, DRAG_TAP_CELL, null, null)),
+  line("lowTom", measure(null, null, null, DRAG_TAP_CELL)),
+];
+const FIVE_STROKE_ROLL_FILL: StoredLine[] = [
+  line(
+    "snare",
+    measure("n-s-s-s-s", custom(N("sixteenth"), N("sixteenth"), N("sixteenth"), N("sixteenth", "accent")), null, null)
+  ),
+  line("highTom", measure(null, null, "n-s-s-s-s", null)),
+  line("lowTom", measure(null, null, null, custom(N("sixteenth"), N("sixteenth"), N("sixteenth"), N("sixteenth", "accent")))),
+];
+const DOUBLE_STROKE_ROLL_TOM_FILL: StoredLine[] = [
+  line(
+    "highTom",
+    measure(
+      custom(N("sixteenth"), N("sixteenth", "ghost"), R("sixteenth"), R("sixteenth")),
+      custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), N("sixteenth", "ghost")),
+      null,
+      null
+    )
+  ),
+  line(
+    "midTom",
+    measure(
+      null,
+      null,
+      custom(N("sixteenth"), N("sixteenth", "ghost"), R("sixteenth"), R("sixteenth")),
+      custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), N("sixteenth", "ghost"))
+    )
+  ),
+  line("snare", measure(null, null, null, custom(N("sixteenth", "accent"), R("sixteenth"), R("sixteenth"), R("sixteenth")))),
+];
+
+// Tier 5 (~roughly Lessons 51-70): triplet-based and linear fills (see
+// TRIPLET_FILL/CRESCENDO_SNARE_FILL above too) — no two limbs ever land on
+// the same sixteenth-note slot in the linear one.
+const LINEAR_SIXTEENTH_FILL: StoredLine[] = [
+  line("kick", measure(custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null)),
+  line("snare", measure(custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")), null, custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")), null)),
+  line("highTom", measure(null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")))),
+  line("lowTom", measure(null, custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")), null, custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")))),
+];
+const PARADIDDLE_FILL: StoredLine[] = [
+  line(
+    "snare",
+    measure(
+      custom(N("sixteenth", "accent"), N("sixteenth"), N("sixteenth"), N("sixteenth")),
+      custom(N("sixteenth"), N("sixteenth", "accent"), N("sixteenth"), N("sixteenth")),
+      null,
+      null
+    )
+  ),
+  line("highTom", measure(null, null, custom(N("sixteenth", "accent"), N("sixteenth"), N("sixteenth"), N("sixteenth")), null)),
+  line("lowTom", measure(null, null, null, custom(N("sixteenth"), N("sixteenth", "accent"), N("sixteenth"), N("sixteenth")))),
+];
+
+// Tier 6 (~roughly Lessons 71-90): combined techniques, dynamics shaping,
+// and the full kit rather than just snare/toms.
+const SIXTEENTH_TRIPLET_CELL = custom(
+  N("sixteenthTriplet"),
+  N("sixteenthTriplet"),
+  N("sixteenthTriplet"),
+  N("sixteenthTriplet"),
+  N("sixteenthTriplet"),
+  N("sixteenthTriplet")
+);
+const ROLLING_SIXTEENTH_TRIPLET_FILL: StoredLine[] = [
+  line("snare", measure(SIXTEENTH_TRIPLET_CELL, null, null, null)),
+  line("highTom", measure(null, SIXTEENTH_TRIPLET_CELL, null, null)),
+  line("midTom", measure(null, null, SIXTEENTH_TRIPLET_CELL, null)),
+  line(
+    "lowTom",
+    measure(
+      null,
+      null,
+      null,
+      custom(
+        N("sixteenthTriplet", "accent"),
+        N("sixteenthTriplet"),
+        N("sixteenthTriplet"),
+        N("sixteenthTriplet"),
+        N("sixteenthTriplet"),
+        N("sixteenthTriplet")
+      )
+    )
+  ),
+];
+const FULL_KIT_GHOST_TO_ACCENT_TOM_FILL: StoredLine[] = [
+  line("highTom", measure(custom(N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost")), null, null, null)),
+  line("midTom", measure(null, "n-s-s-s-s", null, null)),
+  line("lowTom", measure(null, null, custom(N("sixteenth", "accent"), N("sixteenth"), N("sixteenth"), N("sixteenth")), null)),
+  line(
+    "snare",
+    measure(null, null, null, custom(N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent")))
+  ),
+];
+
+// Tier 7 (~roughly Lessons 91-99): the most advanced fill vocabulary,
+// combining triplets, dynamics, and a fast cascade in one bar.
+const VIRTUOSO_COMBO_FILL: StoredLine[] = [
+  line(
+    "snare",
+    measure(
+      custom(N("eighthTriplet", "ghost"), N("eighthTriplet"), N("eighthTriplet", "accent")),
+      custom(N("sixteenthTriplet"), N("sixteenthTriplet"), N("sixteenthTriplet"), N("sixteenthTriplet"), N("sixteenthTriplet"), N("sixteenthTriplet", "accent")),
+      null,
+      null
+    )
+  ),
+  line("highTom", measure(null, null, custom(N("eighthTriplet", "accent"), N("eighthTriplet"), N("eighthTriplet")), null)),
+  line("midTom", measure(null, null, null, custom(N("sixteenth", "accent"), N("sixteenth"), N("sixteenth"), N("sixteenth", "accent")))),
+];
+
+// Meter-matched tom-run fills for the odd-meter lessons that were falling
+// back to the (4-beat) default fill and going silent past beat 4.
+const TOM_RUN_FILL_5: StoredLine[] = [
+  line("highTom", measure("n-quarter", null, null, null, null)),
+  line("midTom", measure(null, "n-quarter", null, null, null)),
+  line("lowTom", measure(null, null, "n-quarter", null, null)),
+  line("snare", measure(null, null, null, "n-quarter", "n-quarter")),
+];
+const TOM_RUN_FILL_6: StoredLine[] = [
+  line("highTom", measure("n-quarter", null, null, null, null, null)),
+  line("midTom", measure(null, "n-quarter", null, null, null, null)),
+  line("lowTom", measure(null, null, "n-quarter", null, null, null)),
+  line("snare", measure(null, null, null, "n-quarter", null, "n-quarter")),
+];
+const TOM_RUN_FILL_7: StoredLine[] = [
+  line("highTom", measure("n-quarter", null, null, null, null, null, null)),
+  line("midTom", measure(null, "n-quarter", null, null, null, null, null)),
+  line("lowTom", measure(null, null, "n-quarter", null, null, null, null)),
+  line("snare", measure(null, null, null, "n-quarter", null, null, "n-quarter")),
+];
+
+// Meter-matched *second* fills for the odd-meter lessons — these lessons
+// already got a meter-matched fillC (above) but were pairing it with a
+// plain 4-beat fillD from the tiered vocabulary below, which (per
+// computeMeasureLength in src/lib/song.ts) would make that slot loop as a
+// short 4-beat pattern instead of matching the lesson's own odd meter.
+const SIXTEENTH_TOM_CASCADE_FILL_5: StoredLine[] = [
+  line("highTom", measure("n-s-s-s-s", null, null, null, null)),
+  line("midTom", measure(null, "n-s-s-s-s", null, null, null)),
+  line("lowTom", measure(null, null, "n-s-s-s-s", null, null)),
+  line("snare", measure(null, null, null, "n-s-s-s-s", "n-s-s-s-s")),
+];
+const SIXTEENTH_TOM_CASCADE_FILL_6: StoredLine[] = [
+  line("highTom", measure("n-s-s-s-s", null, null, null, null, null)),
+  line("midTom", measure(null, "n-s-s-s-s", null, null, null, null)),
+  line("lowTom", measure(null, null, "n-s-s-s-s", null, null, null)),
+  line("snare", measure(null, null, null, "n-s-s-s-s", null, "n-s-s-s-s")),
+];
+const SIXTEENTH_TOM_CASCADE_FILL_7: StoredLine[] = [
+  line("highTom", measure("n-s-s-s-s", null, null, null, null, null, null)),
+  line("midTom", measure(null, "n-s-s-s-s", null, null, null, null, null)),
+  line("lowTom", measure(null, null, "n-s-s-s-s", null, null, null, null)),
+  line("snare", measure(null, null, null, "n-s-s-s-s", null, null, "n-s-s-s-s")),
+];
+const EIGHTH_FILL_5: StoredLine[] = [
+  line("hihatClosed", measure("n-e-e", "n-e-e", "n-e-e", null, null)),
+  line("kick", measure("n-quarter", null, "n-quarter", null, null)),
+  line("snare", measure(null, "n-quarter", null, "n-e-e", "n-e-e")),
+];
+const FLAM_ACCENT_FILL_7: StoredLine[] = [
+  line(
+    "snare",
+    measure(
+      custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")),
+      custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")),
+      null,
+      null,
+      null,
+      custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")),
+      custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth"))
+    )
+  ),
+  line("highTom", measure(null, null, custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")), null, null, null, null)),
+  line("lowTom", measure(null, null, null, custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")), null, null, null)),
+  line("midTom", measure(null, null, null, null, custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")), null, null)),
+];
+const FULL_KIT_GHOST_TO_ACCENT_TOM_FILL_6: StoredLine[] = [
+  line(
+    "highTom",
+    measure(
+      custom(N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost")),
+      custom(N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost")),
+      null,
+      null,
+      null,
+      null
+    )
+  ),
+  line("midTom", measure(null, null, "n-s-s-s-s", null, null, null)),
+  line("lowTom", measure(null, null, null, custom(N("sixteenth", "accent"), N("sixteenth"), N("sixteenth"), N("sixteenth")), null, null)),
+  line(
+    "snare",
+    measure(
+      null,
+      null,
+      null,
+      null,
+      custom(N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent")),
+      custom(N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"))
+    )
+  ),
+];
+const LINEAR_SIXTEENTH_FILL_5: StoredLine[] = [
+  line(
+    "kick",
+    measure(
+      custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")),
+      null,
+      custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")),
+      null,
+      custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth"))
+    )
+  ),
+  line(
+    "snare",
+    measure(
+      custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")),
+      null,
+      custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")),
+      null,
+      custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth"))
+    )
+  ),
+  line(
+    "highTom",
+    measure(
+      null,
+      custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")),
+      null,
+      custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")),
+      null
+    )
+  ),
+  line(
+    "lowTom",
+    measure(
+      null,
+      custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")),
+      null,
+      custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")),
+      null
+    )
+  ),
+];
+const CRESCENDO_SNARE_FILL_5: StoredLine[] = [
+  line(
+    "snare",
+    measure(
+      custom(N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost")),
+      custom(N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth"), N("sixteenth")),
+      custom(N("sixteenth"), N("sixteenth"), N("sixteenth"), N("sixteenth")),
+      custom(N("sixteenth"), N("sixteenth"), N("sixteenth", "accent"), N("sixteenth")),
+      custom(N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"))
+    )
+  ),
+];
+
 // The standard shape for Lessons 11-30: a verse (A) and a busier/accented
 // chorus (B) doing most of the work, with two fills (C, D) used sparingly —
 // 6 of 8 steps below are groove, 2 are fill, matching Lesson 10's ~75/25 mix.
@@ -211,6 +555,69 @@ function bundle(
   };
 }
 
+// --- Additional building blocks for Lessons 1-9 ----------------------------
+// These lessons teach one idea at a time, so B/C/D stay proportionally
+// simple: small dynamic (accent) or spacing variations on that lesson's own
+// idea, not new instruments or concepts pulled forward from later lessons.
+
+const HIHAT_QUARTERS_ACCENT_1 = measure(custom(N("quarter", "accent")), "n-quarter", "n-quarter", "n-quarter");
+const HIHAT_QUARTERS_ACCENT_1_3 = measure(
+  custom(N("quarter", "accent")),
+  "n-quarter",
+  custom(N("quarter", "accent")),
+  "n-quarter"
+);
+const HIHAT_QUARTERS_DROP_4 = measure("n-quarter", "n-quarter", "n-quarter", null);
+
+const BACKBEAT_SNARE_ACCENT = measure(null, custom(N("quarter", "accent")), null, custom(N("quarter", "accent")));
+const BACKBEAT_SNARE_BEAT2_ONLY = measure(null, "n-quarter", null, null);
+
+const KICK_1_AND_3_ACCENT = measure(custom(N("quarter", "accent")), null, custom(N("quarter", "accent")), null);
+const KICK_QUARTERS_ACCENT_ALT = measure(
+  custom(N("quarter", "accent")),
+  "n-quarter",
+  custom(N("quarter", "accent")),
+  "n-quarter"
+);
+const KICK_SYNCOPATED_BOTH = measure("n-quarter", "r-e-e-2", "n-quarter", "r-e-e-2");
+
+const HIHAT_EIGHTHS_GHOST_OFFBEAT = measure(
+  custom(N("eighth"), N("eighth", "ghost")),
+  custom(N("eighth"), N("eighth", "ghost")),
+  custom(N("eighth"), N("eighth", "ghost")),
+  custom(N("eighth"), N("eighth", "ghost"))
+);
+
+// Beat where the closed hat plays only the downbeat eighth and the open hat
+// rings the "and" — paired cells used together in Lesson 7's variations.
+const HIHAT_CLOSED_OPEN_ON_AND = custom(N("eighth"), R("eighth"));
+const HIHAT_OPEN_ACCENT_AND = custom(R("eighth"), N("eighth", "accent"));
+
+const TOM_RUN_FILL_ACCENTED: StoredLine[] = [
+  line("highTom", measure("n-quarter", null, null, null)),
+  line("midTom", measure(null, "n-quarter", null, null)),
+  line("lowTom", measure(null, null, "n-quarter", null)),
+  line("snare", measure(null, null, null, custom(N("quarter", "accent")))),
+];
+const TOM_RUN_FILL_EIGHTHS: StoredLine[] = [
+  line("highTom", measure("n-e-e", null, null, null)),
+  line("midTom", measure(null, "n-e-e", null, null)),
+  line("lowTom", measure(null, null, "n-e-e", null)),
+  line("snare", measure(null, null, null, "n-e-e")),
+];
+
+const EIGHTH_FILL_ACCENTED: StoredLine[] = [
+  line("hihatClosed", measure("n-e-e", "n-e-e", "n-e-e", null)),
+  line("kick", KICK_1_AND_3),
+  line("snare", measure(null, "n-quarter", null, custom(N("eighth", "accent"), N("eighth")))),
+];
+const EIGHTH_FILL_TOM_TAG: StoredLine[] = [
+  line("hihatClosed", measure("n-e-e", "n-e-e", "n-e-e", null)),
+  line("kick", KICK_1_AND_3),
+  line("snare", measure(null, "n-quarter", null, custom(N("eighth"), R("eighth")))),
+  line("highTom", measure(null, null, null, custom(R("eighth"), N("eighth")))),
+];
+
 const SEEDS: LessonSeed[] = [
   {
     slug: "lesson-1-the-pulse",
@@ -218,6 +625,10 @@ const SEEDS: LessonSeed[] = [
     title: "Find the Pulse",
     teaches: "Steady quarter notes on the hi-hat.",
     slotA: slot(76, [line("hihatClosed", HIHAT_QUARTERS)]),
+    slotB: slot(76, [line("hihatClosed", HIHAT_QUARTERS_ACCENT_1)]),
+    slotC: slot(76, [line("hihatClosed", HIHAT_QUARTERS_ACCENT_1_3)]),
+    slotD: slot(76, [line("hihatClosed", HIHAT_QUARTERS_DROP_4)]),
+    stack: { bpm: 76, steps: standardSteps(1), kitOverride: null },
   },
   {
     slug: "lesson-2-the-backbeat",
@@ -225,6 +636,10 @@ const SEEDS: LessonSeed[] = [
     title: "Add the Backbeat",
     teaches: "Snare on beats 2 and 4.",
     slotA: slot(78, [line("hihatClosed", HIHAT_QUARTERS), line("snare", BACKBEAT_SNARE)]),
+    slotB: slot(78, [line("hihatClosed", HIHAT_QUARTERS), line("snare", BACKBEAT_SNARE_ACCENT)]),
+    slotC: slot(78, [line("hihatClosed", HIHAT_QUARTERS), line("snare", BACKBEAT_SNARE_BEAT2_ONLY)]),
+    slotD: slot(78, [line("hihatClosed", HIHAT_QUARTERS_ACCENT_1), line("snare", BACKBEAT_SNARE_ACCENT)]),
+    stack: { bpm: 78, steps: standardSteps(2), kitOverride: null },
   },
   {
     slug: "lesson-3-the-kick",
@@ -236,6 +651,14 @@ const SEEDS: LessonSeed[] = [
       line("snare", BACKBEAT_SNARE),
       line("kick", KICK_1_AND_3),
     ]),
+    slotB: slot(80, [
+      line("hihatClosed", HIHAT_QUARTERS),
+      line("snare", BACKBEAT_SNARE),
+      line("kick", KICK_1_AND_3_ACCENT),
+    ]),
+    slotC: slot(80, [line("hihatClosed", HIHAT_QUARTERS), line("snare", BACKBEAT_SNARE), line("kick", HIHAT_QUARTERS)]),
+    slotD: slot(80, [line("hihatClosed", HIHAT_QUARTERS), line("snare", BACKBEAT_SNARE), line("kick", CRASH_BEAT1)]),
+    stack: { bpm: 80, steps: standardSteps(3), kitOverride: null },
   },
   {
     slug: "lesson-4-eighth-note-hihat",
@@ -247,6 +670,18 @@ const SEEDS: LessonSeed[] = [
       line("snare", BACKBEAT_SNARE),
       line("kick", KICK_1_AND_3),
     ]),
+    slotB: slot(84, [
+      line("hihatClosed", measure(TRAIN_TILE, TRAIN_TILE, TRAIN_TILE, TRAIN_TILE)),
+      line("snare", BACKBEAT_SNARE),
+      line("kick", KICK_1_AND_3),
+    ]),
+    slotC: slot(84, [
+      line("hihatClosed", HIHAT_EIGHTHS_GHOST_OFFBEAT),
+      line("snare", BACKBEAT_SNARE),
+      line("kick", KICK_1_AND_3),
+    ]),
+    slotD: slot(84, [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", HIHAT_QUARTERS)]),
+    stack: { bpm: 84, steps: standardSteps(4), kitOverride: null },
   },
   {
     slug: "lesson-5-syncopated-kick",
@@ -258,6 +693,18 @@ const SEEDS: LessonSeed[] = [
       line("snare", BACKBEAT_SNARE),
       line("kick", measure("n-quarter", "r-e-e-2", "n-quarter", null)),
     ]),
+    slotB: slot(88, [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_SYNCOPATED_BOTH)]),
+    slotC: slot(88, [
+      line("hihatClosed", HIHAT_EIGHTHS),
+      line("snare", BACKBEAT_SNARE_ACCENT),
+      line("kick", measure("n-quarter", "r-e-e-2", "n-quarter", null)),
+    ]),
+    slotD: slot(88, [
+      line("hihatClosed", HIHAT_EIGHTHS_GHOST_OFFBEAT),
+      line("snare", BACKBEAT_SNARE),
+      line("kick", KICK_SYNCOPATED_BOTH),
+    ]),
+    stack: { bpm: 88, steps: standardSteps(5), kitOverride: null },
   },
   {
     slug: "lesson-6-fast-drive",
@@ -269,6 +716,22 @@ const SEEDS: LessonSeed[] = [
       line("snare", BACKBEAT_SNARE),
       line("kick", HIHAT_QUARTERS), // kick on all four quarters, same shape as the hi-hat
     ]),
+    slotB: slot(150, [
+      line("hihatClosed", HIHAT_EIGHTHS),
+      line("snare", BACKBEAT_SNARE),
+      line("kick", KICK_QUARTERS_ACCENT_ALT),
+    ]),
+    slotC: slot(150, [
+      line("hihatClosed", measure(TRAIN_TILE, TRAIN_TILE, TRAIN_TILE, TRAIN_TILE)),
+      line("snare", BACKBEAT_SNARE),
+      line("kick", HIHAT_QUARTERS),
+    ]),
+    slotD: slot(150, [
+      line("hihatClosed", measure(TRAIN_TILE, TRAIN_TILE, TRAIN_TILE, TRAIN_TILE)),
+      line("snare", BACKBEAT_SNARE_ACCENT),
+      line("kick", KICK_QUARTERS_ACCENT_ALT),
+    ]),
+    stack: { bpm: 150, steps: standardSteps(6), kitOverride: null },
   },
   {
     slug: "lesson-7-open-hihat",
@@ -281,6 +744,25 @@ const SEEDS: LessonSeed[] = [
       line("snare", BACKBEAT_SNARE),
       line("kick", KICK_1_AND_3),
     ]),
+    slotB: slot(92, [
+      line("hihatClosed", measure("n-e-e", HIHAT_CLOSED_OPEN_ON_AND, "n-e-e", HIHAT_CLOSED_OPEN_ON_AND)),
+      line("hihatOpen", measure(null, HIHAT_OPEN_ACCENT_AND, null, HIHAT_OPEN_ACCENT_AND)),
+      line("snare", BACKBEAT_SNARE),
+      line("kick", KICK_1_AND_3),
+    ]),
+    slotC: slot(92, [
+      line("hihatClosed", measure("n-e-e", "n-e-e", HIHAT_CLOSED_OPEN_ON_AND, "n-e-e")),
+      line("hihatOpen", measure(null, null, HIHAT_OPEN_ACCENT_AND, null)),
+      line("snare", BACKBEAT_SNARE),
+      line("kick", KICK_1_AND_3),
+    ]),
+    slotD: slot(92, [
+      line("hihatClosed", measure("n-e-e", HIHAT_CLOSED_OPEN_ON_AND, "n-e-e", HIHAT_CLOSED_OPEN_ON_AND)),
+      line("hihatOpen", measure(null, HIHAT_OPEN_ACCENT_AND, null, HIHAT_OPEN_ACCENT_AND)),
+      line("snare", BACKBEAT_SNARE_ACCENT),
+      line("kick", KICK_1_AND_3),
+    ]),
+    stack: { bpm: 92, steps: standardSteps(7), kitOverride: null },
   },
   {
     slug: "lesson-8-tom-fill",
@@ -293,6 +775,10 @@ const SEEDS: LessonSeed[] = [
       line("lowTom", measure(null, null, "n-quarter", null)),
       line("snare", measure(null, null, null, "n-quarter")),
     ]),
+    slotB: slot(92, TOM_RUN_FILL_ACCENTED),
+    slotC: slot(92, TOM_RUN_REVERSE_FILL),
+    slotD: slot(92, TOM_RUN_FILL_EIGHTHS),
+    stack: { bpm: 92, steps: standardSteps(8), kitOverride: null },
   },
   {
     slug: "lesson-9-eighth-fill",
@@ -304,6 +790,10 @@ const SEEDS: LessonSeed[] = [
       line("kick", KICK_1_AND_3),
       line("snare", measure(null, "n-quarter", null, "n-e-e")),
     ]),
+    slotB: slot(92, EIGHTH_FILL_ACCENTED),
+    slotC: slot(92, SIXTEENTH_SNARE_FILL),
+    slotD: slot(92, EIGHTH_FILL_TOM_TAG),
+    stack: { bpm: 92, steps: standardSteps(9), kitOverride: null },
   },
   {
     slug: "lesson-10-put-it-together",
@@ -372,6 +862,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      TOM_RUN_REVERSE_FILL,
+      SNARE_BUILD_FILL
     ),
   },
   {
@@ -389,6 +882,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      SNARE_BUILD_FILL,
+      KICK_SNARE_TRADE_FILL
     ),
   },
   {
@@ -406,6 +902,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      KICK_SNARE_TRADE_FILL,
+      TOM_RUN_REVERSE_FILL
     ),
   },
   {
@@ -427,6 +926,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", measure("n-quarter", null, null, null)),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      TOM_RUN_FILL,
+      SNARE_BUILD_FILL
     ),
   },
   {
@@ -444,6 +946,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      EIGHTH_FILL,
+      TOM_RUN_REVERSE_FILL
     ),
   },
   {
@@ -618,6 +1123,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      SIXTEENTH_TOM_CASCADE_FILL,
+      EIGHTH_FILL
     ),
   },
   {
@@ -641,6 +1149,9 @@ const SEEDS: LessonSeed[] = [
         line("rimshot", measure(null, "n-quarter", null, "n-quarter")),
         line("crash", measure(null, null, "n-quarter", null)),
       ]
+    ,
+      ALTERNATING_SIXTEENTH_FILL,
+      TOM_RUN_REVERSE_FILL
     ),
   },
   {
@@ -664,6 +1175,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      TOM_RUN_FILL,
+      SIXTEENTH_TOM_CASCADE_FILL
     ),
   },
   {
@@ -681,6 +1195,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      EIGHTH_FILL,
+      ALTERNATING_SIXTEENTH_FILL
     ),
   },
   {
@@ -698,6 +1215,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      SIXTEENTH_TOM_CASCADE_FILL,
+      KICK_SNARE_TRADE_FILL
     ),
   },
   {
@@ -781,6 +1301,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", measure(null, null, "n-quarter", null, "n-quarter", null, "n-quarter")),
         line("crash", measure("n-quarter", null, null, null, null, null, null)),
       ]
+    ,
+      TOM_RUN_FILL_7,
+      SIXTEENTH_TOM_CASCADE_FILL_7
     ),
   },
   {
@@ -887,6 +1410,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      PARADIDDLE_FILL,
+      ALTERNATING_SIXTEENTH_FILL
     ),
   },
   {
@@ -908,6 +1434,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", measure("n-quarter", null, null, null)),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      SIXTEENTH_TOM_CASCADE_FILL,
+      TOM_RUN_REVERSE_FILL
     ),
   },
   {
@@ -929,6 +1458,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      ALTERNATING_SIXTEENTH_FILL,
+      EIGHTH_FILL
     ),
   },
   {
@@ -950,6 +1482,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", measure(null, null, "n-quarter", null, "n-quarter")),
         line("crash", measure("n-quarter", null, null, null, null)),
       ]
+    ,
+      TOM_RUN_FILL_5,
+      SIXTEENTH_TOM_CASCADE_FILL_5
     ),
   },
   {
@@ -971,6 +1506,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", measure(null, null, null, "n-quarter", null, null)),
         line("crash", measure("n-quarter", null, null, null, null, null)),
       ]
+    ,
+      TOM_RUN_FILL_6,
+      SIXTEENTH_TOM_CASCADE_FILL_6
     ),
   },
   {
@@ -988,6 +1526,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      FLAM_ACCENT_FILL,
+      TOM_RUN_FILL
     ),
   },
   {
@@ -1000,6 +1541,9 @@ const SEEDS: LessonSeed[] = [
       100,
       [line("ride", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3)],
       [line("ride", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3), line("crash", CRASH_BEAT1)]
+    ,
+      DOUBLE_STROKE_ROLL_TOM_FILL,
+      EIGHTH_FILL
     ),
   },
   {
@@ -1037,6 +1581,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      FIVE_STROKE_ROLL_FILL,
+      FLAM_ACCENT_FILL
     ),
   },
   {
@@ -1064,6 +1611,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", measure(null, null, null, "n-quarter")),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      DRAG_TAP_FILL,
+      TOM_RUN_REVERSE_FILL
     ),
   },
   {
@@ -1091,6 +1641,9 @@ const SEEDS: LessonSeed[] = [
         line("rimshot", measure(null, "n-quarter", null, "n-quarter")),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      FLAM_ACCENT_FILL,
+      SIXTEENTH_TOM_CASCADE_FILL
     ),
   },
   {
@@ -1112,6 +1665,9 @@ const SEEDS: LessonSeed[] = [
         line("hihatClosed", HIHAT_EIGHTHS),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      DOUBLE_STROKE_ROLL_TOM_FILL,
+      FIVE_STROKE_ROLL_FILL
     ),
   },
   {
@@ -1149,6 +1705,9 @@ const SEEDS: LessonSeed[] = [
         line("rimshot", measure(custom(R("eighth"), N("eighth")), custom(R("eighth"), N("eighth")), custom(R("eighth"), N("eighth")), custom(R("eighth"), N("eighth")))),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      DRAG_TAP_FILL,
+      ALTERNATING_SIXTEENTH_FILL
     ),
   },
   {
@@ -1176,6 +1735,9 @@ const SEEDS: LessonSeed[] = [
         line("hihatClosed", HIHAT_EIGHTHS),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      FIVE_STROKE_ROLL_FILL,
+      FLAM_ACCENT_FILL
     ),
   },
   {
@@ -1188,6 +1750,9 @@ const SEEDS: LessonSeed[] = [
       190,
       [line("kick", HIHAT_EIGHTHS), line("snare", HIHAT_EIGHTHS), line("hihatClosed", HIHAT_EIGHTHS)],
       [line("kick", HIHAT_EIGHTHS), line("snare", HIHAT_EIGHTHS), line("crash", HIHAT_EIGHTHS)]
+    ,
+      EIGHTH_FILL,
+      TOM_RUN_FILL
     ),
   },
   {
@@ -1225,6 +1790,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      PARADIDDLE_FILL,
+      DOUBLE_STROKE_ROLL_TOM_FILL
     ),
   },
   {
@@ -1252,7 +1820,7 @@ const SEEDS: LessonSeed[] = [
         line("lowTom", measure(null, null, "n-quarter", null, null)),
         line("snare", measure(null, null, null, "n-quarter", "n-quarter")),
       ],
-      TOM_RUN_FILL
+      TOM_RUN_FILL_5
     ),
   },
   {
@@ -1274,6 +1842,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", measure("n-quarter", null, custom(N("eighth", "ghost"), N("eighth", "accent")), null)),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      FLAM_ACCENT_FILL,
+      DRAG_TAP_FILL
     ),
   },
   {
@@ -1386,6 +1957,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      LINEAR_SIXTEENTH_FILL,
+      EIGHTH_FILL
     ),
   },
   {
@@ -1403,6 +1977,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      TRIPLET_FILL,
+      LINEAR_SIXTEENTH_FILL
     ),
   },
   {
@@ -1451,6 +2028,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", measure(custom(R("sixteenth"), N("sixteenth", "ghost"), R("sixteenth"), N("sixteenth")), "n-quarter", custom(R("sixteenth"), N("sixteenth", "ghost"), R("sixteenth"), N("sixteenth")), "n-quarter")),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      PARADIDDLE_FILL,
+      TRIPLET_FILL
     ),
   },
   {
@@ -1463,6 +2043,9 @@ const SEEDS: LessonSeed[] = [
       150,
       [line("kick", DOUBLE_KICK_ALT), line("hihatClosed", HIHAT_QUARTERS), line("snare", BACKBEAT_SNARE)],
       [line("kick", DOUBLE_KICK_ALT), line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("crash", CRASH_BEAT1)]
+    ,
+      LINEAR_SIXTEENTH_FILL,
+      DOUBLE_STROKE_ROLL_TOM_FILL
     ),
   },
   {
@@ -1484,6 +2067,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", measure(null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, "n-quarter")),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      TRIPLET_FILL,
+      LINEAR_SIXTEENTH_FILL
     ),
   },
   {
@@ -1505,6 +2091,9 @@ const SEEDS: LessonSeed[] = [
         line("hihatClosed", HIHAT_EIGHTHS),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      PARADIDDLE_FILL,
+      FLAM_ACCENT_FILL
     ),
   },
   {
@@ -1517,6 +2106,9 @@ const SEEDS: LessonSeed[] = [
       92,
       [line("snare", GHOST_CASCADE_SNARE), line("hihatClosed", HIHAT_SIXTEENTHS), line("kick", KICK_1_AND_3)],
       [line("snare", GHOST_CASCADE_SNARE), line("hihatClosed", HIHAT_SIXTEENTHS), line("kick", KICK_1_AND_3), line("crash", CRASH_BEAT1)]
+    ,
+      DRAG_TAP_FILL,
+      FIVE_STROKE_ROLL_FILL
     ),
   },
   {
@@ -1615,7 +2207,7 @@ const SEEDS: LessonSeed[] = [
         line("lowTom", measure(null, null, "n-quarter", null, null)),
         line("snare", measure(null, null, null, "n-quarter", "n-quarter")),
       ],
-      EIGHTH_FILL
+      EIGHTH_FILL_5
     ),
   },
   {
@@ -1637,6 +2229,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", measure(GHOST_TAIL, null, GHOST_TAIL, null, null, null, "n-quarter")),
         line("crash", measure("n-quarter", null, null, null, null, null, null)),
       ]
+    ,
+      TOM_RUN_FILL_7,
+      FLAM_ACCENT_FILL_7
     ),
   },
   {
@@ -1672,6 +2267,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", HIHAT_QUARTERS),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      DRAG_TAP_FILL,
+      FIVE_STROKE_ROLL_FILL
     ),
   },
   {
@@ -1693,6 +2291,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", measure(null, "n-quarter", null, custom(N("eighth", "accent"), N("eighth")))),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      EIGHTH_FILL,
+      KICK_SNARE_TRADE_FILL
     ),
   },
   {
@@ -1714,6 +2315,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      LINEAR_SIXTEENTH_FILL,
+      PARADIDDLE_FILL
     ),
   },
   {
@@ -1738,6 +2342,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      SIXTEENTH_TOM_CASCADE_FILL,
+      TRIPLET_FILL
     ),
   },
   {
@@ -1761,6 +2368,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      TRIPLET_FILL,
+      LINEAR_SIXTEENTH_FILL
     ),
   },
   {
@@ -1801,6 +2411,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", measure("n-quarter", null, null, null)),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      CRESCENDO_SNARE_FILL,
+      FULL_KIT_GHOST_TO_ACCENT_TOM_FILL
     ),
   },
   {
@@ -1824,6 +2437,9 @@ const SEEDS: LessonSeed[] = [
         line("hihatOpen", measure(null, null, OFFBEAT_EIGHTH, OFFBEAT_EIGHTH)),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      ROLLING_SIXTEENTH_TRIPLET_FILL,
+      FULL_KIT_GHOST_TO_ACCENT_TOM_FILL
     ),
   },
   {
@@ -1844,6 +2460,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", measure(OFFBEAT_EIGHTH, OFFBEAT_EIGHTH, OFFBEAT_EIGHTH, OFFBEAT_EIGHTH)),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      EIGHTH_FILL,
+      LINEAR_SIXTEENTH_FILL
     ),
   },
   {
@@ -1865,6 +2484,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      TRIPLET_FILL,
+      CRESCENDO_SNARE_FILL
     ),
   },
   {
@@ -1882,6 +2504,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      FULL_KIT_GHOST_TO_ACCENT_TOM_FILL,
+      PARADIDDLE_FILL
     ),
   },
   {
@@ -1918,6 +2543,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      ROLLING_SIXTEENTH_TRIPLET_FILL,
+      TRIPLET_FILL
     ),
   },
   {
@@ -1939,6 +2567,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", measure(null, null, "n-quarter", null, "n-quarter")),
         line("crash", measure("n-quarter", null, null, null, null)),
       ]
+    ,
+      TOM_RUN_FILL_5,
+      CRESCENDO_SNARE_FILL_5
     ),
   },
   {
@@ -1976,6 +2607,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", measure(null, null, null, "n-quarter")),
       ]
+    ,
+      FULL_KIT_GHOST_TO_ACCENT_TOM_FILL,
+      ROLLING_SIXTEENTH_TRIPLET_FILL
     ),
   },
   {
@@ -1993,6 +2627,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", GHOST_BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      CRESCENDO_SNARE_FILL,
+      FULL_KIT_GHOST_TO_ACCENT_TOM_FILL
     ),
   },
   {
@@ -2010,6 +2647,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      PARADIDDLE_FILL,
+      ROLLING_SIXTEENTH_TRIPLET_FILL
     ),
   },
   {
@@ -2031,6 +2671,9 @@ const SEEDS: LessonSeed[] = [
         line("rimshot", measure("n-quarter", null, "n-quarter", null, null, "n-quarter")),
         line("crash", measure("n-quarter", null, null, null, null, null)),
       ]
+    ,
+      TOM_RUN_FILL_6,
+      FULL_KIT_GHOST_TO_ACCENT_TOM_FILL_6
     ),
   },
   {
@@ -2048,6 +2691,9 @@ const SEEDS: LessonSeed[] = [
         line("hihatClosed", HIHAT_QUARTERS),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      DOUBLE_STROKE_ROLL_TOM_FILL,
+      ROLLING_SIXTEENTH_TRIPLET_FILL
     ),
   },
   {
@@ -2069,6 +2715,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      FLAM_ACCENT_FILL,
+      FULL_KIT_GHOST_TO_ACCENT_TOM_FILL
     ),
   },
   {
@@ -2100,6 +2749,9 @@ const SEEDS: LessonSeed[] = [
       128,
       [line("kick", HIHAT_SIXTEENTHS), line("snare", GHOST_CASCADE_SNARE), line("hihatClosed", HIHAT_QUARTERS)],
       [line("kick", HIHAT_SIXTEENTHS), line("snare", GHOST_CASCADE_SNARE), line("hihatClosed", HIHAT_QUARTERS), line("crash", CRASH_BEAT1)]
+    ,
+      DRAG_TAP_FILL,
+      ROLLING_SIXTEENTH_TRIPLET_FILL
     ),
   },
   {
@@ -2112,6 +2764,9 @@ const SEEDS: LessonSeed[] = [
       96,
       [line("hihatClosed", measure("n-de-s", "n-de-s", "n-de-s", "n-de-s")), line("kick", KICK_1_AND_3), line("snare", BACKBEAT_SNARE)],
       [line("hihatClosed", measure("n-de-s", "n-de-s", "n-de-s", "n-de-s")), line("kick", KICK_1_AND_3), line("snare", BACKBEAT_SNARE), line("crash", CRASH_BEAT1)]
+    ,
+      TRIPLET_FILL,
+      CRESCENDO_SNARE_FILL
     ),
   },
   {
@@ -2133,6 +2788,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      PARADIDDLE_FILL,
+      DOUBLE_STROKE_ROLL_TOM_FILL
     ),
   },
   {
@@ -2168,6 +2826,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", BACKBEAT_SNARE),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      FULL_KIT_GHOST_TO_ACCENT_TOM_FILL,
+      ROLLING_SIXTEENTH_TRIPLET_FILL
     ),
   },
   {
@@ -2185,6 +2846,9 @@ const SEEDS: LessonSeed[] = [
         line("hihatClosed", HIHAT_EIGHTHS),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      VIRTUOSO_COMBO_FILL,
+      ROLLING_SIXTEENTH_TRIPLET_FILL
     ),
   },
   {
@@ -2206,6 +2870,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", measure(null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, "n-quarter", null)),
         line("crash", measure("n-quarter", null, null, null, null)),
       ]
+    ,
+      TOM_RUN_FILL_5,
+      LINEAR_SIXTEENTH_FILL_5
     ),
   },
   {
@@ -2259,6 +2926,9 @@ const SEEDS: LessonSeed[] = [
         line("kick", KICK_1_AND_3),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      VIRTUOSO_COMBO_FILL,
+      PARADIDDLE_FILL
     ),
   },
   {
@@ -2280,6 +2950,9 @@ const SEEDS: LessonSeed[] = [
         line("hihatClosed", HIHAT_EIGHTHS),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      FULL_KIT_GHOST_TO_ACCENT_TOM_FILL,
+      VIRTUOSO_COMBO_FILL
     ),
   },
   {
@@ -2301,6 +2974,9 @@ const SEEDS: LessonSeed[] = [
         line("snare", measure(null, custom(N("eighthTriplet"), R("eighthTriplet"), R("eighthTriplet")), null, custom(N("eighthTriplet"), R("eighthTriplet"), R("eighthTriplet")))),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      VIRTUOSO_COMBO_FILL,
+      TRIPLET_FILL
     ),
   },
   {
@@ -2351,6 +3027,9 @@ const SEEDS: LessonSeed[] = [
         line("hihatClosed", HIHAT_EIGHTHS),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      FLAM_ACCENT_FILL,
+      VIRTUOSO_COMBO_FILL
     ),
   },
   {
@@ -2389,7 +3068,7 @@ const SEEDS: LessonSeed[] = [
           )
         ),
       ],
-      TOM_RUN_FILL
+      TOM_RUN_FILL_7
     ),
   },
   {
@@ -2407,6 +3086,9 @@ const SEEDS: LessonSeed[] = [
         line("hihatClosed", HIHAT_EIGHTHS),
         line("crash", CRASH_BEAT1),
       ]
+    ,
+      VIRTUOSO_COMBO_FILL,
+      FULL_KIT_GHOST_TO_ACCENT_TOM_FILL
     ),
   },
   {

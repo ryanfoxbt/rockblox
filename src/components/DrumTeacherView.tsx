@@ -848,6 +848,7 @@ export function DrumTeacherView({
             </>
           )}
         </p>
+        <p className="text-center text-[11px] italic text-white/30">Sticking may be whack.</p>
       </div>
     </div>
   );
