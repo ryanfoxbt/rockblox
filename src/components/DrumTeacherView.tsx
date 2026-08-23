@@ -92,8 +92,29 @@ const FLASH_FADE_S = 0.32;
 const WINDUP_S = 0.22;
 const LIFT_PEAK = 0.42;
 
+// How long the Unhinged Kit's fart cloud takes to drift from the monkey's
+// butt up to the drummer's face — deliberately much longer than the quick
+// impact bump, since a smell lingers well after the kick that caused it.
+const RISE_DURATION_S = 0.9;
+
+// How a flamingo cymbal stand wobbles after getting knocked — a damped
+// sine, oscillating WOBBLE_FREQ_HZ times a second and dying out to nothing
+// over WOBBLE_DURATION_S.
+const WOBBLE_DURATION_S = 0.5;
+const WOBBLE_FREQ_HZ = 5.5;
+const WOBBLE_AMP_DEG = 9;
+
 function velocityPeak(accent?: "accent" | "ghost"): number {
   return accent === "accent" ? 1 : accent === "ghost" ? 0.55 : 0.8;
+}
+
+// 0 outside [riseStart, fallEnd], ramping up to 1 across [riseStart, riseEnd]
+// and back down across [fallStart, fallEnd] — a smooth "on for this stretch
+// of t" window, used to fade the stink-reaction in and back out.
+function rampWindow(t: number, riseStart: number, riseEnd: number, fallStart: number, fallEnd: number): number {
+  const up = Math.max(0, Math.min(1, (t - riseStart) / (riseEnd - riseStart)));
+  const down = 1 - Math.max(0, Math.min(1, (t - fallStart) / (fallEnd - fallStart)));
+  return Math.min(up, down);
 }
 
 // The most recent event at-or-before `abs` in a beat-sorted list, wrapping
@@ -139,12 +160,143 @@ function lerpAngle(a: number, b: number, t: number): number {
   return a + diff * t;
 }
 
-function StickLimb({ elRef, thickness = 9 }: { elRef: Ref<SVGGElement>; thickness?: number }) {
+// The local x-offset (within .head-group's own coordinate space) of the
+// nose/.tip circle — poseArm translates .head-group by `dist - NOSE_LOCAL_X`
+// each frame so the nose itself, not the group's origin, is what actually
+// lands on the drum.
+const NOSE_LOCAL_X = 24;
+
+type StickVariant = "classic" | "ferret" | "skunk";
+
+interface AnimalVariant {
+  bodyFill: string;
+  bodyStroke: string;
+  earFill: string;
+  noseFill: string;
+  maskFill?: string; // a ferret's dark eye-mask marking
+  stripeFill?: string; // a skunk's back stripe
+}
+
+const CLASSIC: AnimalVariant = {
+  bodyFill: "#d2a066",
+  bodyStroke: "#8a6238",
+  earFill: "#d2a066",
+  noseFill: "#fcd9a8",
+};
+
+const FERRET: AnimalVariant = {
+  bodyFill: "#c9985a",
+  bodyStroke: "#8a6238",
+  earFill: "#a97845",
+  noseFill: "#f472b6",
+  maskFill: "#5b3a20",
+};
+
+const SKUNK: AnimalVariant = {
+  bodyFill: "#20242b",
+  bodyStroke: "#0b0d11",
+  earFill: "#20242b",
+  noseFill: "#0f172a",
+  stripeFill: "#f8fafc",
+};
+
+const STICK_VARIANTS: Record<StickVariant, AnimalVariant> = { classic: CLASSIC, ferret: FERRET, skunk: SKUNK };
+
+// A cymbal stand, Unhinged Kit style — a one-legged flamingo whose neck
+// stretches all the way up to wherever the cymbal actually sits. Pivots
+// (via elRef, from its feet — see wobbleTransformOrigin) into a wobble
+// whenever its cymbal gets hit.
+function FlamingoStand({
+  cx,
+  topY,
+  groundY = 470,
+  elRef,
+}: {
+  cx: number;
+  topY: number;
+  groundY?: number;
+  elRef?: Ref<SVGGElement>;
+}) {
+  const bodyY = groundY - 30;
+  const headY = topY + 6;
+  const neckMidX = cx + 22;
+  const neckMidY = (bodyY + headY) / 2;
+  return (
+    <g ref={elRef} style={{ transformOrigin: `${cx}px ${groundY}px` }}>
+      <path
+        d={`M ${cx - 3} ${groundY} L ${cx + 5} ${groundY - 18} L ${cx - 1} ${bodyY}`}
+        stroke="#fb7185"
+        strokeWidth={3.5}
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <ellipse cx={cx - 3} cy={groundY + 1} rx={7} ry={2.5} fill="#fb7185" />
+      <ellipse cx={cx - 1} cy={bodyY} rx={16} ry={11} fill="#f9a8d4" stroke="#ec4899" strokeWidth={2} />
+      <path d={`M ${cx - 15} ${bodyY - 3} q -9 -2 -10 6`} stroke="#f9a8d4" strokeWidth={4} fill="none" strokeLinecap="round" />
+      <path
+        d={`M ${cx + 6} ${bodyY - 6} Q ${neckMidX} ${neckMidY}, ${cx + 2} ${headY}`}
+        stroke="#f9a8d4"
+        strokeWidth={6}
+        fill="none"
+        strokeLinecap="round"
+      />
+      <circle cx={cx + 2} cy={headY} r={7} fill="#f9a8d4" stroke="#ec4899" strokeWidth={1.5} />
+      <path d={`M ${cx + 8} ${headY} L ${cx + 19} ${headY + 3} L ${cx + 8} ${headY + 4.5} Z`} fill="#292524" />
+      <circle cx={cx + 4} cy={headY - 3} r={1.3} fill="#292524" />
+    </g>
+  );
+}
+
+// The right/left drumsticks — either a plain stick, or (in Unhinged Kit) a
+// ferret/skunk held by the tail, striking nose-first. Same rig underneath
+// either way: .forearm is the human hand/arm, .body is the stretchy bit
+// standing in for the stick's shaft, .head-group carries the face (with
+// .tip, the nose, as the actual impact point poseArm aims at a drum), and
+// .tongue is a lick that flicks out on contact — unhinged-variants only.
+function AnimalStick({ elRef, variant }: { elRef: Ref<SVGGElement>; variant: StickVariant }) {
+  const v = STICK_VARIANTS[variant];
+  const silly = variant !== "classic";
+  const bodyThickness = silly ? 18 : 7;
   return (
     <g ref={elRef}>
-      <rect className="forearm" x={0} y={-thickness / 2} width={0} height={thickness} rx={thickness / 2} fill="#e2b48b" stroke="#b3855f" strokeWidth={1.5} />
-      <rect className="stick" x={0} y={-3} width={0} height={6} rx={3} fill="#d2a066" stroke="#8a6238" strokeWidth={1} />
-      <circle className="tip" cx={0} cy={0} r={7} fill="#fde68a" />
+      <rect className="forearm" x={0} y={-4.5} width={0} height={9} rx={4.5} fill="#e2b48b" stroke="#b3855f" strokeWidth={1.5} />
+
+      {/* The end you're gripping — a skunk's famous bushy tail, or a
+          ferret's much humbler one. Classic mode has no tail to hold. */}
+      {silly && (
+        <g className="tail-group">
+          {variant === "skunk" ? (
+            <>
+              <ellipse cx={-2} cy={-9} rx={14} ry={10} fill={v.bodyFill} stroke={v.bodyStroke} strokeWidth={1.5} />
+              <ellipse cx={-13} cy={-16} rx={9} ry={6} fill={v.stripeFill} />
+              <ellipse cx={4} cy={-4} rx={8} ry={5} fill={v.stripeFill} opacity={0.85} />
+            </>
+          ) : (
+            <ellipse cx={-8} cy={3} rx={12} ry={4.5} fill={v.bodyFill} stroke={v.bodyStroke} strokeWidth={1.2} transform="rotate(18 -8 3)" />
+          )}
+        </g>
+      )}
+
+      <rect className="body" x={0} y={-bodyThickness / 2} width={0} height={bodyThickness} rx={bodyThickness / 2} fill={v.bodyFill} stroke={v.bodyStroke} strokeWidth={1.5} />
+      {v.stripeFill && <rect className="stripe" x={0} y={-4} width={0} height={8} rx={4} fill={v.stripeFill} />}
+
+      <g className="head-group">
+        {silly && (
+          <>
+            <ellipse cx={12} cy={0} rx={15} ry={11} fill={v.bodyFill} stroke={v.bodyStroke} strokeWidth={1.5} />
+            <ellipse cx={6} cy={-9} rx={5} ry={6} fill={v.earFill} stroke={v.bodyStroke} strokeWidth={1} />
+            <ellipse cx={18} cy={-9} rx={5} ry={6} fill={v.earFill} stroke={v.bodyStroke} strokeWidth={1} />
+            {v.maskFill && <ellipse cx={14} cy={-1} rx={9} ry={4} fill={v.maskFill} opacity={0.75} />}
+            <circle cx={8} cy={-3} r={2} fill="#0f172a" />
+            <circle cx={16} cy={-3} r={2} fill="#0f172a" />
+          </>
+        )}
+        {silly && (
+          <rect className="tongue" x={NOSE_LOCAL_X} y={2} width={0} height={5} rx={2.5} fill="#f43f5e" stroke="#be123c" strokeWidth={0.75} />
+        )}
+        <circle className="tip" data-rest-fill={v.noseFill} cx={NOSE_LOCAL_X} cy={1} r={silly ? 6 : 5} fill={v.noseFill} />
+      </g>
     </g>
   );
 }
@@ -167,11 +319,19 @@ export function DrumTeacherView({
   const rightArmRef = useRef<SVGGElement>(null);
   const beaterRef = useRef<SVGGElement>(null);
   const kickFootRef = useRef<SVGGElement>(null);
+  const fartCloudRef = useRef<SVGGElement>(null);
+  const headEmojiRef = useRef<SVGTextElement>(null);
+  const stinkLinesRef = useRef<SVGGElement>(null);
   const overlayRefs = useRef<Partial<Record<VisualPiece, SVGElement>>>({});
+  const flamingoRefs = useRef<Partial<Record<VisualPiece, SVGGElement>>>({});
+  const snareTongueRef = useRef<SVGRectElement>(null);
 
   const [bpm, setBpm] = useState(DEFAULT_TEACHER_BPM);
   const [isPlaying, setIsPlaying] = useState(false);
   const [samplesLoading, setSamplesLoading] = useState(true);
+  // Off by default — the ferret/skunk/monkey-butt kit is fun but a lot to
+  // look at while you're trying to actually learn a beat.
+  const [unhinged, setUnhinged] = useState(false);
   const playerRef = useRef<RockBloxPlayer | null>(null);
 
   // This view owns its own player entirely separate from the main editor's —
@@ -254,15 +414,26 @@ export function DrumTeacherView({
     const d = Math.max(1, dist);
     g.setAttribute("transform", `translate(${pivot.x} ${pivot.y}) rotate(${angleDeg})`);
     const forearm = g.querySelector<SVGRectElement>(".forearm");
-    const stick = g.querySelector<SVGRectElement>(".stick");
+    const body = g.querySelector<SVGRectElement>(".body");
+    const stripe = g.querySelector<SVGRectElement>(".stripe");
+    const tailGroup = g.querySelector<SVGGElement>(".tail-group");
+    const headGroup = g.querySelector<SVGGElement>(".head-group");
     const tip = g.querySelector<SVGCircleElement>(".tip");
-    const handDist = d * 0.62;
+    const tongue = g.querySelector<SVGRectElement>(".tongue");
+    const handDist = d * 0.55;
+    const bodyWidth = Math.max(1, d - handDist);
     forearm?.setAttribute("width", String(handDist));
-    stick?.setAttribute("x", String(handDist));
-    stick?.setAttribute("width", String(d - handDist));
-    tip?.setAttribute("cx", String(d));
-    tip?.setAttribute("r", String(6 + impact * 6));
-    tip?.setAttribute("fill", impact > 0.05 ? "#fde047" : "#fcd9a8");
+    body?.setAttribute("x", String(handDist));
+    body?.setAttribute("width", String(bodyWidth));
+    stripe?.setAttribute("x", String(handDist));
+    stripe?.setAttribute("width", String(bodyWidth));
+    tailGroup?.setAttribute("transform", `translate(${handDist} 0)`);
+    headGroup?.setAttribute("transform", `translate(${d - NOSE_LOCAL_X} 0)`);
+    tip?.setAttribute("r", String(5 + impact * 5));
+    tip?.setAttribute("fill", impact > 0.05 ? "#fde047" : tip?.getAttribute("data-rest-fill") || "#fcd9a8");
+    // A lick — the tongue flicks out to roughly the same beat the impact
+    // flash/tip-bump decays on, so it reads as "touched, then pulled back."
+    tongue?.setAttribute("width", String(Math.max(0, impact) * 15));
   }
 
   function angleTo(pivot: { x: number; y: number }, target: { x: number; y: number }): number {
@@ -332,22 +503,52 @@ export function DrumTeacherView({
       beater.querySelector("rect")?.setAttribute("width", String(bdist));
       beater.querySelector("circle")?.setAttribute("cx", String(bdist));
     }
+    const fartCloud = fartCloudRef.current;
+    const headEmoji = headEmojiRef.current;
+    const stinkLines = stinkLinesRef.current;
+    if (fartCloud) {
+      // The cloud rises from the butt toward his face over RISE_DURATION_S —
+      // a much longer, slower arc than the quick impact bump above, since a
+      // smell lingers and drifts well after the kick itself has landed.
+      const sinceKickS = kickFound ? kickFound.sinceBeats * secondsPerBeat : Infinity;
+      const riseT = Math.max(0, Math.min(1, sinceKickS / RISE_DURATION_S));
+      const cloudX = KICK_STRIKE_POINT.x + (HEAD.x - KICK_STRIKE_POINT.x) * riseT;
+      const cloudY = KICK_STRIKE_POINT.y + (HEAD.y + HEAD.r + 6 - KICK_STRIKE_POINT.y) * riseT;
+      const fadeIn = Math.min(1, riseT / 0.1);
+      const fadeOut = Math.min(1, (1 - riseT) / 0.15);
+      fartCloud.style.opacity = String(Math.min(fadeIn, fadeOut) * 0.85);
+      fartCloud.setAttribute("transform", `translate(${cloudX} ${cloudY}) scale(${0.5 + riseT * 0.7})`);
+
+      // Once the cloud's mostly reached his face, he reacts to the stink.
+      const reactAmount = rampWindow(riseT, 0.45, 0.6, 0.82, 0.95);
+      if (headEmoji) headEmoji.textContent = reactAmount > 0.5 ? "🤢" : "💩";
+      if (stinkLines) stinkLines.style.opacity = String(reactAmount);
+    }
 
     for (const shape of DRUM_SHAPES) {
+      const found = abs === null ? null : mostRecentEvent(eventsByPiece[shape.id], abs, measureLength);
+      const sinceS = found ? found.sinceBeats * secondsPerBeat : Infinity;
+      const fade = found ? Math.max(0, 1 - sinceS / FLASH_FADE_S) * velocityPeak(found.event.accent) : 0;
+
       const el = overlayRefs.current[shape.id];
-      if (!el) continue;
-      if (abs === null) {
-        el.style.opacity = "0";
-        continue;
+      if (el) el.style.opacity = String(fade);
+
+      // Flamingo stands wobble on their feet for a bit after their cymbal
+      // gets hit — a damped oscillation, same "recompute fresh from how
+      // long ago" logic as everything else here.
+      const flamingo = flamingoRefs.current[shape.id];
+      if (flamingo) {
+        const wobble =
+          sinceS < WOBBLE_DURATION_S
+            ? Math.sin(sinceS * WOBBLE_FREQ_HZ * Math.PI * 2) * WOBBLE_AMP_DEG * (1 - sinceS / WOBBLE_DURATION_S)
+            : 0;
+        flamingo.style.transform = `rotate(${wobble}deg)`;
       }
-      const found = mostRecentEvent(eventsByPiece[shape.id], abs, measureLength);
-      if (!found) {
-        el.style.opacity = "0";
-        continue;
+
+      // The snare's monkey face sticks its tongue out on every hit.
+      if (shape.id === "snare") {
+        snareTongueRef.current?.setAttribute("height", String(Math.max(0, fade) * 16));
       }
-      const sinceS = found.sinceBeats * secondsPerBeat;
-      const fade = Math.max(0, 1 - sinceS / FLASH_FADE_S) * velocityPeak(found.event.accent);
-      el.style.opacity = String(fade);
     }
   }
 
@@ -412,6 +613,20 @@ export function DrumTeacherView({
           />
           <span className="w-16 text-sm text-white/80">{bpm} BPM</span>
         </div>
+        <button
+          type="button"
+          onClick={() => setUnhinged((v) => !v)}
+          title="Swap the sticks for a ferret and a skunk, the kick drum for a snow monkey, and the cymbal stands for flamingos"
+          aria-pressed={unhinged}
+          className={[
+            "rounded-full border px-4 py-1.5 text-sm font-medium transition",
+            unhinged
+              ? "border-yellow-400 bg-yellow-400/20 text-yellow-300"
+              : "border-white/15 bg-white/5 text-white/70 hover:border-yellow-400 hover:text-yellow-400",
+          ].join(" ")}
+        >
+          🦩 Unhinged Kit {unhinged ? "On" : "Off"}
+        </button>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center gap-2 overflow-auto p-6">
@@ -429,10 +644,21 @@ export function DrumTeacherView({
               </linearGradient>
             </defs>
 
-            {/* Stands (drawn first, behind everything else) */}
-            {DRUM_SHAPES.filter((p) => p.kind === "cymbal").map((p) => (
-              <line key={`stand-${p.id}`} x1={p.cx} y1={p.standTopY} x2={p.cx} y2={470} stroke="#475569" strokeWidth={4} />
-            ))}
+            {/* Stands (drawn first, behind everything else) — flamingos in Unhinged Kit */}
+            {DRUM_SHAPES.filter((p) => p.kind === "cymbal").map((p) =>
+              unhinged ? (
+                <FlamingoStand
+                  key={`stand-${p.id}`}
+                  cx={p.cx}
+                  topY={p.standTopY ?? p.cy}
+                  elRef={(el) => {
+                    if (el) flamingoRefs.current[p.id] = el;
+                  }}
+                />
+              ) : (
+                <line key={`stand-${p.id}`} x1={p.cx} y1={p.standTopY} x2={p.cx} y2={470} stroke="#475569" strokeWidth={4} />
+              )
+            )}
             <line x1={320} y1={362} x2={320} y2={430} stroke="#475569" strokeWidth={4} />
 
             {/* The seated drummer, behind the kit pieces it's reaching around */}
@@ -441,12 +667,99 @@ export function DrumTeacherView({
             <line x1={HIP.left.x} y1={HIP.left.y} x2={LEFT_FOOT.x} y2={LEFT_FOOT.y} stroke="#94a3b8" strokeWidth={16} strokeLinecap="round" />
             <line x1={HIP.right.x} y1={HIP.right.y} x2={KICK_PEDAL_FOOT_REST.x} y2={KICK_PEDAL_FOOT_REST.y} stroke="#94a3b8" strokeWidth={16} strokeLinecap="round" />
             <rect x={TORSO.x - TORSO.w / 2} y={TORSO.y - TORSO.h / 2} width={TORSO.w} height={TORSO.h} rx={28} fill="#38bdf8" />
-            <circle cx={HEAD.x} cy={HEAD.y} r={HEAD.r} fill="#f4c9a0" />
+            {unhinged ? (
+              <>
+                <text
+                  ref={headEmojiRef}
+                  x={HEAD.x}
+                  y={HEAD.y + HEAD.r * 0.65}
+                  textAnchor="middle"
+                  fontSize={HEAD.r * 2.1}
+                  className="select-none"
+                >
+                  💩
+                </text>
+                {/* Stink lines — faded in only while the fart cloud is
+                    actually reaching his face (see applyPose's reactAmount). */}
+                <g ref={stinkLinesRef} style={{ opacity: 0 }}>
+                  <path d={`M ${HEAD.x - 34} ${HEAD.y - 6} q -8 -10 0 -20 q 8 -10 0 -20`} stroke="#a3e635" strokeWidth={3} fill="none" strokeLinecap="round" />
+                  <path d={`M ${HEAD.x + 34} ${HEAD.y - 6} q 8 -10 0 -20 q -8 -10 0 -20`} stroke="#a3e635" strokeWidth={3} fill="none" strokeLinecap="round" />
+                </g>
+              </>
+            ) : (
+              <circle cx={HEAD.x} cy={HEAD.y} r={HEAD.r} fill="#f4c9a0" />
+            )}
 
             {/* Kit pieces */}
             {DRUM_SHAPES.map((p) => (
               <g key={p.id}>
-                {p.kind === "drum" ? (
+                {p.id === "snare" && unhinged ? (
+                  <>
+                    {/* A snow monkey's face on the snare head — same pink
+                        bare-skin coloring as the kick's rear end, just up
+                        top this time. Tongue (see snareTongueRef) sticks
+                        out on every hit. */}
+                    <rect
+                      x={p.cx - p.rx}
+                      y={p.cy - p.ry * 0.3}
+                      width={p.rx * 2}
+                      height={p.ry * 1.6}
+                      rx={p.rx * 0.3}
+                      fill="#cbd5e1"
+                      stroke="#1e293b"
+                      strokeWidth={2}
+                    />
+                    <ellipse cx={p.cx} cy={p.cy - p.ry * 0.3} rx={p.rx} ry={p.ry * 0.55} fill="#f1f5f9" stroke="#94a3b8" strokeWidth={2} />
+                    <ellipse cx={p.cx} cy={p.cy - p.ry * 0.22} rx={p.rx * 0.62} ry={p.ry * 0.42} fill="#e8919e" stroke="#c2687a" strokeWidth={1.5} />
+                    <circle cx={p.cx - p.rx * 0.28} cy={p.cy - p.ry * 0.36} r={4} fill="#1f2937" />
+                    <circle cx={p.cx + p.rx * 0.28} cy={p.cy - p.ry * 0.36} r={4} fill="#1f2937" />
+                    <ellipse cx={p.cx - 4} cy={p.cy - p.ry * 0.18} rx={2} ry={1.4} fill="#7a2e3a" />
+                    <ellipse cx={p.cx + 4} cy={p.cy - p.ry * 0.18} rx={2} ry={1.4} fill="#7a2e3a" />
+                    <path
+                      d={`M ${p.cx - 10} ${p.cy - p.ry * 0.08} Q ${p.cx} ${p.cy - p.ry * 0.02}, ${p.cx + 10} ${p.cy - p.ry * 0.08}`}
+                      stroke="#7a2e3a"
+                      strokeWidth={2}
+                      fill="none"
+                      strokeLinecap="round"
+                    />
+                    <rect
+                      ref={snareTongueRef}
+                      x={p.cx - 6}
+                      y={p.cy - p.ry * 0.06}
+                      width={12}
+                      height={0}
+                      rx={5}
+                      fill="#f43f5e"
+                      stroke="#be123c"
+                      strokeWidth={1}
+                    />
+                  </>
+                ) : p.id === "kick" && unhinged ? (
+                  <>
+                    {/* Fur-colored hips framing a snow monkey's famously
+                        bright red rear end — real macaques really do have
+                        this coloring, it's not just a bit. */}
+                    <rect
+                      x={p.cx - p.rx}
+                      y={p.cy - p.ry * 0.3}
+                      width={p.rx * 2}
+                      height={p.ry * 1.6}
+                      rx={p.rx * 0.35}
+                      fill="#8a6238"
+                      stroke="#5b3a20"
+                      strokeWidth={2}
+                    />
+                    <ellipse cx={p.cx - p.rx * 0.36} cy={p.cy + p.ry * 0.18} rx={p.rx * 0.46} ry={p.ry * 0.62} fill="#e0435b" stroke="#a01f36" strokeWidth={2} />
+                    <ellipse cx={p.cx + p.rx * 0.36} cy={p.cy + p.ry * 0.18} rx={p.rx * 0.46} ry={p.ry * 0.62} fill="#e0435b" stroke="#a01f36" strokeWidth={2} />
+                    <path
+                      d={`M ${p.cx + p.rx * 0.85} ${p.cy - p.ry * 0.1} q 22 -6 14 -26`}
+                      stroke="#8a6238"
+                      strokeWidth={6}
+                      fill="none"
+                      strokeLinecap="round"
+                    />
+                  </>
+                ) : p.kind === "drum" ? (
                   <>
                     <rect
                       x={p.cx - p.rx}
@@ -454,7 +767,7 @@ export function DrumTeacherView({
                       width={p.rx * 2}
                       height={p.ry * 1.6}
                       rx={p.rx * 0.3}
-                      fill={p.id === "kick" ? "#b91c1c" : p.id === "snare" ? "#cbd5e1" : "#7c2d12"}
+                      fill={p.id === "snare" ? "#cbd5e1" : "#7c2d12"}
                       stroke="#1e293b"
                       strokeWidth={2}
                     />
@@ -468,14 +781,14 @@ export function DrumTeacherView({
                     if (el) overlayRefs.current[p.id] = el;
                   }}
                   cx={p.cx}
-                  cy={p.kind === "drum" ? p.cy - p.ry * 0.3 : p.cy}
-                  rx={p.rx}
-                  ry={p.kind === "drum" ? p.ry * 0.55 : p.ry}
+                  cy={p.id === "kick" && unhinged ? p.cy + p.ry * 0.18 : p.kind === "drum" ? p.cy - p.ry * 0.3 : p.cy}
+                  rx={p.id === "kick" && unhinged ? p.rx * 0.9 : p.rx}
+                  ry={p.id === "kick" && unhinged ? p.ry * 0.75 : p.kind === "drum" ? p.ry * 0.55 : p.ry}
                   fill="#fde047"
                   opacity={0}
                 />
                 <text x={p.cx} y={p.cy + p.labelDy} textAnchor="middle" fontSize={13} fill="#e2e8f0" className="select-none" style={{ paintOrder: "stroke", stroke: "#0f172a", strokeWidth: 3 }}>
-                  {p.label}
+                  {p.id === "kick" && unhinged ? "Kick (a Snow Monkey's Butt)" : p.label}
                 </text>
               </g>
             ))}
@@ -492,14 +805,48 @@ export function DrumTeacherView({
               <circle cx={0} cy={0} r={11} fill="#e2e8f0" stroke="#94a3b8" strokeWidth={2} />
             </g>
 
-            {/* Arms — drawn last so the sticks read as being in front of the kit */}
-            <StickLimb elRef={leftArmRef} />
-            <StickLimb elRef={rightArmRef} />
+            {/* A fart cloud — Unhinged Kit only — puffs up every time the
+                beater connects, driven by the same kickImpact as
+                everything else the kick triggers. */}
+            {unhinged && (
+              <g ref={fartCloudRef} transform={`translate(${KICK_STRIKE_POINT.x} ${KICK_STRIKE_POINT.y}) scale(0.6)`} style={{ opacity: 0 }}>
+                <ellipse cx={-16} cy={-12} rx={17} ry={13} fill="#a3e635" opacity={0.55} />
+                <ellipse cx={14} cy={-20} rx={14} ry={11} fill="#bef264" opacity={0.5} />
+                <ellipse cx={0} cy={-32} rx={11} ry={9} fill="#d9f99d" opacity={0.5} />
+                <text
+                  x={0}
+                  y={-40}
+                  textAnchor="middle"
+                  fontSize={16}
+                  fontWeight={700}
+                  fill="#fde047"
+                  className="select-none"
+                  style={{ paintOrder: "stroke", stroke: "#78350f", strokeWidth: 2 }}
+                >
+                  pfft
+                </text>
+              </g>
+            )}
+
+            {/* Arms — drawn last so the sticks/animals read as being in front of the kit */}
+            <AnimalStick elRef={leftArmRef} variant={unhinged ? "skunk" : "classic"} />
+            <AnimalStick elRef={rightArmRef} variant={unhinged ? "ferret" : "classic"} />
           </svg>
         </div>
         <p className="max-w-2xl text-center text-xs text-white/40">
-          Left hand plays the snare/floor tom, right hand crosses over for the hi-hat plus ride/crash/toms, and the
-          right foot works the kick pedal — one common way to play it. Real drummers vary their sticking.
+          {unhinged ? (
+            <>
+              The left hand&apos;s skunk plays the snare/floor tom, the right hand&apos;s ferret crosses over for
+              the hi-hat plus ride/crash/toms, and the right foot kicks a snow monkey&apos;s butt where the bass
+              drum usually goes — one common way to play it. Real drummers vary their sticking (and typically
+              don&apos;t use animals).
+            </>
+          ) : (
+            <>
+              Left hand plays the snare/floor tom, right hand crosses over for the hi-hat plus ride/crash/toms, and
+              the right foot works the kick pedal — one common way to play it. Real drummers vary their sticking.
+            </>
+          )}
         </p>
       </div>
     </div>
