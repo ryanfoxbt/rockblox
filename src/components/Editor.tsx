@@ -15,7 +15,6 @@ import {
 import { TilePalette } from "@/components/TilePalette";
 import { LineRow } from "@/components/LineRow";
 import { Transport } from "@/components/Transport";
-import { SaveShare } from "@/components/SaveShare";
 import { SheetMusicView } from "@/components/SheetMusicView";
 import { TileVisual } from "@/components/TileVisual";
 import { FartRecorder } from "@/components/FartRecorder";
@@ -71,6 +70,7 @@ export function Editor({
   initialSlug,
   initialSlot,
   board,
+  lessonNav,
 }: {
   initialBpm?: number;
   initialLines?: StoredLine[];
@@ -81,6 +81,10 @@ export function Editor({
   // from Stacks — falls back to the first non-empty slot when absent.
   initialSlot?: SlotLetter;
   board?: BoardData;
+  // Drum School's prev/next lesson links, set only by /school/[slug] — null
+  // for either end means there's nothing to link to (Lesson 1's "Previous",
+  // the last lesson's "Next").
+  lessonNav?: { prevHref: string | null; nextHref: string | null };
 }) {
   // The homepage with nothing claimed yet: the only editor mode with no
   // board and no server-persisted pattern behind it, so it's the one case
@@ -586,7 +590,7 @@ export function Editor({
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
+      <header className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
         <div className="max-w-xl">
           <Link href="/" title="Home" className="inline-block">
             <h1 className="text-xl font-black tracking-tight transition hover:text-yellow-400 sm:text-2xl">
@@ -595,66 +599,67 @@ export function Editor({
           </Link>
           <p className="hidden text-sm text-white/50 sm:block">
             {isMobile
-              ? `Tap a tile, then tap up to ${MAX_BEATS} beat blocks per line to build a drum groove. Tap a hit again to rest it, or double-tap it to cycle accent → ghost → normal.`
-              : `Drag rhythmic values into up to ${MAX_BEATS} beat blocks per line to build a drum groove, or click a tile then click a block to place it — handy on a trackpad. Click a hit to rest it, double-click it to cycle accent → ghost → normal, or click a block's grip handle to pick it up and move it elsewhere.`}
+              ? `Tap a tile, then tap up to ${MAX_BEATS} beat blocks per line to build a drum groove.`
+              : `Drag rhythmic values into up to ${MAX_BEATS} beat blocks per line to build a drum groove, or click a tile then click a block to place it — handy on a trackpad.`}
           </p>
           {board ? (
-            <>
-              <div className="mt-1 flex flex-wrap items-center text-xs">
-                {board.readOnly ? (
-                  <span className="text-white/40">
-                    🎵 {board.subtitle} —{" "}
-                    <span className="text-yellow-400">mess around all you want, nothing here saves</span>
-                  </span>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={copyBoardLink}
-                      title="Copy this page's link"
-                      className="text-left text-white/40 transition hover:text-yellow-400"
-                    >
-                      Your page: <span className="font-mono text-yellow-400">/{board.displayName}</span>
-                      {linkCopied ? (
-                        <span className="ml-2 text-yellow-400">Copied!</span>
-                      ) : (
-                        saveStatus !== "idle" && (
-                          <span className="ml-2">
-                            {saveStatus === "saving" ? "· Saving…" : saveStatus === "error" ? "· Error" : "· Saved"}
-                          </span>
-                        )
-                      )}
-                    </button>
-                    <PresenceIndicator boardSlug={board.slug} />
-                  </>
-                )}
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <div className="flex overflow-hidden rounded-md border border-white/15">
-                  {SLOT_LETTERS.map((slot) => (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => switchSlot(slot)}
-                      title={`Beat ${slot}`}
-                      className={[
-                        "flex h-9 w-9 items-center justify-center text-sm font-semibold transition",
-                        slot === activeSlot
-                          ? "bg-yellow-400 text-slate-900"
-                          : "bg-white/5 text-white/60 hover:bg-white/10",
-                      ].join(" ")}
-                    >
-                      {slot}
-                    </button>
-                  ))}
-                </div>
-                {undoRedoButtons}
-              </div>
-            </>
-          ) : (
+            <div className="mt-1 flex flex-wrap items-center text-xs">
+              {board.readOnly ? (
+                <span className="text-white/40">
+                  🎵 {board.subtitle} —{" "}
+                  <span className="text-yellow-400">mess around all you want, nothing here saves</span>
+                </span>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={copyBoardLink}
+                    title="Copy this page's link"
+                    className="text-left text-white/40 transition hover:text-yellow-400"
+                  >
+                    Your page: <span className="font-mono text-yellow-400">/{board.displayName}</span>
+                    {linkCopied ? (
+                      <span className="ml-2 text-yellow-400">Copied!</span>
+                    ) : (
+                      saveStatus !== "idle" && (
+                        <span className="ml-2">
+                          {saveStatus === "saving" ? "· Saving…" : saveStatus === "error" ? "· Error" : "· Saved"}
+                        </span>
+                      )
+                    )}
+                  </button>
+                  <PresenceIndicator boardSlug={board.slug} />
+                </>
+              )}
+            </div>
+          ) : null}
+          {lessonNav && (
+            <div className="mt-2 flex items-center gap-2 text-xs">
+              {lessonNav.prevHref ? (
+                <Link
+                  href={lessonNav.prevHref}
+                  className="rounded-md border border-white/15 bg-white/5 px-2.5 py-1 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+                >
+                  ← Previous Lesson
+                </Link>
+              ) : (
+                <span className="rounded-md border border-white/10 px-2.5 py-1 text-white/20">← Previous Lesson</span>
+              )}
+              {lessonNav.nextHref ? (
+                <Link
+                  href={lessonNav.nextHref}
+                  className="rounded-md border border-white/15 bg-white/5 px-2.5 py-1 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+                >
+                  Next Lesson →
+                </Link>
+              ) : (
+                <span className="rounded-md border border-white/10 px-2.5 py-1 text-white/20">Next Lesson →</span>
+              )}
+            </div>
+          )}
+          {!board && (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <ClaimUrlBox bpm={bpm} lines={lines} kit={kit} customSamples={customSamples} />
-              <TextToBeatButton />
               {lastBoardName && (
                 <Link
                   href={`/${lastBoardName}`}
@@ -666,13 +671,53 @@ export function Editor({
             </div>
           )}
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-1.5">
-          {board && (
+
+        {/* Controls row: kept as one flex line (not wrapped from the header
+            above) so the right-hand group stays pinned to the right even on
+            narrow screens — a wrapped flex line with a single item collapses
+            justify-between to the start, which used to strand this group on
+            the left underneath the title instead. No overflow-x here: an
+            overflow-x other than visible forces the paired overflow-y to
+            auto too (a CSS quirk), which would clip the tools menu's
+            dropdown since it's an absolutely-positioned descendant of this
+            row — the row's few small icon buttons fit without scrolling
+            anyway. */}
+        <div className="flex flex-nowrap items-center justify-between gap-1.5">
+          <div className="flex shrink-0 flex-nowrap items-center gap-1.5">
+            {board && (
+              <div className="flex overflow-hidden rounded-md border border-white/15">
+                {SLOT_LETTERS.map((slot) => (
+                  <button
+                    key={slot}
+                    type="button"
+                    onClick={() => switchSlot(slot)}
+                    title={`Beat ${slot}`}
+                    className={[
+                      "flex h-9 w-9 items-center justify-center text-sm font-semibold transition",
+                      slot === activeSlot
+                        ? "bg-yellow-400 text-slate-900"
+                        : "bg-white/5 text-white/60 hover:bg-white/10",
+                    ].join(" ")}
+                  >
+                    {slot}
+                  </button>
+                ))}
+              </div>
+            )}
+            {undoRedoButtons}
+          </div>
+          <div className="flex shrink-0 flex-nowrap items-center gap-1.5">
             <div className="relative" ref={toolsMenuRef}>
               <button
                 type="button"
                 onClick={() => setToolsMenuOpen((v) => !v)}
-                title={board.readOnly ? "Stacks, Save a copy, Inspiration" : "Stacks, TextyBeat, Wall, Inspiration"}
+                title={
+                  board
+                    ? board.readOnly
+                      ? "Stacks, Save a copy, Inspiration"
+                      : "Stacks, TextyBeat, Wall, Inspiration"
+                    : "TextyBeat, Inspiration"
+                }
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
@@ -690,26 +735,31 @@ export function Editor({
                 // z-index), and the outside-click handler above closes it
                 // on the next unrelated click.
                 <div className="absolute right-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-md border border-white/10 bg-slate-800 shadow-lg">
-                  <Link
-                    href={`${basePath}/stack?from=${activeSlot}`}
-                    title="Arrange your beats into a longer song"
-                    className="block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
-                  >
-                    Stacks
-                  </Link>
-                  {!board.readOnly && (
+                  {board && (
                     <>
-                      <TextToBeatButton board={board} variant="menuItem" />
-                      <WallButton boardSlug={board.slug} />
+                      <Link
+                        href={`${basePath}/stack?from=${activeSlot}`}
+                        title="Arrange your beats into a longer song"
+                        className="block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
+                      >
+                        Stacks
+                      </Link>
+                      {!board.readOnly && (
+                        <>
+                          <TextToBeatButton board={board} variant="menuItem" />
+                          <WallButton boardSlug={board.slug} />
+                        </>
+                      )}
+                      {board.readOnly && (
+                        <SaveCopyButton
+                          variant="menuItem"
+                          getSlots={currentSlotsSnapshot}
+                          getStack={() => board.stack ?? null}
+                        />
+                      )}
                     </>
                   )}
-                  {board.readOnly && (
-                    <SaveCopyButton
-                      variant="menuItem"
-                      getSlots={currentSlotsSnapshot}
-                      getStack={() => board.stack ?? null}
-                    />
-                  )}
+                  {!board && <TextToBeatButton variant="menuItem" />}
                   <RandomizeButton
                     variant="menuItem"
                     variationSources={variationSources}
@@ -721,35 +771,22 @@ export function Editor({
               {/* Song import is temporarily hidden from the UI — see SongImportButton.tsx; the
                   upload/transcribe/import API routes are untouched, just not linked to from here. */}
             </div>
-          )}
-          {!board && (
-            <>
-              {undoRedoButtons}
-              <RandomizeButton
-                variationSources={variationSources}
-                onGenerateNew={randomizeBeat}
-                onGenerateVariation={randomizeVariation}
-              />
-            </>
-          )}
-          <button
-            type="button"
-            onClick={() => setShowSheet(true)}
-            disabled={measureLength < 1}
-            title="View sheet music"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <line x1="3" y1="7" x2="21" y2="7" />
-              <line x1="3" y1="11" x2="21" y2="11" />
-              <line x1="3" y1="15" x2="21" y2="15" />
-              <circle cx="9" cy="17.5" r="2" fill="currentColor" stroke="none" />
-              <line x1="11" y1="17.5" x2="11" y2="9" />
-            </svg>
-          </button>
-          {!board && (
-            <SaveShare bpm={bpm} lines={lines} kit={kit} customSamples={customSamples} initialSlug={initialSlug} />
-          )}
+            <button
+              type="button"
+              onClick={() => setShowSheet(true)}
+              disabled={measureLength < 1}
+              title="View sheet music"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <line x1="3" y1="7" x2="21" y2="7" />
+                <line x1="3" y1="11" x2="21" y2="11" />
+                <line x1="3" y1="15" x2="21" y2="15" />
+                <circle cx="9" cy="17.5" r="2" fill="currentColor" stroke="none" />
+                <line x1="11" y1="17.5" x2="11" y2="9" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 

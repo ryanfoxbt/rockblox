@@ -1,4 +1,10 @@
+import { useRef } from "react";
 import { NOTE_FRACTION, RhythmTile } from "@/lib/rhythm";
+
+// How long a touch has to be held before it counts as a long-press (mobile's
+// accent/ghost trigger, replacing desktop's right-click/Ctrl-click) rather
+// than a plain tap (toggle rest).
+const LONG_PRESS_MS = 450;
 
 // A ghost note plays quietly (see rhythm.ts's ACCENT_VELOCITY) — shown here
 // as a dimmed, parenthesized fill, the same convention real drum charts use.
@@ -13,16 +19,32 @@ function hitFill(isRest: boolean, accent?: "accent" | "ghost"): string {
 export function TileVisual({
   tile,
   height = 32,
+  isMobile = false,
   onToggleHit,
   onCycleAccent,
 }: {
   tile: RhythmTile;
   height?: number;
+  isMobile?: boolean;
   onToggleHit?: (index: number) => void;
   // Cycles a note's dynamic level: normal -> accent -> ghost -> normal. Only
   // ever called for a "note" hit — rests have nothing to accent.
   onCycleAccent?: (index: number) => void;
 }) {
+  // Tracks an in-progress long-press (mobile) so the tap-release that
+  // follows it doesn't also fire a toggle-to-rest — a long-press already
+  // fires its own accent-cycle action, so the trailing click needs to be a
+  // no-op rather than undoing/redoing the rest state.
+  const longPressTimer = useRef<number | null>(null);
+  const longPressFired = useRef(false);
+
+  function clearLongPress() {
+    if (longPressTimer.current !== null) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
+
   return (
     <div className="flex w-full overflow-hidden rounded border border-white/20" style={{ height }}>
       {tile.hits.map((h, i) => {
@@ -56,23 +78,49 @@ export function TileVisual({
             // button starts out as a pointerdown the drag sensor sees first,
             // so it can hijack the click into a phantom drag-and-drop instead
             // of a clean toggle of just this one hit.
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => onToggleHit(i)}
-            onDoubleClick={(e) => {
-              // A double-click/double-tap fires two plain clicks first (which
-              // toggle rest twice — a net no-op) followed by this — so it
-              // reads as "leave the note/rest alone, just cycle its
-              // dynamics" without needing a second, separately-clickable
-              // target crammed into a hit that can be a few pixels wide.
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              longPressFired.current = false;
+              if (!isMobile || isRest) return;
+              longPressTimer.current = window.setTimeout(() => {
+                longPressFired.current = true;
+                onCycleAccent?.(i);
+              }, LONG_PRESS_MS);
+            }}
+            onPointerUp={clearLongPress}
+            onPointerLeave={clearLongPress}
+            onPointerCancel={clearLongPress}
+            onClick={(e) => {
+              if (isMobile) {
+                // The long-press already fired its own accent-cycle action —
+                // don't let the release's trailing click also toggle rest.
+                if (longPressFired.current) {
+                  longPressFired.current = false;
+                  return;
+                }
+                onToggleHit(i);
+                return;
+              }
+              // Ctrl-click (Windows) or Option/Alt-click (Mac) — an
+              // alternative to right-click for cycling accent/ghost, for
+              // anyone on a trackpad/mouse without an easy secondary click.
+              if ((e.ctrlKey || e.metaKey || e.altKey) && !isRest) {
+                onCycleAccent?.(i);
+                return;
+              }
+              onToggleHit(i);
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               if (!isRest) onCycleAccent?.(i);
             }}
             title={
               isRest
                 ? "Rest — tap to sound this hit"
-                : `Tap to turn this hit into a rest — double-tap to cycle accent/ghost/normal${
-                    h.accent ? ` (currently ${h.accent})` : ""
-                  }`
+                : `${isMobile ? "Tap" : "Click"} to turn this hit into a rest — ${
+                    isMobile ? "long-press" : "right-click, or Ctrl/Option-click,"
+                  } to cycle accent/ghost/normal${h.accent ? ` (currently ${h.accent})` : ""}`
             }
             className="relative h-full border-r border-black/20 transition last:border-r-0 hover:brightness-90"
             style={style}

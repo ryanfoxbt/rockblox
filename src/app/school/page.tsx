@@ -21,9 +21,9 @@ export default function DrumSchoolIndexPage() {
           Rock<span className="text-yellow-400">Blocks</span> Drum School
         </h1>
         <p className="mt-2 text-sm text-white/50">
-          Ten lessons, stepwise — each one adds a single new idea to the last. Start at Lesson 1 even if you can
-          already play a beat; the point is to see how a full groove gets built one piece at a time. Nothing you
-          change here saves, so everyone gets the same starting point.
+          {DRUM_LESSONS.length} lessons, stepwise — each one adds a single new idea to the last. Start at Lesson 1
+          even if you can already play a beat; the point is to see how a full groove gets built one piece at a
+          time. Nothing you change here saves, so everyone gets the same starting point.
         </p>
         <ul className="mt-6 flex flex-col gap-2">
           {DRUM_LESSONS.map((lesson) => (

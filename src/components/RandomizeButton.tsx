@@ -31,9 +31,10 @@ export function RandomizeButton({
   onGenerateVariation: (sourceSlot: string, kind: VariationKind, complexity: number) => void;
   // "menuItem" renders as a plain full-width row for the header's
   // consolidated tools menu (see Editor.tsx, labeled "Inspiration" there)
-  // instead of its own icon button — used on board pages, where it joins
-  // Stacks/TextyBeat/Wall there. The homepage has no such menu (nothing
-  // else to group it with), so it stays a standalone icon button there.
+  // instead of its own icon button — Editor always uses this now, on both
+  // board pages (alongside Stacks/TextyBeat/Wall) and the homepage
+  // (alongside TextyBeat). "button" remains for any other caller that wants
+  // a standalone icon.
   variant?: "button" | "menuItem";
 }) {
   const [open, setOpen] = useState(false);

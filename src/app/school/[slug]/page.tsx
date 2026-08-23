@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getDb } from "@/db";
 import { lessons } from "@/db/schema";
 import { SLOT_LETTERS } from "@/lib/board";
+import { DRUM_LESSONS } from "@/lib/drumSchool";
 import { buildShareMetadata } from "@/lib/shareMetadata";
 import { Editor } from "@/components/Editor";
 
@@ -44,6 +45,14 @@ export default async function LessonPage({
 
   const initialSlot = SLOT_LETTERS.find((l) => l === slot);
 
+  // DRUM_LESSONS is already ordered by lessonNumber (see lib/drumSchool.ts),
+  // so a lesson's neighbors in that array are its curriculum neighbors —
+  // no need to sort or look at lessonNumber directly.
+  const lessonIndex = DRUM_LESSONS.findIndex((l) => l.slug === slug);
+  const prevLesson = lessonIndex > 0 ? DRUM_LESSONS[lessonIndex - 1] : null;
+  const nextLesson =
+    lessonIndex >= 0 && lessonIndex < DRUM_LESSONS.length - 1 ? DRUM_LESSONS[lessonIndex + 1] : null;
+
   return (
     <Editor
       board={{
@@ -56,6 +65,10 @@ export default async function LessonPage({
         subtitle: `Lesson ${lesson.lessonNumber}: ${lesson.title} — ${lesson.teaches}`,
       }}
       initialSlot={initialSlot}
+      lessonNav={{
+        prevHref: prevLesson ? `/school/${prevLesson.slug}` : null,
+        nextHref: nextLesson ? `/school/${nextLesson.slug}` : null,
+      }}
     />
   );
 }
