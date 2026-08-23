@@ -108,6 +108,59 @@ const TRAIN_SNARE = measure(TRAIN_TILE, TRAIN_TILE, TRAIN_TILE, TRAIN_TILE);
 const GHOST_TAIL = custom(R("sixteenth"), R("sixteenth"), R("sixteenth"), N("sixteenth", "ghost"));
 const GHOST_BACKBEAT_SNARE = measure(GHOST_TAIL, "n-quarter", GHOST_TAIL, "n-quarter");
 
+// --- Additional building blocks for Lessons 51-100 -------------------------
+
+// Reggae-style "skank": nothing on the downbeat, a single hit on every
+// off-beat "and" — see Lesson 51.
+const OFFBEAT_EIGHTH = custom(R("eighth"), N("eighth"));
+const OFFBEAT_SKANK = measure(OFFBEAT_EIGHTH, OFFBEAT_EIGHTH, OFFBEAT_EIGHTH, OFFBEAT_EIGHTH);
+
+// Three ghost hits packed into one beat, leaving only the second sixteenth
+// silent — a denser cousin of GHOST_TAIL for Lesson 58's "cascade" and
+// Lesson 86's kick-ostinato pairing.
+const GHOST_CASCADE = custom(N("sixteenth", "ghost"), N("sixteenth", "ghost"), R("sixteenth"), N("sixteenth", "ghost"));
+const GHOST_CASCADE_SNARE = measure(GHOST_CASCADE, "n-quarter", GHOST_CASCADE, "n-quarter");
+
+// A continuous sixteenth-note kick with the accent alternating hit-to-hit —
+// approximates the alternating-foot emphasis of a double-bass-pedal player,
+// reused in Lessons 55 and 91.
+const DOUBLE_KICK_ALT = measure(
+  custom(N("sixteenth", "accent"), N("sixteenth"), N("sixteenth", "accent"), N("sixteenth")),
+  custom(N("sixteenth"), N("sixteenth", "accent"), N("sixteenth"), N("sixteenth", "accent")),
+  custom(N("sixteenth", "accent"), N("sixteenth"), N("sixteenth", "accent"), N("sixteenth")),
+  custom(N("sixteenth"), N("sixteenth", "accent"), N("sixteenth"), N("sixteenth", "accent"))
+);
+
+// A one-bar snare fill that ramps from all-ghost to all-accent across the
+// four beats — Lesson 59's dynamic crescendo, also used in Lesson 60.
+const CRESCENDO_SNARE_FILL: StoredLine[] = [
+  line(
+    "snare",
+    measure(
+      custom(N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost")),
+      custom(N("sixteenth", "ghost"), N("sixteenth"), N("sixteenth"), N("sixteenth")),
+      custom(N("sixteenth"), N("sixteenth"), N("sixteenth", "accent"), N("sixteenth")),
+      custom(N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"))
+    )
+  ),
+];
+
+// A one-bar fill built entirely from triplet subdivisions instead of
+// straight sixteenths — Lesson 61's triplet fill, also used in Lesson 70.
+const TRIPLET_FILL: StoredLine[] = [
+  line(
+    "snare",
+    measure(
+      custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")),
+      custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")),
+      null,
+      null
+    )
+  ),
+  line("highTom", measure(null, null, custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")), null)),
+  line("lowTom", measure(null, null, null, custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")))),
+];
+
 // Reused across several lessons from 11 on, same way a working drummer reuses
 // a small vocabulary of stock fills across many songs rather than inventing
 // a new one every time.
@@ -756,7 +809,7 @@ const SEEDS: LessonSeed[] = [
   {
     slug: "lesson-30-graduation",
     lessonNumber: 30,
-    title: "Graduation: A Song of Your Own",
+    title: "A Song of Your Own",
     teaches: "Verse, chorus, and bridge grooves plus a fill — everything from this course, in one song.",
     slotA: slot(96, [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3)]),
     slotB: slot(96, [
@@ -1269,7 +1322,7 @@ const SEEDS: LessonSeed[] = [
   {
     slug: "lesson-50-graduation-two",
     lessonNumber: 50,
-    title: "Graduation II: Fifty Lessons In",
+    title: "Fifty Lessons In",
     teaches: "A paradiddle-based verse, a samba-influenced bridge, a driving chorus, and a fill — the advanced half, in one song.",
     slotA: slot(100, [
       line(
@@ -1303,6 +1356,1098 @@ const SEEDS: LessonSeed[] = [
       bpm: 100,
       steps: ["A", "A", "B", "A", "C", "C", "A", "B", "D", "A"].map((s, i) => ({
         id: `step-l50-${i + 1}`,
+        slot: s as SlotLetterLocal,
+      })),
+      kitOverride: null,
+    },
+  },
+
+  // --- Lessons 51-100: the advanced back half — exotic-feeling meters within
+  // the 7-cell measure limit, more genre vocabulary (reggae, jazz, gospel,
+  // metal, breakbeat, clave, bossa — again generic public-domain rhythmic
+  // vocabulary, not any specific recording), a wider fill vocabulary
+  // (triplet, linear, call-and-response, crescendo), and lessons that
+  // deliberately combine two or more earlier ideas at once. Same bundle()
+  // shape as Lessons 11-49, with capstone full-arrangement lessons roughly
+  // every ten (60, 70, 80, 90, 99) and Lesson 100 as the true finale. ---
+
+  {
+    slug: "lesson-51-offbeat-skank-groove",
+    lessonNumber: 51,
+    title: "Offbeat Skank Groove",
+    teaches: "A hi-hat pattern voiced entirely on the off-beat 'and' of each beat, with the kick landing alone on beat 3.",
+    ...bundle(
+      51,
+      78,
+      [line("hihatClosed", OFFBEAT_SKANK), line("kick", measure(null, null, "n-quarter", null))],
+      [
+        line("hihatClosed", OFFBEAT_SKANK),
+        line("kick", measure(null, null, "n-quarter", null)),
+        line("snare", BACKBEAT_SNARE),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-52-jazz-ride-pattern",
+    lessonNumber: 52,
+    title: "Jazz Ride Pattern",
+    teaches: "A swung ride-cymbal ostinato (the 'spang-a-lang' shape) with soft snare comping underneath instead of a fixed backbeat.",
+    ...bundle(
+      52,
+      120,
+      [line("ride", SHUFFLE_HIHAT), line("snare", measure(GHOST_TAIL, GHOST_TAIL, GHOST_TAIL, GHOST_TAIL)), line("kick", measure("n-quarter", null, null, null))],
+      [
+        line("ride", SHUFFLE_HIHAT),
+        line("snare", measure(GHOST_TAIL, GHOST_TAIL, GHOST_TAIL, GHOST_TAIL)),
+        line("kick", KICK_1_AND_3),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-53-waltz-time",
+    lessonNumber: 53,
+    title: "Waltz Time: Three-Beat Feel",
+    teaches: "A 3-beat measure with the bass drum on beat 1 and the hi-hat keeping a gentle three-count, instead of grouping in four.",
+    ...bundle(
+      53,
+      138,
+      [line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter")), line("kick", measure("n-quarter", null, null))],
+      [
+        line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter")),
+        line("kick", measure("n-quarter", null, null)),
+        line("snare", measure(null, null, "n-quarter")),
+        line("crash", measure("n-quarter", null, null)),
+      ],
+      [
+        line("highTom", measure("n-quarter", null, null)),
+        line("midTom", measure(null, "n-quarter", null)),
+        line("snare", measure(null, null, "n-quarter")),
+      ],
+      [
+        line("hihatClosed", measure("n-e-e", "n-e-e", null)),
+        line("kick", measure("n-quarter", null, null)),
+        line("snare", measure(null, "n-quarter", "n-e-e")),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-54-gospel-chop-groove",
+    lessonNumber: 54,
+    title: "Gospel Chop Groove",
+    teaches: "A busy, syncopated sixteenth-note kick-and-snare conversation with the hi-hat holding steady eighths on top.",
+    ...bundle(
+      54,
+      100,
+      [
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("kick", measure("n-quarter", null, custom(N("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), null)),
+        line("snare", measure(custom(R("sixteenth"), N("sixteenth", "ghost"), R("sixteenth"), N("sixteenth")), "n-quarter", custom(R("sixteenth"), N("sixteenth", "ghost"), R("sixteenth"), N("sixteenth")), "n-quarter")),
+      ],
+      [
+        line("hihatClosed", HIHAT_SIXTEENTHS),
+        line("kick", measure("n-quarter", null, custom(N("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), null)),
+        line("snare", measure(custom(R("sixteenth"), N("sixteenth", "ghost"), R("sixteenth"), N("sixteenth")), "n-quarter", custom(R("sixteenth"), N("sixteenth", "ghost"), R("sixteenth"), N("sixteenth")), "n-quarter")),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-55-alternating-double-kick",
+    lessonNumber: 55,
+    title: "Alternating Double-Kick Feel",
+    teaches: "A continuous sixteenth-note kick pattern with alternating accents, the way a double-bass-pedal player alternates emphasis between feet.",
+    ...bundle(
+      55,
+      150,
+      [line("kick", DOUBLE_KICK_ALT), line("hihatClosed", HIHAT_QUARTERS), line("snare", BACKBEAT_SNARE)],
+      [line("kick", DOUBLE_KICK_ALT), line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("crash", CRASH_BEAT1)]
+    ),
+  },
+  {
+    slug: "lesson-56-breakbeat-groove",
+    lessonNumber: 56,
+    title: "Breakbeat Groove",
+    teaches: "A fast, syncopated kick-and-snare breakbeat pattern lifted off the sixteenth-note grid instead of landing on the obvious beats.",
+    ...bundle(
+      56,
+      165,
+      [
+        line("hihatClosed", HIHAT_SIXTEENTHS),
+        line("kick", measure("n-quarter", null, custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), null)),
+        line("snare", measure(null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, "n-quarter")),
+      ],
+      [
+        line("hihatClosed", HIHAT_SIXTEENTHS),
+        line("kick", measure("n-quarter", custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), null)),
+        line("snare", measure(null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, "n-quarter")),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-57-clave-influenced-groove",
+    lessonNumber: 57,
+    title: "Clave-Influenced Groove",
+    teaches: "A kick-and-rimshot pattern echoing a generic three-against-two clave shape, spread across the bar instead of a straight backbeat.",
+    ...bundle(
+      57,
+      104,
+      [
+        line("kick", measure("n-quarter", null, OFFBEAT_EIGHTH, null)),
+        line("rimshot", measure(null, custom(N("eighth"), R("eighth")), null, "n-quarter")),
+        line("hihatClosed", HIHAT_EIGHTHS),
+      ],
+      [
+        line("kick", measure("n-quarter", null, OFFBEAT_EIGHTH, null)),
+        line("rimshot", measure(null, custom(N("eighth"), R("eighth")), null, "n-quarter")),
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-58-funk-ghost-cascade",
+    lessonNumber: 58,
+    title: "Funk Ghost Cascade",
+    teaches: "Multiple ghost notes packed into a single beat on the snare, filling space between sparse kick hits.",
+    ...bundle(
+      58,
+      92,
+      [line("snare", GHOST_CASCADE_SNARE), line("hihatClosed", HIHAT_SIXTEENTHS), line("kick", KICK_1_AND_3)],
+      [line("snare", GHOST_CASCADE_SNARE), line("hihatClosed", HIHAT_SIXTEENTHS), line("kick", KICK_1_AND_3), line("crash", CRASH_BEAT1)]
+    ),
+  },
+  {
+    slug: "lesson-59-dynamic-crescendo-fill",
+    lessonNumber: 59,
+    title: "Dynamic Crescendo Fill",
+    teaches: "A one-bar snare fill that builds from ghost notes to full accents across the bar instead of staying one volume.",
+    ...bundle(
+      59,
+      94,
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3)],
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3), line("crash", CRASH_BEAT1)],
+      CRESCENDO_SNARE_FILL,
+      TOM_RUN_FILL
+    ),
+  },
+  {
+    slug: "lesson-60-full-arrangement-groove-toolkit",
+    lessonNumber: 60,
+    title: "Full Arrangement: Groove Toolkit",
+    teaches: "Combining a reggae-influenced verse, a gospel-chop chorus, and two contrasting fills into one arranged song.",
+    ...bundle(
+      60,
+      100,
+      [line("hihatClosed", OFFBEAT_SKANK), line("kick", measure(null, null, "n-quarter", null))],
+      [
+        line("hihatClosed", HIHAT_SIXTEENTHS),
+        line("kick", KICK_1_AND_3),
+        line("snare", GHOST_BACKBEAT_SNARE),
+        line("crash", CRASH_BEAT1),
+      ],
+      TOM_RUN_FILL,
+      CRESCENDO_SNARE_FILL
+    ),
+  },
+  {
+    slug: "lesson-61-triplet-fill",
+    lessonNumber: 61,
+    title: "Triplet Fill",
+    teaches: "A one-bar fill built entirely from triplet subdivisions instead of straight sixteenths.",
+    ...bundle(
+      61,
+      96,
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3)],
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3), line("crash", CRASH_BEAT1)],
+      TRIPLET_FILL,
+      EIGHTH_FILL
+    ),
+  },
+  {
+    slug: "lesson-62-cross-rhythm-fill",
+    lessonNumber: 62,
+    title: "Cross-Rhythm Fill",
+    teaches: "A fill that accents every third eighth note across a 4-beat bar, carrying the hemiola idea from Lesson 38 into a fill instead of a groove.",
+    ...bundle(
+      62,
+      96,
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3)],
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3), line("crash", CRASH_BEAT1)],
+      [
+        line(
+          "snare",
+          measure(
+            custom(N("eighth", "accent"), N("eighth")),
+            custom(N("eighth"), N("eighth", "accent")),
+            "n-e-e",
+            custom(N("eighth", "accent"), N("eighth"))
+          )
+        ),
+      ],
+      TOM_RUN_FILL
+    ),
+  },
+  {
+    slug: "lesson-63-five-four-groove-two-three",
+    lessonNumber: 63,
+    title: "5/4 Groove: 2+3",
+    teaches: "The same 5-beat measure as Lesson 34, regrouped 2+3 instead of 3+2 — a different feel from the same meter.",
+    ...bundle(
+      63,
+      100,
+      [
+        line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter")),
+        line("kick", measure("n-quarter", null, "n-quarter", null, null)),
+        line("snare", measure(null, "n-quarter", null, null, "n-quarter")),
+      ],
+      [
+        line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter")),
+        line("kick", measure("n-quarter", null, "n-quarter", null, null)),
+        line("snare", measure(null, "n-quarter", null, null, "n-quarter")),
+        line("crash", measure("n-quarter", null, null, null, null)),
+      ],
+      [
+        line("highTom", measure("n-quarter", null, null, null, null)),
+        line("midTom", measure(null, "n-quarter", null, null, null)),
+        line("lowTom", measure(null, null, "n-quarter", null, null)),
+        line("snare", measure(null, null, null, "n-quarter", "n-quarter")),
+      ],
+      EIGHTH_FILL
+    ),
+  },
+  {
+    slug: "lesson-64-odd-meter-ghost-notes",
+    lessonNumber: 64,
+    title: "Odd-Meter Ghost Notes",
+    teaches: "A 7-beat measure (grouped 2+2+3) with ghost notes woven between the backbeat hits, combining odd meter and dynamics.",
+    ...bundle(
+      64,
+      108,
+      [
+        line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter")),
+        line("kick", measure("n-quarter", null, "n-quarter", null, "n-quarter", null, null)),
+        line("snare", measure(GHOST_TAIL, null, GHOST_TAIL, null, null, null, "n-quarter")),
+      ],
+      [
+        line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter")),
+        line("kick", measure("n-quarter", null, "n-quarter", null, "n-quarter", null, null)),
+        line("snare", measure(GHOST_TAIL, null, GHOST_TAIL, null, null, null, "n-quarter")),
+        line("crash", measure("n-quarter", null, null, null, null, null, null)),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-65-rudiment-style-march",
+    lessonNumber: 65,
+    title: "Rudiment-Style March",
+    teaches: "A snare pattern using a ghost sixteenth right before each accent to approximate a flam, over a steady quarter-note bass drum march.",
+    ...bundle(
+      65,
+      112,
+      [
+        line(
+          "snare",
+          measure(
+            custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")),
+            custom(R("sixteenth"), R("sixteenth"), N("sixteenth", "ghost"), N("sixteenth", "accent")),
+            custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")),
+            custom(R("sixteenth"), R("sixteenth"), N("sixteenth", "ghost"), N("sixteenth", "accent"))
+          )
+        ),
+        line("kick", HIHAT_QUARTERS),
+      ],
+      [
+        line(
+          "snare",
+          measure(
+            custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")),
+            custom(R("sixteenth"), R("sixteenth"), N("sixteenth", "ghost"), N("sixteenth", "accent")),
+            custom(N("sixteenth", "ghost"), N("sixteenth", "accent"), R("sixteenth"), R("sixteenth")),
+            custom(R("sixteenth"), R("sixteenth"), N("sixteenth", "ghost"), N("sixteenth", "accent"))
+          )
+        ),
+        line("kick", HIHAT_QUARTERS),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-66-cut-time-punk-drive",
+    lessonNumber: 66,
+    title: "Cut-Time Punk Drive",
+    teaches: "A very fast, stripped-down groove with the kick landing on every quarter note and a pushed snare accent into beat 4 — punk and hardcore's forward drive.",
+    ...bundle(
+      66,
+      190,
+      [
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("kick", HIHAT_QUARTERS),
+        line("snare", measure(null, "n-quarter", null, custom(N("eighth", "accent"), N("eighth")))),
+      ],
+      [
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("kick", HIHAT_QUARTERS),
+        line("snare", measure(null, "n-quarter", null, custom(N("eighth", "accent"), N("eighth")))),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-67-displaced-hihat-accents",
+    lessonNumber: 67,
+    title: "Displaced Hi-Hat Accents",
+    teaches: "Accenting the hi-hat on the off-beats instead of the downbeats, while the kick and snare stay put — shifting where the ear locks in without moving the backbeat.",
+    ...bundle(
+      67,
+      100,
+      [
+        line("hihatClosed", measure(custom(N("eighth"), N("eighth", "accent")), custom(N("eighth"), N("eighth", "accent")), custom(N("eighth"), N("eighth", "accent")), custom(N("eighth"), N("eighth", "accent")))),
+        line("kick", KICK_1_AND_3),
+        line("snare", BACKBEAT_SNARE),
+      ],
+      [
+        line("hihatClosed", measure(custom(N("eighth"), N("eighth", "accent")), custom(N("eighth"), N("eighth", "accent")), custom(N("eighth"), N("eighth", "accent")), custom(N("eighth"), N("eighth", "accent")))),
+        line("kick", KICK_1_AND_3),
+        line("snare", BACKBEAT_SNARE),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-68-tom-voiced-groove",
+    lessonNumber: 68,
+    title: "Tom-Voiced Groove",
+    teaches: "A groove where the toms carry the main rhythm instead of hi-hat and snare, for a tribal, low-end-heavy feel.",
+    ...bundle(
+      68,
+      92,
+      [
+        line("highTom", measure("n-quarter", null, "n-quarter", null)),
+        line("lowTom", measure(null, "n-quarter", null, "n-quarter")),
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("kick", KICK_1_AND_3),
+      ],
+      [
+        line("highTom", measure("n-quarter", null, "n-quarter", null)),
+        line("lowTom", measure(null, "n-quarter", null, "n-quarter")),
+        line("midTom", measure(null, null, null, "n-e-e")),
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("kick", KICK_1_AND_3),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-69-sixteenth-note-hihat-opens",
+    lessonNumber: 69,
+    title: "Sixteenth-Note Hi-Hat Opens",
+    teaches: "Opening the hi-hat on select sixteenth-note partials instead of just the eighth-note off-beats, for a busier splash pattern.",
+    ...bundle(
+      69,
+      100,
+      [
+        line("hihatClosed", measure(custom(N("sixteenth"), N("sixteenth"), R("sixteenth"), N("sixteenth")), custom(N("sixteenth"), N("sixteenth"), R("sixteenth"), N("sixteenth")), custom(N("sixteenth"), N("sixteenth"), R("sixteenth"), N("sixteenth")), custom(N("sixteenth"), N("sixteenth"), R("sixteenth"), N("sixteenth")))),
+        line("hihatOpen", measure(custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")))),
+        line("kick", KICK_1_AND_3),
+        line("snare", BACKBEAT_SNARE),
+      ],
+      [
+        line("hihatClosed", measure(custom(N("sixteenth"), N("sixteenth"), R("sixteenth"), N("sixteenth")), custom(N("sixteenth"), N("sixteenth"), R("sixteenth"), N("sixteenth")), custom(N("sixteenth"), N("sixteenth"), R("sixteenth"), N("sixteenth")), custom(N("sixteenth"), N("sixteenth"), R("sixteenth"), N("sixteenth")))),
+        line("hihatOpen", measure(custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")))),
+        line("kick", KICK_1_AND_3),
+        line("snare", BACKBEAT_SNARE),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-70-full-arrangement-advanced-textures",
+    lessonNumber: 70,
+    title: "Full Arrangement: Advanced Textures",
+    teaches: "Combining a displaced-hi-hat verse, a gospel-chop chorus, and a triplet fill into one arranged song.",
+    ...bundle(
+      70,
+      100,
+      [
+        line("hihatClosed", measure(custom(N("eighth"), N("eighth", "accent")), custom(N("eighth"), N("eighth", "accent")), custom(N("eighth"), N("eighth", "accent")), custom(N("eighth"), N("eighth", "accent")))),
+        line("kick", KICK_1_AND_3),
+        line("snare", BACKBEAT_SNARE),
+      ],
+      [
+        line("hihatClosed", HIHAT_SIXTEENTHS),
+        line("kick", measure("n-quarter", null, custom(N("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), null)),
+        line("snare", GHOST_BACKBEAT_SNARE),
+        line("crash", CRASH_BEAT1),
+      ],
+      TRIPLET_FILL,
+      SIXTEENTH_SNARE_FILL
+    ),
+  },
+  {
+    slug: "lesson-71-half-time-power-ballad",
+    lessonNumber: 71,
+    title: "Half-Time Power Ballad",
+    teaches: "A slow half-time groove with a heavily accented backbeat and a sustained crash, the arena-ballad feel.",
+    ...bundle(
+      71,
+      76,
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", measure(null, null, "n-quarter", null)), line("kick", measure("n-quarter", null, null, null))],
+      [
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("snare", measure(null, null, custom(N("quarter", "accent")), null)),
+        line("kick", measure("n-quarter", null, null, null)),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-72-funk-groove-hihat-splashes",
+    lessonNumber: 72,
+    title: "Funk Groove with Hi-Hat Splashes",
+    teaches: "Layering open hi-hat splashes onto a syncopated sixteenth-note funk kick pattern.",
+    ...bundle(
+      72,
+      98,
+      [
+        line("hihatClosed", HIHAT_SIXTEENTHS),
+        line("kick", measure("n-quarter", custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")))),
+        line("snare", GHOST_BACKBEAT_SNARE),
+        line("hihatOpen", measure(null, null, OFFBEAT_EIGHTH, null)),
+      ],
+      [
+        line("hihatClosed", HIHAT_SIXTEENTHS),
+        line("kick", measure("n-quarter", custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")))),
+        line("snare", GHOST_BACKBEAT_SNARE),
+        line("hihatOpen", measure(null, null, OFFBEAT_EIGHTH, OFFBEAT_EIGHTH)),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-73-alternating-blast-beat",
+    lessonNumber: 73,
+    title: "Alternating Blast Beat",
+    teaches: "A blast beat where kick and snare alternate every eighth note instead of hitting together, for a different kind of relentless drive.",
+    ...bundle(
+      73,
+      190,
+      [
+        line("kick", measure(custom(N("eighth"), R("eighth")), custom(N("eighth"), R("eighth")), custom(N("eighth"), R("eighth")), custom(N("eighth"), R("eighth")))),
+        line("snare", measure(OFFBEAT_EIGHTH, OFFBEAT_EIGHTH, OFFBEAT_EIGHTH, OFFBEAT_EIGHTH)),
+        line("hihatClosed", HIHAT_EIGHTHS),
+      ],
+      [
+        line("kick", measure(custom(N("eighth"), R("eighth")), custom(N("eighth"), R("eighth")), custom(N("eighth"), R("eighth")), custom(N("eighth"), R("eighth")))),
+        line("snare", measure(OFFBEAT_EIGHTH, OFFBEAT_EIGHTH, OFFBEAT_EIGHTH, OFFBEAT_EIGHTH)),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-74-bossa-influenced-feel",
+    lessonNumber: 74,
+    title: "Bossa-Influenced Feel",
+    teaches: "A relaxed Latin-adjacent feel with a steady eighth-note hi-hat and a syncopated rimshot pattern, quieter than the samba and songo feels.",
+    ...bundle(
+      74,
+      112,
+      [
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("rimshot", measure("n-quarter", OFFBEAT_EIGHTH, null, custom(N("eighth"), R("eighth")))),
+        line("kick", measure("n-quarter", null, null, null)),
+      ],
+      [
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("rimshot", measure("n-quarter", OFFBEAT_EIGHTH, null, custom(N("eighth"), R("eighth")))),
+        line("kick", KICK_1_AND_3),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-75-ride-cymbal-dynamics",
+    lessonNumber: 75,
+    title: "Ride Cymbal Dynamics",
+    teaches: "Accenting select ride-cymbal hits while keeping the rest at normal volume, the way a bell accent cuts through a ride pattern.",
+    ...bundle(
+      75,
+      108,
+      [line("ride", measure(custom(N("eighth", "accent"), N("eighth")), "n-e-e", custom(N("eighth", "accent"), N("eighth")), "n-e-e")), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3)],
+      [
+        line("ride", measure(custom(N("eighth", "accent"), N("eighth")), "n-e-e", custom(N("eighth", "accent"), N("eighth")), "n-e-e")),
+        line("snare", BACKBEAT_SNARE),
+        line("kick", KICK_1_AND_3),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-76-full-bar-linear-fill",
+    lessonNumber: 76,
+    title: "Full-Bar Linear Fill",
+    teaches: "A fill spanning the entire bar where kick, snare, and toms trade sixteenth notes without ever overlapping.",
+    ...bundle(
+      76,
+      100,
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3)],
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3), line("crash", CRASH_BEAT1)],
+      [
+        line("kick", measure(custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null)),
+        line("snare", measure(custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")), null, custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")), null)),
+        line("highTom", measure(null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")))),
+        line("lowTom", measure(null, custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")), null, custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")))),
+      ],
+      EIGHTH_FILL
+    ),
+  },
+  {
+    slug: "lesson-77-syncopated-ride-groove",
+    lessonNumber: 77,
+    title: "Syncopated Ride Groove",
+    teaches: "A ride-cymbal pattern with the off-beat 'and' dropped out here and there, instead of playing every eighth note evenly.",
+    ...bundle(
+      77,
+      106,
+      [line("ride", measure(custom(N("eighth"), R("eighth")), "n-e-e", custom(N("eighth"), R("eighth")), "n-e-e")), line("kick", KICK_1_AND_3), line("snare", BACKBEAT_SNARE)],
+      [
+        line("ride", measure(custom(N("eighth"), R("eighth")), "n-e-e", custom(N("eighth"), R("eighth")), "n-e-e")),
+        line("kick", KICK_1_AND_3),
+        line("snare", BACKBEAT_SNARE),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-78-shuffle-in-five",
+    lessonNumber: 78,
+    title: "Shuffle in Five",
+    teaches: "The shuffle's swung triplet hi-hat feel, now stretched across a 5-beat measure instead of 4.",
+    ...bundle(
+      78,
+      96,
+      [
+        line("hihatClosed", measure(SHUFFLE_TILE, SHUFFLE_TILE, SHUFFLE_TILE, SHUFFLE_TILE, SHUFFLE_TILE)),
+        line("kick", measure("n-quarter", null, null, "n-quarter", null)),
+        line("snare", measure(null, null, "n-quarter", null, "n-quarter")),
+      ],
+      [
+        line("hihatClosed", measure(SHUFFLE_TILE, SHUFFLE_TILE, SHUFFLE_TILE, SHUFFLE_TILE, SHUFFLE_TILE)),
+        line("kick", measure("n-quarter", null, null, "n-quarter", null)),
+        line("snare", measure(null, null, "n-quarter", null, "n-quarter")),
+        line("crash", measure("n-quarter", null, null, null, null)),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-79-groove-that-builds",
+    lessonNumber: 79,
+    title: "Groove That Builds Within the Bar",
+    teaches: "A single groove where the hi-hat itself ramps from ghost to accent across the bar, so the intensity builds without the pattern changing.",
+    ...bundle(
+      79,
+      90,
+      [
+        line(
+          "hihatClosed",
+          measure(
+            custom(N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost")),
+            "n-s-s-s-s",
+            custom(N("sixteenth"), N("sixteenth"), N("sixteenth", "accent"), N("sixteenth")),
+            custom(N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"))
+          )
+        ),
+        line("snare", BACKBEAT_SNARE),
+        line("kick", KICK_1_AND_3),
+      ],
+      [
+        line(
+          "hihatClosed",
+          measure(
+            custom(N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost")),
+            "n-s-s-s-s",
+            custom(N("sixteenth"), N("sixteenth"), N("sixteenth", "accent"), N("sixteenth")),
+            custom(N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"))
+          )
+        ),
+        line("snare", BACKBEAT_SNARE),
+        line("kick", KICK_1_AND_3),
+        line("crash", measure(null, null, null, "n-quarter")),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-80-full-arrangement-grooves-in-motion",
+    lessonNumber: 80,
+    title: "Full Arrangement: Grooves in Motion",
+    teaches: "A half-time-ballad verse, a funk chorus with hi-hat splashes, and two fills — the busiest arrangement yet.",
+    ...bundle(
+      80,
+      98,
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", measure(null, null, "n-quarter", null)), line("kick", measure("n-quarter", null, null, null))],
+      [
+        line("hihatClosed", HIHAT_SIXTEENTHS),
+        line("kick", measure("n-quarter", custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")))),
+        line("snare", GHOST_BACKBEAT_SNARE),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-81-three-over-two-kick",
+    lessonNumber: 81,
+    title: "Three-Over-Two Kick Pattern",
+    teaches: "A kick pattern that lands every dotted quarter note against a steady straight pulse, a simple polyrhythm you can feel in the feet.",
+    ...bundle(
+      81,
+      100,
+      [line("hihatClosed", HIHAT_EIGHTHS), line("kick", measure("n-quarter", OFFBEAT_EIGHTH, null, "n-quarter")), line("snare", BACKBEAT_SNARE)],
+      [
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("kick", measure("n-quarter", OFFBEAT_EIGHTH, null, "n-quarter")),
+        line("snare", BACKBEAT_SNARE),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-82-six-eight-bell-pattern",
+    lessonNumber: 82,
+    title: "6/8 Bell Pattern Feel",
+    teaches: "A 6-beat groove with a rimshot outlining a bell-pattern rhythm underneath a steady pulse.",
+    ...bundle(
+      82,
+      92,
+      [
+        line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter")),
+        line("kick", measure("n-quarter", null, null, "n-quarter", null, null)),
+        line("rimshot", measure("n-quarter", null, "n-quarter", null, null, "n-quarter")),
+      ],
+      [
+        line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter")),
+        line("kick", measure("n-quarter", null, null, "n-quarter", null, null)),
+        line("rimshot", measure("n-quarter", null, "n-quarter", null, null, "n-quarter")),
+        line("crash", measure("n-quarter", null, null, null, null, null)),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-83-snare-led-sixteenth-groove",
+    lessonNumber: 83,
+    title: "Snare-Led Sixteenth Groove",
+    teaches: "A continuous sixteenth-note snare ostinato with the kick only accenting select hits underneath, flipping which instrument leads the groove.",
+    ...bundle(
+      83,
+      100,
+      [line("snare", HIHAT_SIXTEENTHS), line("kick", measure("n-quarter", null, custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), null)), line("hihatClosed", HIHAT_QUARTERS)],
+      [
+        line("snare", HIHAT_SIXTEENTHS),
+        line("kick", measure("n-quarter", custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")))),
+        line("hihatClosed", HIHAT_QUARTERS),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-84-inverted-accent-groove",
+    lessonNumber: 84,
+    title: "Inverted Accent Groove",
+    teaches: "Accenting the off-beats and ghosting the downbeats on the hi-hat — the reverse of where accents usually land.",
+    ...bundle(
+      84,
+      100,
+      [
+        line("hihatClosed", measure(custom(N("eighth", "ghost"), N("eighth", "accent")), custom(N("eighth", "ghost"), N("eighth", "accent")), custom(N("eighth", "ghost"), N("eighth", "accent")), custom(N("eighth", "ghost"), N("eighth", "accent")))),
+        line("kick", KICK_1_AND_3),
+        line("snare", BACKBEAT_SNARE),
+      ],
+      [
+        line("hihatClosed", measure(custom(N("eighth", "ghost"), N("eighth", "accent")), custom(N("eighth", "ghost"), N("eighth", "accent")), custom(N("eighth", "ghost"), N("eighth", "accent")), custom(N("eighth", "ghost"), N("eighth", "accent")))),
+        line("kick", KICK_1_AND_3),
+        line("snare", BACKBEAT_SNARE),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-85-shuffle-feel-fill",
+    lessonNumber: 85,
+    title: "Shuffle-Feel Fill",
+    teaches: "A tom fill built from the shuffle's triplet skip shape instead of straight sixteenths.",
+    ...bundle(
+      85,
+      100,
+      [line("hihatClosed", SHUFFLE_HIHAT), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3)],
+      [line("hihatClosed", SHUFFLE_HIHAT), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3), line("crash", CRASH_BEAT1)],
+      [
+        line("highTom", measure(SHUFFLE_TILE, null, null, null)),
+        line("midTom", measure(null, SHUFFLE_TILE, null, null)),
+        line("lowTom", measure(null, null, SHUFFLE_TILE, null)),
+        line("snare", measure(null, null, null, SHUFFLE_TILE)),
+      ],
+      EIGHTH_FILL
+    ),
+  },
+  {
+    slug: "lesson-86-kick-ostinato-meets-ghost-snare",
+    lessonNumber: 86,
+    title: "Kick Ostinato Meets Ghost Snare",
+    teaches: "Combining the continuous sixteenth-note kick ostinato from Lesson 36 with a dense ghost-note snare pattern underneath a steady hi-hat.",
+    ...bundle(
+      86,
+      128,
+      [line("kick", HIHAT_SIXTEENTHS), line("snare", GHOST_CASCADE_SNARE), line("hihatClosed", HIHAT_QUARTERS)],
+      [line("kick", HIHAT_SIXTEENTHS), line("snare", GHOST_CASCADE_SNARE), line("hihatClosed", HIHAT_QUARTERS), line("crash", CRASH_BEAT1)]
+    ),
+  },
+  {
+    slug: "lesson-87-dotted-eighth-loping-feel",
+    lessonNumber: 87,
+    title: "Dotted-Eighth Loping Feel",
+    teaches: "A hi-hat pattern built from dotted-eighth-plus-sixteenth cells instead of straight or swung eighths, for a loping, uneven pulse.",
+    ...bundle(
+      87,
+      96,
+      [line("hihatClosed", measure("n-de-s", "n-de-s", "n-de-s", "n-de-s")), line("kick", KICK_1_AND_3), line("snare", BACKBEAT_SNARE)],
+      [line("hihatClosed", measure("n-de-s", "n-de-s", "n-de-s", "n-de-s")), line("kick", KICK_1_AND_3), line("snare", BACKBEAT_SNARE), line("crash", CRASH_BEAT1)]
+    ),
+  },
+  {
+    slug: "lesson-88-sixteenth-cross-stick-groove",
+    lessonNumber: 88,
+    title: "Sixteenth-Note Cross-Stick Groove",
+    teaches: "Moving the quiet cross-stick backbeat from Lesson 24 onto a syncopated sixteenth-note grid instead of a plain quarter-note backbeat.",
+    ...bundle(
+      88,
+      88,
+      [
+        line("rimshot", measure(custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")), custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), custom(R("sixteenth"), R("sixteenth"), R("sixteenth"), N("sixteenth")))),
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("kick", KICK_1_AND_3),
+      ],
+      [
+        line("snare", measure(custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")), custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), custom(R("sixteenth"), R("sixteenth"), R("sixteenth"), N("sixteenth")))),
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("kick", KICK_1_AND_3),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-89-call-and-response-fill",
+    lessonNumber: 89,
+    title: "Call-and-Response Fill",
+    teaches: "A fill built as a short snare phrase answered by tom phrases, trading back and forth within the bar.",
+    ...bundle(
+      89,
+      96,
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3)],
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3), line("crash", CRASH_BEAT1)],
+      [
+        line("snare", measure("n-e-e", null, "n-e-e", null)),
+        line("highTom", measure(null, "n-e-e", null, null)),
+        line("lowTom", measure(null, null, null, "n-e-e")),
+      ],
+      EIGHTH_FILL
+    ),
+  },
+  {
+    slug: "lesson-90-full-arrangement-polyrhythms-and-ghosts",
+    lessonNumber: 90,
+    title: "Full Arrangement: Polyrhythms and Ghosts",
+    teaches: "A polyrhythmic-kick verse, an inverted-accent chorus, and two fills arranged into one song.",
+    ...bundle(
+      90,
+      100,
+      [line("hihatClosed", HIHAT_EIGHTHS), line("kick", measure("n-quarter", OFFBEAT_EIGHTH, null, "n-quarter")), line("snare", BACKBEAT_SNARE)],
+      [
+        line("hihatClosed", measure(custom(N("eighth", "ghost"), N("eighth", "accent")), custom(N("eighth", "ghost"), N("eighth", "accent")), custom(N("eighth", "ghost"), N("eighth", "accent")), custom(N("eighth", "ghost"), N("eighth", "accent")))),
+        line("kick", KICK_1_AND_3),
+        line("snare", BACKBEAT_SNARE),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-91-half-time-double-kick-groove",
+    lessonNumber: 91,
+    title: "Half-Time Double-Kick Groove",
+    teaches: "A half-time backbeat with a continuous sixteenth-note double-kick pattern underneath, instead of a sparse kick.",
+    ...bundle(
+      91,
+      140,
+      [line("kick", DOUBLE_KICK_ALT), line("snare", measure(null, null, "n-quarter", null)), line("hihatClosed", HIHAT_EIGHTHS)],
+      [
+        line("kick", DOUBLE_KICK_ALT),
+        line("snare", measure(null, null, custom(N("quarter", "accent")), null)),
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-92-breakbeat-in-five",
+    lessonNumber: 92,
+    title: "Breakbeat in Five",
+    teaches: "The syncopated breakbeat feel from Lesson 56, now fit into a 5-beat measure instead of straight 4/4.",
+    ...bundle(
+      92,
+      140,
+      [
+        line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter")),
+        line("kick", measure("n-quarter", null, custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), null, "n-quarter")),
+        line("snare", measure(null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, "n-quarter", null)),
+      ],
+      [
+        line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter")),
+        line("kick", measure("n-quarter", null, custom(R("sixteenth"), R("sixteenth"), N("sixteenth"), R("sixteenth")), null, "n-quarter")),
+        line("snare", measure(null, custom(N("sixteenth"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, "n-quarter", null)),
+        line("crash", measure("n-quarter", null, null, null, null)),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-93-inverted-paradiddle-groove",
+    lessonNumber: 93,
+    title: "Inverted Paradiddle Groove",
+    teaches: "The paradiddle sticking pattern from Lesson 31, with the two voices swapped — landing the accents in different spots than before.",
+    ...bundle(
+      93,
+      100,
+      [
+        line(
+          "hihatClosed",
+          measure(
+            custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")),
+            custom(N("sixteenth", "accent"), R("sixteenth"), N("sixteenth"), N("sixteenth")),
+            custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")),
+            custom(N("sixteenth", "accent"), R("sixteenth"), N("sixteenth"), N("sixteenth"))
+          )
+        ),
+        line(
+          "snare",
+          measure(
+            custom(N("sixteenth", "accent"), R("sixteenth"), N("sixteenth"), N("sixteenth")),
+            custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")),
+            custom(N("sixteenth", "accent"), R("sixteenth"), N("sixteenth"), N("sixteenth")),
+            custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth"))
+          )
+        ),
+        line("kick", KICK_1_AND_3),
+      ],
+      [
+        line(
+          "hihatClosed",
+          measure(
+            custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")),
+            custom(N("sixteenth", "accent"), R("sixteenth"), N("sixteenth"), N("sixteenth")),
+            custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")),
+            custom(N("sixteenth", "accent"), R("sixteenth"), N("sixteenth"), N("sixteenth"))
+          )
+        ),
+        line(
+          "snare",
+          measure(
+            custom(N("sixteenth", "accent"), R("sixteenth"), N("sixteenth"), N("sixteenth")),
+            custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth")),
+            custom(N("sixteenth", "accent"), R("sixteenth"), N("sixteenth"), N("sixteenth")),
+            custom(R("sixteenth"), N("sixteenth"), R("sixteenth"), R("sixteenth"))
+          )
+        ),
+        line("kick", KICK_1_AND_3),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-94-independent-limb-dynamics",
+    lessonNumber: 94,
+    title: "Independent Limb Dynamics",
+    teaches: "Accenting the kick at the same instant the snare plays a ghost note, so each limb carries its own dynamic level independently.",
+    ...bundle(
+      94,
+      94,
+      [
+        line("kick", measure(custom(N("eighth", "accent"), R("eighth")), null, custom(N("eighth", "accent"), R("eighth")), null)),
+        line("snare", measure(custom(N("eighth", "ghost"), R("eighth")), "n-quarter", custom(N("eighth", "ghost"), R("eighth")), "n-quarter")),
+        line("hihatClosed", HIHAT_EIGHTHS),
+      ],
+      [
+        line("kick", measure(custom(N("eighth", "accent"), R("eighth")), null, custom(N("eighth", "accent"), R("eighth")), null)),
+        line("snare", measure(custom(N("eighth", "ghost"), R("eighth")), "n-quarter", custom(N("eighth", "ghost"), R("eighth")), "n-quarter")),
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-95-full-triplet-groove",
+    lessonNumber: 95,
+    title: "Full Triplet Groove",
+    teaches: "A groove where kick, snare, and hi-hat all sit on the triplet grid together, not just the hi-hat like the shuffle.",
+    ...bundle(
+      95,
+      118,
+      [
+        line("hihatClosed", measure(custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")), custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")), custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")), custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")))),
+        line("kick", measure(custom(N("eighthTriplet"), R("eighthTriplet"), R("eighthTriplet")), null, custom(N("eighthTriplet"), R("eighthTriplet"), R("eighthTriplet")), null)),
+        line("snare", measure(null, custom(N("eighthTriplet"), R("eighthTriplet"), R("eighthTriplet")), null, custom(N("eighthTriplet"), R("eighthTriplet"), R("eighthTriplet")))),
+      ],
+      [
+        line("hihatClosed", measure(custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")), custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")), custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")), custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")))),
+        line("kick", measure(custom(N("eighthTriplet"), R("eighthTriplet"), R("eighthTriplet")), null, custom(N("eighthTriplet"), R("eighthTriplet"), R("eighthTriplet")), null)),
+        line("snare", measure(null, custom(N("eighthTriplet"), R("eighthTriplet"), R("eighthTriplet")), null, custom(N("eighthTriplet"), R("eighthTriplet"), R("eighthTriplet")))),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-96-full-kit-crescendo-fill",
+    lessonNumber: 96,
+    title: "Full-Kit Crescendo Fill",
+    teaches: "A fill where the hi-hat, kick, and snare all ramp from ghost to accent together, for a big buildup into the next section.",
+    ...bundle(
+      96,
+      96,
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3)],
+      [line("hihatClosed", HIHAT_EIGHTHS), line("snare", BACKBEAT_SNARE), line("kick", KICK_1_AND_3), line("crash", CRASH_BEAT1)],
+      [
+        line(
+          "hihatClosed",
+          measure(
+            custom(N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost")),
+            "n-s-s-s-s",
+            custom(N("sixteenth", "accent"), N("sixteenth"), N("sixteenth", "accent"), N("sixteenth")),
+            custom(N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"))
+          )
+        ),
+        line("kick", measure(custom(N("sixteenth", "ghost"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, custom(N("sixteenth", "accent"), R("sixteenth"), R("sixteenth"), R("sixteenth")), "n-quarter")),
+        line("snare", measure(null, custom(N("sixteenth", "ghost"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, custom(N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent")))),
+        line("crash", measure(null, null, null, "n-quarter")),
+      ],
+      TOM_RUN_FILL
+    ),
+  },
+  {
+    slug: "lesson-97-latin-influenced-ghost-groove",
+    lessonNumber: 97,
+    title: "Latin-Influenced Ghost Groove",
+    teaches: "Layering ghost notes onto the clave-influenced kick-and-rimshot pattern from Lesson 57.",
+    ...bundle(
+      97,
+      104,
+      [
+        line("kick", measure("n-quarter", null, OFFBEAT_EIGHTH, null)),
+        line("rimshot", measure(null, custom(N("eighth"), R("eighth")), null, "n-quarter")),
+        line("snare", measure(GHOST_TAIL, null, GHOST_TAIL, null)),
+        line("hihatClosed", HIHAT_EIGHTHS),
+      ],
+      [
+        line("kick", measure("n-quarter", null, OFFBEAT_EIGHTH, null)),
+        line("rimshot", measure(null, custom(N("eighth"), R("eighth")), null, "n-quarter")),
+        line("snare", measure(GHOST_TAIL, null, GHOST_TAIL, null)),
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-98-odd-meter-triplet-fill",
+    lessonNumber: 98,
+    title: "Odd-Meter Triplet Fill",
+    teaches: "A fill spanning a 7-beat measure built from triplet subdivisions, combining odd meter and triplet phrasing.",
+    ...bundle(
+      98,
+      104,
+      [
+        line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter")),
+        line("kick", measure("n-quarter", null, null, "n-quarter", null, null, null)),
+        line("snare", measure(null, null, "n-quarter", null, null, null, "n-quarter")),
+      ],
+      [
+        line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter")),
+        line("kick", measure("n-quarter", null, null, "n-quarter", null, null, null)),
+        line("snare", measure(null, null, "n-quarter", null, null, null, "n-quarter")),
+        line("crash", measure("n-quarter", null, null, null, null, null, null)),
+      ],
+      [
+        line("highTom", measure(custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")), null, null, null, null, null, null)),
+        line("midTom", measure(null, custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")), null, null, null, null, null)),
+        line("lowTom", measure(null, null, custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")), null, null, null, null)),
+        line(
+          "snare",
+          measure(
+            null,
+            null,
+            null,
+            custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")),
+            custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")),
+            custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet")),
+            custom(N("eighthTriplet"), N("eighthTriplet"), N("eighthTriplet"))
+          )
+        ),
+      ],
+      TOM_RUN_FILL
+    ),
+  },
+  {
+    slug: "lesson-99-full-arrangement-the-home-stretch",
+    lessonNumber: 99,
+    title: "Full Arrangement: The Home Stretch",
+    teaches: "A polyrhythmic-kick verse, a half-time double-kick chorus, and two fills — one last full arrangement before the final song.",
+    ...bundle(
+      99,
+      110,
+      [line("hihatClosed", HIHAT_EIGHTHS), line("kick", measure("n-quarter", OFFBEAT_EIGHTH, null, "n-quarter")), line("snare", BACKBEAT_SNARE)],
+      [
+        line("kick", DOUBLE_KICK_ALT),
+        line("snare", measure(null, null, "n-quarter", null)),
+        line("hihatClosed", HIHAT_EIGHTHS),
+        line("crash", CRASH_BEAT1),
+      ]
+    ),
+  },
+  {
+    slug: "lesson-100-graduation",
+    lessonNumber: 100,
+    title: "Graduation: Everything You've Learned",
+    teaches: "A full song combining sixteenth-note ghost/accent dynamics, a driving double-kick chorus, a 7-beat odd-meter bridge, and a full-kit crescendo fill — the whole hundred-lesson course, in one song.",
+    slotA: slot(104, [
+      line("hihatClosed", measure(custom(N("eighth", "accent"), N("eighth", "ghost")), "n-e-e", custom(N("eighth", "accent"), N("eighth", "ghost")), "n-e-e")),
+      line("snare", GHOST_BACKBEAT_SNARE),
+      line("kick", measure("n-quarter", null, custom(N("eighth", "ghost"), N("eighth", "accent")), null)),
+    ]),
+    slotB: slot(104, [
+      line("kick", DOUBLE_KICK_ALT),
+      line("hihatClosed", HIHAT_EIGHTHS),
+      line("snare", BACKBEAT_SNARE),
+      line("crash", CRASH_BEAT1),
+    ]),
+    slotC: slot(104, [
+      line("hihatClosed", measure("n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter", "n-quarter")),
+      line("kick", measure("n-quarter", null, "n-quarter", null, "n-quarter", null, null)),
+      line("snare", measure(GHOST_TAIL, null, GHOST_TAIL, null, null, null, "n-quarter")),
+    ]),
+    slotD: slot(104, [
+      line(
+        "hihatClosed",
+        measure(
+          custom(N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost"), N("sixteenth", "ghost")),
+          "n-s-s-s-s",
+          custom(N("sixteenth", "accent"), N("sixteenth"), N("sixteenth", "accent"), N("sixteenth")),
+          custom(N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"))
+        )
+      ),
+      line("kick", measure(custom(N("sixteenth", "ghost"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, custom(N("sixteenth", "accent"), R("sixteenth"), R("sixteenth"), R("sixteenth")), "n-quarter")),
+      line("snare", measure(null, custom(N("sixteenth", "ghost"), R("sixteenth"), R("sixteenth"), R("sixteenth")), null, custom(N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent"), N("sixteenth", "accent")))),
+      line("crash", measure(null, null, null, "n-quarter")),
+    ]),
+    stack: {
+      bpm: 104,
+      steps: ["A", "A", "B", "A", "C", "C", "B", "B", "D", "A"].map((s, i) => ({
+        id: `step-l100-${i + 1}`,
         slot: s as SlotLetterLocal,
       })),
       kitOverride: null,
