@@ -37,6 +37,41 @@ export function totalStackSeconds(
   return steps.reduce((sum, step) => sum + stepDurationSeconds(measureLengths[step.slot] ?? 0, bpm), 0);
 }
 
+export interface StackPlayheadPosition {
+  // Which step (by index into the array of measure lengths passed in) is
+  // currently sounding.
+  stepIndex: number;
+  // Position within that step, in beats — same units as
+  // RockBloxPlayer.getPlayheadInfo()'s beat+fraction, just scoped to one
+  // step's measure instead of a single looping pattern's.
+  abs: number;
+}
+
+// Maps whole-song elapsed seconds (StackPlayer.getProgress().elapsed) to a
+// step index + position within that step — used to drive the Drum Teacher
+// rig/notation off a StackPlayer the same way it's driven off a single
+// RockBloxPlayer's getPlayheadInfo(). Mirrors StackSheetMusicView's own
+// highlight math, generalized to plain measure-length numbers so it isn't
+// tied to a SlotLetter-keyed step shape.
+export function stackPlayheadPosition(
+  elapsedSeconds: number,
+  stepMeasureLengths: number[],
+  bpm: number
+): StackPlayheadPosition | null {
+  if (stepMeasureLengths.length === 0) return null;
+  const beatSeconds = 60 / bpm;
+  let remaining = elapsedSeconds;
+  for (let i = 0; i < stepMeasureLengths.length; i++) {
+    const stepDuration = beatSeconds * stepMeasureLengths[i];
+    if (remaining < stepDuration || i === stepMeasureLengths.length - 1) {
+      const abs = Math.max(0, Math.min(stepMeasureLengths[i], remaining / beatSeconds));
+      return { stepIndex: i, abs };
+    }
+    remaining -= stepDuration;
+  }
+  return null;
+}
+
 export function formatDuration(seconds: number): string {
   const total = Math.max(0, Math.round(seconds));
   const minutes = Math.floor(total / 60);

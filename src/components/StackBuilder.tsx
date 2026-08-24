@@ -19,6 +19,7 @@ import {
 } from "@/lib/stack";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { SaveCopyButton } from "@/components/SaveCopyButton";
+import { DrumTeacherStep, DrumTeacherView } from "@/components/DrumTeacherView";
 import { StackPaletteBlock } from "./StackPaletteBlock";
 import { StackStepChip } from "./StackStepChip";
 import { StackSheetMusicView } from "./StackSheetMusicView";
@@ -99,6 +100,7 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
   // Auto-on by default so people can jam along with the beat right away.
   const [loop, setLoop] = useState(true);
   const [showSheet, setShowSheet] = useState(false);
+  const [showDrumTeacher, setShowDrumTeacher] = useState(false);
   // When set, every step plays/exports through this one kit instead of its
   // own saved kit — a stack-only override, so switching it never touches
   // the individual beats' own kits on their page.
@@ -278,6 +280,21 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
     [steps, slotInfo]
   );
 
+  // Same per-step kit-override resolution as the buffer-loading effect
+  // above, so Drum Teacher hears (and its kit-dependent visuals reflect)
+  // exactly what Play/export do.
+  const teacherSteps = useMemo<DrumTeacherStep[]>(
+    () =>
+      steps.map((s) => ({
+        slot: s.slot,
+        lines: slotInfo[s.slot].lineStates,
+        kit: kitOverride ?? slotInfo[s.slot].kit,
+        customSamples: kitOverride ? undefined : slotInfo[s.slot].customSamples,
+        measureLength: slotInfo[s.slot].measureLength,
+      })),
+    [steps, slotInfo, kitOverride]
+  );
+
   async function togglePlay() {
     if (!playerRef.current) return;
     if (playerRef.current.isPlaying()) {
@@ -369,6 +386,10 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
         />
       )}
 
+      {showDrumTeacher && (
+        <DrumTeacherView steps={teacherSteps} initialBpm={bpm} onClose={() => setShowDrumTeacher(false)} />
+      )}
+
       <DndContext id="stack-dnd" sensors={sensors} onDragEnd={handleDragEnd}>
         <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
           <section className="flex flex-wrap items-center gap-4 rounded-xl bg-white/5 p-4">
@@ -443,6 +464,20 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
               className="rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
             >
               Sheet music
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowDrumTeacher(true)}
+              disabled={playDisabled}
+              title="Watch how to play this song on a real kit"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <ellipse cx="12" cy="16" rx="8" ry="4" />
+                <path d="M6 8 17 19" strokeLinecap="round" />
+                <path d="M17 8 6 19" strokeLinecap="round" />
+              </svg>
             </button>
 
             <button

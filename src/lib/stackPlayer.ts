@@ -68,8 +68,18 @@ export class StackPlayer {
     void this.resyncAfterGap();
   };
 
+  // Safari on iOS has a WebKit-only AudioContext state, "interrupted",
+  // distinct from "suspended" — entered when another app (e.g. Photos
+  // playing a video) takes the device's audio session while this tab is
+  // backgrounded. The browser never auto-recovers from it, so code that only
+  // checks for "suspended" leaves playback stuck. See RockBloxPlayer.needsResume.
+  private needsResume(): boolean {
+    const state: string = this.ctx.state;
+    return state === "suspended" || state === "interrupted";
+  }
+
   private async resyncAfterGap() {
-    if (this.ctx.state === "suspended") {
+    if (this.needsResume()) {
       try {
         await this.ctx.resume();
       } catch {
@@ -122,9 +132,14 @@ export class StackPlayer {
     return this.playing;
   }
 
+  /** Retunes an in-progress (or not-yet-started) playback — takes effect at the next scheduled pass, same as the tempo read fresh each call in schedulePassAndNext. */
+  setBpm(bpm: number): void {
+    this.bpm = bpm;
+  }
+
   async play(steps: StackStepSource[], bpm: number, loop: boolean = false): Promise<void> {
     if (this.playing) return;
-    if (this.ctx.state === "suspended") await this.ctx.resume();
+    if (this.needsResume()) await this.ctx.resume();
     if (this.buildPlayableSteps(steps).length === 0) return;
 
     this.steps = steps;

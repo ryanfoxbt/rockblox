@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -16,7 +16,7 @@ import { TilePalette } from "@/components/TilePalette";
 import { LineRow } from "@/components/LineRow";
 import { Transport } from "@/components/Transport";
 import { SheetMusicView } from "@/components/SheetMusicView";
-import { DrumTeacherView } from "@/components/DrumTeacherView";
+import { DrumTeacherStep, DrumTeacherView } from "@/components/DrumTeacherView";
 import { TileVisual } from "@/components/TileVisual";
 import { FartRecorder } from "@/components/FartRecorder";
 import { RandomizeButton, VariationKind } from "@/components/RandomizeButton";
@@ -160,6 +160,11 @@ export function Editor({
   const rafRef = useRef<number | null>(null);
 
   const measureLength = computeMeasureLength(lines);
+
+  const drumTeacherSteps = useMemo<DrumTeacherStep[]>(
+    () => [{ slot: activeSlot, lines, kit, customSamples, measureLength }],
+    [activeSlot, lines, kit, customSamples, measureLength]
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
@@ -809,6 +814,7 @@ export function Editor({
         <SheetMusicView
           lines={lines}
           bpm={bpm}
+          onBpmChange={setBpm}
           measureLength={measureLength}
           isPlaying={isPlaying}
           playheadBeat={isPlaying ? playheadBeat : null}
@@ -819,10 +825,8 @@ export function Editor({
 
       {showDrumTeacher && (
         <DrumTeacherView
-          lines={lines}
-          kit={kit}
-          customSamples={customSamples}
-          measureLength={measureLength}
+          steps={drumTeacherSteps}
+          initialBpm={bpm}
           onClose={() => setShowDrumTeacher(false)}
         />
       )}

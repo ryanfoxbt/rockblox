@@ -251,7 +251,7 @@ export class RockBloxPlayer {
     // silently stay dead until the user hit Play again; this resumes on its
     // own as soon as focus is available.
     this.ctx.onstatechange = () => {
-      if (this.ctx.state === "suspended" && this.playing) this.ctx.resume().catch(() => {});
+      if (this.needsResume() && this.playing) this.ctx.resume().catch(() => {});
     };
     this.setupMediaSession();
   }
@@ -298,8 +298,20 @@ export class RockBloxPlayer {
     void this.resyncAfterGap();
   };
 
+  // Safari on iOS has a WebKit-only AudioContext state, "interrupted",
+  // distinct from the standard "suspended" — it's what the context enters
+  // when another app (e.g. Photos playing a video) takes over the device's
+  // audio session while this tab is backgrounded. Unlike "suspended", the
+  // browser never auto-recovers from it; resume() must be called explicitly,
+  // and code that only checks for "suspended" leaves the context stuck,
+  // making Play silently do nothing until the page is refreshed.
+  private needsResume(): boolean {
+    const state: string = this.ctx.state;
+    return state === "suspended" || state === "interrupted";
+  }
+
   private async resyncAfterGap() {
-    if (this.ctx.state === "suspended") {
+    if (this.needsResume()) {
       try {
         await this.ctx.resume();
       } catch {
@@ -408,7 +420,7 @@ export class RockBloxPlayer {
   async play() {
     if (this.playing || this.measureBeats < 1) return;
     await this.readyPromise;
-    if (this.ctx.state === "suspended") await this.ctx.resume();
+    if (this.needsResume()) await this.ctx.resume();
     this.playing = true;
     this.nextLoopTime = this.ctx.currentTime + 0.1;
     this.scheduleLoopAndNext();

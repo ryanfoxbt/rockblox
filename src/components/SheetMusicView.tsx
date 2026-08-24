@@ -7,6 +7,7 @@ import { NotationLayout, renderNotation, VF } from "@/lib/notation";
 export function SheetMusicView({
   lines,
   bpm,
+  onBpmChange,
   measureLength,
   isPlaying,
   playheadBeat,
@@ -15,6 +16,7 @@ export function SheetMusicView({
 }: {
   lines: LineData[];
   bpm: number;
+  onBpmChange: (bpm: number) => void;
   measureLength: number;
   isPlaying: boolean;
   playheadBeat: number | null;
@@ -149,9 +151,22 @@ export function SheetMusicView({
         >
           {isPlaying ? "■ Stop" : "▶ Play"}
         </button>
-        <span className="text-sm text-white/50">
-          {bpm} BPM · {measureLength}/4
-        </span>
+        <div className="flex items-center gap-2">
+          <label htmlFor="sheet-tempo" className="text-sm text-white/60">
+            Tempo
+          </label>
+          <input
+            id="sheet-tempo"
+            type="range"
+            min={40}
+            max={220}
+            value={bpm}
+            onChange={(e) => onBpmChange(Number(e.target.value))}
+            className="w-24 accent-yellow-400 sm:w-40"
+          />
+          <span className="w-16 text-sm text-white/80">{bpm} BPM</span>
+        </div>
+        <span className="text-sm text-white/50">{measureLength}/4</span>
       </div>
 
       <div className="flex flex-1 items-center overflow-auto p-6">

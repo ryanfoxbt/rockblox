@@ -2,16 +2,28 @@
 
 import { Ref, RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { InstrumentId } from "@/lib/instruments";
-import { LineState, RockBloxPlayer } from "@/lib/audioEngine";
+import { LineState } from "@/lib/audioEngine";
 import { CustomSamples } from "@/lib/customSamples";
 import { computeHitEvents, DrumHitEvent, Limb } from "@/lib/drumRig";
 import { NotationLayout, renderNotation, VF } from "@/lib/notation";
-import { LineData } from "@/lib/song";
+import { stackPlayheadPosition } from "@/lib/stack";
+import { StackPlayer, StackSlotSource, StackStepSource } from "@/lib/stackPlayer";
 import { useIsMobile } from "@/lib/useIsMobile";
 
-// Teaching-first default: slow enough to actually watch each hit land,
-// with the tempo slider (below) always one drag away from real speed.
-const DEFAULT_TEACHER_BPM = 80;
+// One beat in the sequence Drum Teacher plays/animates through — either a
+// single pattern looping forever (the main editor's Drum Teacher button
+// wraps its one beat in a length-1 array) or a whole Stack Builder timeline,
+// which advances through each step in order before looping back to the
+// start. `slot` only needs to be stable/shared across steps that reuse the
+// same underlying beat, so StackPlayer can cache and reuse that beat's
+// buffers instead of reloading them per repeat.
+export interface DrumTeacherStep {
+  slot: string;
+  lines: LineState[];
+  kit: string;
+  customSamples?: CustomSamples;
+  measureLength: number;
+}
 
 type VisualPiece = "hihat" | "crash" | "ride" | "highTom" | "midTom" | "lowTom" | "snare" | "kick";
 
@@ -310,16 +322,19 @@ function AnimalStick({ elRef, variant }: { elRef: Ref<SVGGElement>; variant: Sti
 }
 
 export function DrumTeacherView({
-  lines,
-  kit,
-  customSamples,
-  measureLength,
+  steps,
+  initialBpm,
   onClose,
 }: {
-  lines: LineData[];
-  kit: string;
-  customSamples?: CustomSamples;
-  measureLength: number;
+  // The full sequence to play/animate through, in order, looping back to
+  // the start — a single beat wraps itself in a length-1 array (see
+  // Editor.tsx), a Stack Builder timeline passes every one of its steps
+  // (see StackBuilder.tsx).
+  steps: DrumTeacherStep[];
+  // The main editor's/stack's current tempo, used only to seed this view's
+  // own tempo slider (below) so it picks up where the beat's actual tempo
+  // left off instead of always starting at the slow teaching default.
+  initialBpm: number;
   onClose: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -338,7 +353,7 @@ export function DrumTeacherView({
   const notationHighlightRef = useRef<HTMLDivElement>(null);
   const notationLayoutRef = useRef<NotationLayout | null>(null);
 
-  const [bpm, setBpm] = useState(DEFAULT_TEACHER_BPM);
+  const [bpm, setBpm] = useState(initialBpm);
   const [isPlaying, setIsPlaying] = useState(false);
   const [samplesLoading, setSamplesLoading] = useState(true);
   // Off by default — the ferret/skunk/monkey-butt kit is fun but a lot to
@@ -350,19 +365,33 @@ export function DrumTeacherView({
   const [showNotation, setShowNotation] = useState(false);
   const [notationReady, setNotationReady] = useState(false);
   const isMobile = useIsMobile();
-  const playerRef = useRef<RockBloxPlayer | null>(null);
+  const playerRef = useRef<StackPlayer | null>(null);
 
-  // This view owns its own player entirely separate from the main editor's —
-  // so its tempo (defaulted slow, for actually following along) never
-  // touches the real pattern's tempo, and closing/reopening it can't leave
-  // the main page's transport in a surprising state.
+  // Which step of `steps` is currently sounding — index 0 until playback
+  // starts, then kept in sync with the player's actual progress by the
+  // pose-driving effect below. Everything the rig/notation panel render off
+  // (lines, measureLength) is scoped to just this one step, exactly as if
+  // it were the sole beat — the sequence only changes what step lines up
+  // with "current" as playback moves through it.
+  const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const activeStep = steps[Math.min(activeStepIndex, steps.length - 1)];
+  const lines = activeStep.lines;
+  const measureLength = activeStep.measureLength;
+  const measureLengths = useMemo(() => steps.map((s) => s.measureLength), [steps]);
+
+  // This view owns its own player entirely separate from the main editor's/
+  // stack's — its tempo slider starts at the sequence's own tempo
+  // (initialBpm) but can be dragged slower to actually follow along,
+  // without touching the real pattern's tempo or leaving the main page's
+  // transport in a surprising state when this view closes. A StackPlayer
+  // (rather than a single-pattern RockBloxPlayer) is used even for the
+  // single-beat case so both modes share the exact same playback and
+  // step-tracking logic.
   useEffect(() => {
-    const player = new RockBloxPlayer(kit);
+    const player = new StackPlayer();
     playerRef.current = player;
-    player.ready.then(() => {
-      setSamplesLoading(false);
-      if (customSamples && Object.keys(customSamples).length > 0) player.loadCustomSamples(customSamples);
-    });
+    const sources: StackSlotSource[] = steps.map((s) => ({ slot: s.slot, kit: s.kit, customSamples: s.customSamples }));
+    player.loadSlots(sources).then(() => setSamplesLoading(false));
     return () => {
       player.destroy();
       playerRef.current = null;
@@ -370,11 +399,10 @@ export function DrumTeacherView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Retunes an already-scheduled or in-progress loop — see StackPlayer.setBpm.
   useEffect(() => {
-    if (!playerRef.current) return;
-    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks, volume: l.volume }));
-    playerRef.current.updateSong(lineStates, bpm, measureLength);
-  }, [lines, bpm, measureLength]);
+    playerRef.current?.setBpm(bpm);
+  }, [bpm]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -442,8 +470,10 @@ export function DrumTeacherView({
     if (player.isPlaying()) {
       player.stop();
       setIsPlaying(false);
+      setActiveStepIndex(0);
     } else {
-      await player.play();
+      const stepSources: StackStepSource[] = steps.map((s) => ({ slot: s.slot, lines: s.lines, measureLength: s.measureLength }));
+      await player.play(stepSources, bpm, true);
       setIsPlaying(true);
     }
   }
@@ -642,6 +672,13 @@ export function DrumTeacherView({
   // tracking) so a slow/backgrounded frame just means one frame reads a
   // slightly later `abs`, never a compounding drift between the animation
   // and the audio the way accumulating deltas across frames could.
+  //
+  // StackPlayer only reports whole-song elapsed seconds (not "which step,
+  // how far into it"), so stackPlayheadPosition does that mapping every
+  // frame. When it crosses into a new step, this frame just blanks the pose
+  // (same "hide, then let the next render pick it up" approach as
+  // StackSheetMusicView's page turns) and updates activeStepIndex — the
+  // *next* frame renders against that step's own events/measureLength.
   useEffect(() => {
     if (!isPlaying || allEvents.length === 0 || measureLength <= 0) {
       applyPose(null);
@@ -649,14 +686,22 @@ export function DrumTeacherView({
     }
     let rafId: number;
     function tick() {
-      const info = playerRef.current?.getPlayheadInfo() ?? null;
-      applyPose(info ? info.beat + info.fraction : null);
+      const progress = playerRef.current?.getProgress() ?? null;
+      const pos = progress ? stackPlayheadPosition(progress.elapsed, measureLengths, bpm) : null;
+      if (!pos) {
+        applyPose(null);
+      } else if (pos.stepIndex !== activeStepIndex) {
+        applyPose(null);
+        setActiveStepIndex(pos.stepIndex);
+      } else {
+        applyPose(pos.abs);
+      }
       rafId = requestAnimationFrame(tick);
     }
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying, allEvents, measureLength, bpm]);
+  }, [isPlaying, allEvents, measureLength, bpm, activeStepIndex, measureLengths]);
 
   return (
     <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white">

@@ -1,6 +1,6 @@
 import { InstrumentId } from "./instruments";
+import { NotationLine } from "./notation";
 import { HitAccent, NOTE_FRACTION } from "./rhythm";
-import { LineData } from "./song";
 
 // Which limb plays which drum piece, for the Drum Teacher view — a standard
 // basic-groove convention (right hand keeps time on hi-hat/ride/toms/crash,
@@ -38,7 +38,7 @@ export interface DrumHitEvent {
 // One measure's worth of hit events, sorted by time — the same timing math
 // as audioEngine.ts's scheduleLoopEvents, but producing visual events (for
 // the Drum Teacher view) instead of scheduling audio.
-export function computeHitEvents(lines: LineData[], measureBeats: number): DrumHitEvent[] {
+export function computeHitEvents(lines: NotationLine[], measureBeats: number): DrumHitEvent[] {
   const events: DrumHitEvent[] = [];
   for (let beatIndex = 0; beatIndex < measureBeats; beatIndex++) {
     for (const line of lines) {
