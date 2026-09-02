@@ -140,6 +140,24 @@ function drawStave(
     measureLength
   ).fill(undefined);
 
+  // A rest at the start or end of a would-be beam group isn't beamed in
+  // standard notation: a subdivided beat with one of its hits turned to a
+  // rest reads as a flagged note next to a rest, not a one-note beam. Trim
+  // edge rests off the group and only return it when two or more sounding
+  // notes are left. `beamRests` stays on at the call sites so a rest *between*
+  // two hits still beams through, which is correct.
+  const beamableRun = (
+    group: { note: InstanceType<VF["StemmableNote"]>; isRest: boolean }[]
+  ): InstanceType<VF["StemmableNote"]>[] | null => {
+    let start = 0;
+    let end = group.length;
+    while (start < end && group[start].isRest) start++;
+    while (end > start && group[end - 1].isRest) end--;
+    const trimmed = group.slice(start, end);
+    const sounding = trimmed.filter((g) => !g.isRest).length;
+    return sounding >= 2 ? trimmed.map((g) => g.note) : null;
+  };
+
   for (let beat = 0; beat < measureLength; beat++) {
     // Collect every note onset in this beat, across all instrument lines,
     // keyed by its tick offset — so hits that land on the same tick become
@@ -247,23 +265,27 @@ function drawStave(
     // which requires every member to already have one.
     if (beatHasTriplet) {
       tuplets.push(new VF.Tuplet(beatNotes, { numNotes: 3, notesOccupied: 2 }));
-      if (beatNotes.length >= 2) {
+      const toBeam = beamableRun(
+        beatNotes.map((note, i) => ({ note, isRest: !segments[i].instruments }))
+      );
+      if (toBeam) {
         beams.push(
-          ...VF.Beam.generateBeams(beatNotes, { beamRests: true, stemDirection: STEM_DIRECTION })
+          ...VF.Beam.generateBeams(toBeam, { beamRests: true, stemDirection: STEM_DIRECTION })
         );
       }
     } else {
-      let run: InstanceType<VF["StemmableNote"]>[] = [];
+      let run: { note: InstanceType<VF["StemmableNote"]>; isRest: boolean }[] = [];
       const flush = () => {
-        if (run.length >= 2) {
+        const toBeam = beamableRun(run);
+        if (toBeam) {
           beams.push(
-            ...VF.Beam.generateBeams(run, { beamRests: true, stemDirection: STEM_DIRECTION })
+            ...VF.Beam.generateBeams(toBeam, { beamRests: true, stemDirection: STEM_DIRECTION })
           );
         }
         run = [];
       };
       segments.forEach((seg, i) => {
-        if (seg.ticks !== TICKS_PER_BEAT) run.push(beatNotes[i]);
+        if (seg.ticks !== TICKS_PER_BEAT) run.push({ note: beatNotes[i], isRest: !seg.instruments });
         else flush();
       });
       flush();
