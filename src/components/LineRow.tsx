@@ -39,23 +39,40 @@ export function LineRow({
 }) {
   const def = getInstrument(instrument);
 
-  const blockButtons = blocks.map((tile, i) => (
-    <Block
-      key={i}
-      id={`${lineId}:${i}`}
-      tile={tile}
-      active={i < measureLength}
-      playing={playheadBeat === i}
-      isMobile={isMobile}
-      picked={movingBlock?.lineId === lineId && movingBlock?.index === i}
-      movePending={movingBlock !== null}
-      onClear={() => onClearBlock(i)}
-      onTap={() => onBlockTap(i)}
-      onToggleHit={(hitIndex) => onToggleHit(i, hitIndex)}
-      onCycleAccent={(hitIndex) => onCycleAccent(i, hitIndex)}
-      onPickUp={() => onPickUp(i)}
-    />
-  ));
+  const beatCount = blocks.length;
+  const blockButtons = blocks.flatMap((tile, i) => {
+    const block = (
+      <Block
+        key={`b${i}`}
+        id={`${lineId}:${i}`}
+        tile={tile}
+        active={i < measureLength}
+        playing={playheadBeat === i}
+        isMobile={isMobile}
+        picked={movingBlock?.lineId === lineId && movingBlock?.index === i}
+        movePending={movingBlock !== null}
+        onClear={() => onClearBlock(i)}
+        onTap={() => onBlockTap(i)}
+        onToggleHit={(hitIndex) => onToggleHit(i, hitIndex)}
+        onCycleAccent={(hitIndex) => onCycleAccent(i, hitIndex)}
+        onPickUp={() => onPickUp(i)}
+      />
+    );
+    // Hairline after beat 4 once the grid runs past a single 4/4 bar, so the
+    // starter measure keeps its shape. Desktop only — the wrapping mobile
+    // grid already breaks the row there.
+    if (i === 3 && beatCount > 4) {
+      return [
+        block,
+        <span
+          key="bar-div"
+          aria-hidden
+          className="hidden shrink-0 self-center rounded bg-white/30 md:mx-2.5 md:block md:h-16 md:w-0.5"
+        />,
+      ];
+    }
+    return [block];
+  });
 
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-white/5 p-3 md:flex-row md:flex-wrap md:items-center">
@@ -83,7 +100,12 @@ export function LineRow({
         </button>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-7 md:flex md:flex-1 md:flex-nowrap md:gap-2 md:overflow-x-auto">
+      <div
+        className={[
+          "grid gap-2 md:flex md:flex-1 md:flex-nowrap md:gap-2 md:overflow-x-auto",
+          beatCount <= 3 ? "grid-cols-3" : "grid-cols-4",
+        ].join(" ")}
+      >
         {blockButtons}
       </div>
 

@@ -48,9 +48,9 @@ interface SlotCrop {
 const POLL_INTERVAL_MS = 3000;
 const PIXELS_PER_SECOND = 80;
 const WAVEFORM_HEIGHT = 120;
-// Deliberately *not* lib/song's MAX_BEATS (7) — the normal Editor and every
-// hand-built board stay capped at 7, but a manually-picked clip here is
-// allowed to run to a full 8-beat (2-bar) phrase. StoredLine.blocks isn't
+// Independent of lib/song's MAX_BEATS (they happen to coincide at 8 today):
+// a manually-picked clip here is allowed to run to a full 8-beat (2-bar)
+// phrase whatever the editor's cap is set to. StoredLine.blocks isn't
 // fixed-length (LineRow renders however many blocks actually exist), so an
 // 8-block crop still displays and plays fine once saved to a real board.
 const CROP_MAX_BEATS = 8;

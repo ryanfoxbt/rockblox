@@ -282,15 +282,15 @@ function nextTomVoice(tom: InstrumentId): InstrumentId {
 }
 
 const MIN_MEASURE_BEATS = 3;
-const MAX_MEASURE_BEATS = MAX_BEATS; // 7 — the app's own per-pattern ceiling
-const MEASURE_BEATS_OPTIONS = MAX_MEASURE_BEATS - MIN_MEASURE_BEATS + 1; // 3,4,5,6,7 = 5 choices
+const MAX_MEASURE_BEATS = MAX_BEATS; // the app's own per-pattern ceiling (see song.ts)
+const MEASURE_BEATS_OPTIONS = MAX_MEASURE_BEATS - MIN_MEASURE_BEATS + 1; // 3,4,5,6,7,8 = 6 choices
 
 // Picks the sentence's time signature from its character count via a plain
-// modulo, landing somewhere in 3-7 — a from-scratch beat used to almost
-// always end up at 7/4 simply because that's the block-filling loop's hard
-// ceiling, not because the text called for it. Character count (not word
-// count) gives finer-grained, less clustered spread across the five
-// options, and ties back to the feature's own 280-character framing.
+// modulo, landing somewhere in 3-8 — a from-scratch beat used to almost
+// always end up at the ceiling simply because that's the block-filling
+// loop's hard limit, not because the text called for it. Character count
+// (not word count) gives finer-grained, less clustered spread across the
+// six options, and ties back to the feature's own 280-character framing.
 function beatsPerMeasureFor(sentence: string): number {
   return MIN_MEASURE_BEATS + (sentence.trim().length % MEASURE_BEATS_OPTIONS);
 }

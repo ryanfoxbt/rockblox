@@ -28,10 +28,13 @@ import { generateFillVariation, generateGrooveVariation, generateRandomBeat } fr
 import { InstrumentId } from "@/lib/instruments";
 import { useIsMobile } from "@/lib/useIsMobile";
 import {
+  DEFAULT_GRID_BEATS,
   LineData,
   MAX_BEATS,
+  MIN_GRID_BEATS,
   StoredLine,
   computeMeasureLength,
+  createDefaultLines,
   createLine,
   deserializeLines,
   measureLengthFromStoredLines,
@@ -117,14 +120,21 @@ export function Editor({
   const [lines, setLines, { undo, redo, reset: resetLines, canUndo, canRedo }] = useHistoryState<LineData[]>(() => {
     if (board) {
       const data = board.slots[activeSlot];
-      return data && data.lines.length > 0 ? deserializeLines(data.lines) : [createLine(0)];
+      return data && data.lines.length > 0 ? deserializeLines(data.lines) : createDefaultLines();
     }
-    return initialLines && initialLines.length > 0 ? deserializeLines(initialLines) : [createLine(0)];
+    return initialLines && initialLines.length > 0 ? deserializeLines(initialLines) : createDefaultLines();
   });
   const [bpm, setBpm] = useState(() => {
     if (board) return board.slots[activeSlot]?.bpm ?? 100;
     return initialBpm ?? 100;
   });
+  // The floor for how many beat columns the grid shows. Starts at the
+  // 4-beat home layout, or wider if the pattern loaded already needs it.
+  // Only the edge nudge changes this; the actual column count on screen
+  // (`visibleBeats` below) also grows to cover any beat that gets filled.
+  const [gridBeats, setGridBeats] = useState(() =>
+    Math.min(MAX_BEATS, Math.max(DEFAULT_GRID_BEATS, computeMeasureLength(lines)))
+  );
   const [isPlaying, setIsPlaying] = useState(false);
   const [playheadBeat, setPlayheadBeat] = useState<number | null>(null);
   const [activeTile, setActiveTile] = useState<RhythmTile | null>(null);
@@ -160,6 +170,20 @@ export function Editor({
   const rafRef = useRef<number | null>(null);
 
   const measureLength = computeMeasureLength(lines);
+
+  // Columns actually rendered: the user's chosen floor, but never fewer than
+  // the beats that have tiles in them (so an import or a generated beat is
+  // never clipped). Nudging can't drop below whichever is larger of the 3/4
+  // minimum and the filled length.
+  const visibleBeats = Math.min(
+    MAX_BEATS,
+    Math.max(gridBeats, measureLength, MIN_GRID_BEATS)
+  );
+  const canGrowGrid = visibleBeats < MAX_BEATS;
+  const canShrinkGrid = visibleBeats > Math.max(MIN_GRID_BEATS, measureLength);
+  function nudgeGridBeats(delta: number) {
+    setGridBeats(Math.min(MAX_BEATS, Math.max(MIN_GRID_BEATS, visibleBeats + delta)));
+  }
 
   const drumTeacherSteps = useMemo<DrumTeacherStep[]>(
     () => [{ slot: activeSlot, lines, kit, customSamples, measureLength }],
@@ -227,6 +251,9 @@ export function Editor({
     if (!isScratchpad) return;
     const draft = loadDraft();
     if (draft) {
+      // No setGridBeats here: on a scratchpad mount gridBeats is already at
+      // its 4-beat floor, and visibleBeats widens on its own to cover a
+      // longer restored pattern (see the measureLength derivation).
       if (draft.lines.length > 0) resetLines(deserializeLines(draft.lines));
       // One-time rehydration from an external store (localStorage) on mount
       // — not derived from props/state, so there's no dependency to move
@@ -284,7 +311,7 @@ export function Editor({
     router.replace(`${basePath}?slot=${slot}`, { scroll: false });
 
     const data = slotsRef.current[slot];
-    const nextLines = data && data.lines.length > 0 ? deserializeLines(data.lines) : [createLine(0)];
+    const nextLines = data && data.lines.length > 0 ? deserializeLines(data.lines) : createDefaultLines();
     const nextBpm = data?.bpm ?? 100;
     const nextKit = data?.kit ?? DEFAULT_KIT;
     const nextCustomSamples = data?.customSamples ?? {};
@@ -301,6 +328,7 @@ export function Editor({
     setArmedTile(null);
     setMovingFrom(null);
     resetLines(nextLines);
+    setGridBeats(Math.min(MAX_BEATS, Math.max(DEFAULT_GRID_BEATS, computeMeasureLength(nextLines))));
     setBpm(nextBpm);
     setCustomSamples(nextCustomSamples);
     playerRef.current?.clearCustomSamples();
@@ -606,8 +634,8 @@ export function Editor({
           </Link>
           <p className="hidden text-sm text-white/50 sm:block">
             {isMobile
-              ? `Tap a tile, then tap up to ${MAX_BEATS} beat blocks per line to build a drum groove.`
-              : `Drag rhythmic values into up to ${MAX_BEATS} beat blocks per line to build a drum groove, or click a tile then click a block to place it — handy on a trackpad.`}
+              ? `Tap a tile, then tap up to ${visibleBeats} beat blocks per line to build a drum groove.`
+              : `Drag rhythmic values into up to ${visibleBeats} beat blocks per line to build a drum groove, or click a tile then click a block to place it — handy on a trackpad.`}
           </p>
           {board ? (
             <div className="mt-1 flex flex-wrap items-center text-xs">
@@ -872,39 +900,82 @@ export function Editor({
               )}
             </Transport>
 
-            <div className="flex flex-col gap-3">
-              {lines.map((line) => (
-                <LineRow
-                  key={line.id}
-                  lineId={line.id}
-                  instrument={line.instrument}
-                  blocks={line.blocks}
-                  measureLength={measureLength}
-                  playheadBeat={isPlaying ? playheadBeat : null}
-                  isMobile={isMobile}
-                  movingBlock={movingFrom}
-                  onInstrumentChange={(inst) => changeInstrument(line.id, inst)}
-                  onClearBlock={(i) => clearBlock(line.id, i)}
-                  onBlockTap={(i) => handleBlockTap(line.id, i)}
-                  onToggleHit={(i, hitIndex) => handleToggleHit(line.id, i, hitIndex)}
-                  onCycleAccent={(i, hitIndex) => handleCycleAccent(line.id, i, hitIndex)}
-                  onRemoveLine={() => removeLine(line.id)}
-                  onPickUp={(i) => {
-                    const t = line.blocks[i];
-                    if (t) handlePickUp(line.id, i, t);
-                  }}
-                  canRemove={lines.length > 1}
-                />
-              ))}
+            <div className="flex items-stretch gap-1.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-3">
+                {lines.map((line) => (
+                  <LineRow
+                    key={line.id}
+                    lineId={line.id}
+                    instrument={line.instrument}
+                    blocks={line.blocks.slice(0, visibleBeats)}
+                    measureLength={measureLength}
+                    playheadBeat={isPlaying ? playheadBeat : null}
+                    isMobile={isMobile}
+                    movingBlock={movingFrom}
+                    onInstrumentChange={(inst) => changeInstrument(line.id, inst)}
+                    onClearBlock={(i) => clearBlock(line.id, i)}
+                    onBlockTap={(i) => handleBlockTap(line.id, i)}
+                    onToggleHit={(i, hitIndex) => handleToggleHit(line.id, i, hitIndex)}
+                    onCycleAccent={(i, hitIndex) => handleCycleAccent(line.id, i, hitIndex)}
+                    onRemoveLine={() => removeLine(line.id)}
+                    onPickUp={(i) => {
+                      const t = line.blocks[i];
+                      if (t) handlePickUp(line.id, i, t);
+                    }}
+                    canRemove={lines.length > 1}
+                  />
+                ))}
+              </div>
+              {/* Beat-count nudge — deliberately faint. The 3×4 grid is the
+                  whole point; that it pulls in to 3/4 or out to 8/4 is a
+                  bonus for the curious, not a headline control. */}
+              <div className="flex shrink-0 flex-col items-center justify-center gap-2 border-l border-white/10 pl-1.5">
+                <button
+                  type="button"
+                  onClick={() => nudgeGridBeats(1)}
+                  aria-label="Show another beat column"
+                  title="Add a beat (up to 8)"
+                  className={[
+                    "flex h-6 w-6 items-center justify-center rounded text-lg leading-none transition",
+                    canGrowGrid
+                      ? "text-white/15 hover:bg-white/5 hover:text-white/60"
+                      : "pointer-events-none opacity-0",
+                  ].join(" ")}
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  onClick={() => nudgeGridBeats(-1)}
+                  aria-label="Hide the last beat column"
+                  title="Remove a beat (down to 3)"
+                  className={[
+                    "flex h-6 w-6 items-center justify-center rounded text-lg leading-none transition",
+                    canShrinkGrid
+                      ? "text-white/15 hover:bg-white/5 hover:text-white/60"
+                      : "pointer-events-none opacity-0",
+                  ].join(" ")}
+                >
+                  −
+                </button>
+              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={addLine}
-              className="self-start rounded-md border border-dashed border-white/20 px-4 py-2 text-sm text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
-            >
-              + Add drum piece
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/25"
+                title="Beats per bar — nudge the +/− at the grid's edge to change it"
+              >
+                {visibleBeats} / 4
+              </span>
+              <button
+                type="button"
+                onClick={addLine}
+                className="rounded-md border border-dashed border-white/20 px-4 py-2 text-sm text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+              >
+                + Add drum piece
+              </button>
+            </div>
           </section>
         </main>
 
