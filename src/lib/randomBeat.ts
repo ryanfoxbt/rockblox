@@ -41,6 +41,14 @@ export interface RandomBeatOptions {
   instruments: InstrumentId[];
   // 1 (steady/plain) to 10 (chaotic) — see paramsForComplexity.
   complexity: number;
+  // Explicit beat count, 1..MAX_BEATS. When omitted, the count is rolled
+  // from complexity (paramsForComplexity's min/maxBlocks) as before.
+  beats?: number;
+}
+
+// Clamp a requested beat count into the app's valid range.
+function clampBeats(beats: number): number {
+  return Math.max(1, Math.min(MAX_BEATS, Math.round(beats)));
 }
 
 export const DEFAULT_RANDOM_BEAT_OPTIONS: RandomBeatOptions = {
@@ -192,7 +200,8 @@ function reactiveProbabilities(
 export function generateRandomBeat(options: Partial<RandomBeatOptions> = {}): LineData[] {
   const opts = { ...DEFAULT_RANDOM_BEAT_OPTIONS, ...options };
   const params = paramsForComplexity(opts.complexity);
-  const blockCount = randomInt(params.minBlocks, params.maxBlocks);
+  const blockCount =
+    opts.beats != null ? clampBeats(opts.beats) : randomInt(params.minBlocks, params.maxBlocks);
   const instruments = opts.instruments;
   if (instruments.length === 0) return [];
 
@@ -231,8 +240,14 @@ const VARIATION_DROP_HIT_PROBABILITY = 0.15;
 // length as the source (so it can drop into another slot of the same song
 // without a jarring bar-length change), with each block having a chance —
 // scaled by complexity — of being re-rolled rather than kept as-is.
-export function generateGrooveVariation(sourceLines: LineData[], complexity: number): LineData[] {
-  const measureLength = computeMeasureLength(sourceLines);
+export function generateGrooveVariation(
+  sourceLines: LineData[],
+  complexity: number,
+  beats?: number
+): LineData[] {
+  // An explicit `beats` overrides the source's own bar length — beats past
+  // the source's end are generated fresh, extra source beats are dropped.
+  const measureLength = beats != null ? clampBeats(beats) : computeMeasureLength(sourceLines);
   const params = paramsForComplexity(complexity);
   const mutationProbability = scaleByComplexity(complexity, VARIATION_MUTATION_PROBABILITY);
 
@@ -391,8 +406,12 @@ function buildFillLineBlocks(
 // for color, the timekeeping cymbal dropping out for the tail, and an
 // occasional single crash accent landing on the very last sixteenth of the
 // bar. No triplets: real fills are rarely polyrhythmic.
-export function generateFillVariation(sourceLines: LineData[], complexity: number): LineData[] {
-  const measureLength = computeMeasureLength(sourceLines);
+export function generateFillVariation(
+  sourceLines: LineData[],
+  complexity: number,
+  beats?: number
+): LineData[] {
+  const measureLength = beats != null ? clampBeats(beats) : computeMeasureLength(sourceLines);
   if (measureLength === 0) return [];
   const density = fillDensityForComplexity(complexity);
 

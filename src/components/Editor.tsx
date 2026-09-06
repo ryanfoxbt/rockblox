@@ -558,8 +558,8 @@ export function Editor({
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, instrument } : l)));
   }
 
-  function randomizeBeat(complexity: number) {
-    setLines(generateRandomBeat({ complexity }));
+  function randomizeBeat(complexity: number, beats: number) {
+    setLines(generateRandomBeat({ complexity, beats }));
   }
 
   // Slots other than the one on screen that actually have a beat in
@@ -570,11 +570,20 @@ export function Editor({
     computeVariationSources(board?.slots ?? null, activeSlot)
   );
 
-  function randomizeVariation(sourceSlot: string, kind: VariationKind, complexity: number) {
+  function randomizeVariation(
+    sourceSlot: string,
+    kind: VariationKind,
+    complexity: number,
+    beats: number
+  ) {
     const data = slotsRef.current[sourceSlot as SlotLetter];
     if (!data) return;
     const sourceLines = deserializeLines(data.lines);
-    setLines(kind === "fill" ? generateFillVariation(sourceLines, complexity) : generateGrooveVariation(sourceLines, complexity));
+    setLines(
+      kind === "fill"
+        ? generateFillVariation(sourceLines, complexity, beats)
+        : generateGrooveVariation(sourceLines, complexity, beats)
+    );
   }
 
   function clearBlock(id: string, index: number) {

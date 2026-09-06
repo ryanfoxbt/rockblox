@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { DEFAULT_COMPLEXITY, MAX_COMPLEXITY, MIN_COMPLEXITY } from "@/lib/randomBeat";
+import { DEFAULT_GRID_BEATS, MAX_BEATS } from "@/lib/song";
 import { FAMOUS_SONGS } from "@/lib/famousSongs";
 import { DRUM_LESSONS } from "@/lib/drumSchool";
 
@@ -27,8 +28,8 @@ export function RandomizeButton({
   variant = "button",
 }: {
   variationSources: VariationSource[];
-  onGenerateNew: (complexity: number) => void;
-  onGenerateVariation: (sourceSlot: string, kind: VariationKind, complexity: number) => void;
+  onGenerateNew: (complexity: number, beats: number) => void;
+  onGenerateVariation: (sourceSlot: string, kind: VariationKind, complexity: number, beats: number) => void;
   // "menuItem" renders as a plain full-width row for the header's
   // consolidated tools menu (see Editor.tsx, labeled "Inspiration" there)
   // instead of its own icon button — Editor always uses this now, on both
@@ -40,6 +41,7 @@ export function RandomizeButton({
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"new" | "variation">("new");
   const [complexity, setComplexity] = useState(DEFAULT_COMPLEXITY);
+  const [beats, setBeats] = useState(DEFAULT_GRID_BEATS);
   const [sourceSlot, setSourceSlot] = useState<string | null>(null);
   const [variationKind, setVariationKind] = useState<VariationKind>("groove");
   // Modal stays open after Generate (so re-rolling is one click), so without
@@ -61,9 +63,9 @@ export function RandomizeButton({
 
   function generate() {
     if (mode === "variation" && effectiveSourceSlot) {
-      onGenerateVariation(effectiveSourceSlot, variationKind, complexity);
+      onGenerateVariation(effectiveSourceSlot, variationKind, complexity, beats);
     } else {
-      onGenerateNew(complexity);
+      onGenerateNew(complexity, beats);
     }
     setJustGenerated(true);
     setTimeout(() => setJustGenerated(false), 2000);
@@ -199,6 +201,25 @@ export function RandomizeButton({
             <div className="mt-1 flex justify-between text-[10px] uppercase tracking-wide text-white/40">
               <span>Steady</span>
               <span>Chaotic</span>
+            </div>
+
+            <label className="mb-1 mt-4 flex items-center justify-between text-sm text-white/70">
+              <span>Beats</span>
+              <span className="font-mono text-yellow-400">{beats}</span>
+            </label>
+            <input
+              type="range"
+              min={1}
+              max={MAX_BEATS}
+              step={1}
+              value={beats}
+              onChange={(e) => setBeats(Number(e.target.value))}
+              className="w-full accent-yellow-400"
+              aria-label="Beats per bar for the generated pattern"
+            />
+            <div className="mt-1 flex justify-between text-[10px] uppercase tracking-wide text-white/40">
+              <span>1 / 4</span>
+              <span>{MAX_BEATS} / 4</span>
             </div>
 
             <button
