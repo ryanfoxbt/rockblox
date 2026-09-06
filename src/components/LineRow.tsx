@@ -61,13 +61,13 @@ export function LineRow({
     // Hairline after beat 4 once the grid runs past a single 4/4 bar, so the
     // starter measure keeps its shape. Desktop only — the wrapping mobile
     // grid already breaks the row there.
-    if (i === 3 && beatCount > 4) {
+    if (i === 3 && beatCount > 4 && !isMobile) {
       return [
         block,
         <span
           key="bar-div"
           aria-hidden
-          className="hidden shrink-0 self-center rounded bg-white/30 md:mx-2.5 md:block md:h-16 md:w-0.5"
+          className="mx-2.5 h-16 w-0.5 shrink-0 self-center rounded bg-white/30"
         />,
       ];
     }
@@ -89,15 +89,17 @@ export function LineRow({
             </option>
           ))}
         </select>
-        <button
-          type="button"
-          onClick={onRemoveLine}
-          disabled={!canRemove}
-          title="Remove this RockBlocks line"
-          className="shrink-0 rounded-md border border-white/10 px-2 py-1 text-xs text-white/60 transition hover:border-red-400 hover:text-red-400 disabled:opacity-20 md:hidden"
-        >
-          Remove
-        </button>
+        {isMobile && (
+          <button
+            type="button"
+            onClick={onRemoveLine}
+            disabled={!canRemove}
+            title="Remove this RockBlocks line"
+            className="shrink-0 rounded-md border border-white/10 px-2 py-1 text-xs text-white/60 transition hover:border-red-400 hover:text-red-400 disabled:opacity-20"
+          >
+            Remove
+          </button>
+        )}
       </div>
 
       <div
@@ -109,15 +111,17 @@ export function LineRow({
         {blockButtons}
       </div>
 
-      <button
-        type="button"
-        onClick={onRemoveLine}
-        disabled={!canRemove}
-        title="Remove this RockBlocks line"
-        className="hidden shrink-0 rounded-md border border-white/10 px-2 py-1 text-xs text-white/60 transition hover:border-red-400 hover:text-red-400 disabled:opacity-20 md:ml-auto md:block"
-      >
-        Remove
-      </button>
+      {!isMobile && (
+        <button
+          type="button"
+          onClick={onRemoveLine}
+          disabled={!canRemove}
+          title="Remove this RockBlocks line"
+          className="ml-auto shrink-0 rounded-md border border-white/10 px-2 py-1 text-xs text-white/60 transition hover:border-red-400 hover:text-red-400 disabled:opacity-20"
+        >
+          Remove
+        </button>
+      )}
     </div>
   );
 }

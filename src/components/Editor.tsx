@@ -633,11 +633,12 @@ export function Editor({
               Rock<span className="text-yellow-400">Blocks</span>
             </h1>
           </Link>
-          <p className="hidden text-sm text-white/50 sm:block">
-            {isMobile
-              ? `Tap a tile, then tap up to ${visibleBeats} beat blocks per line to build a drum groove.`
-              : `Drag rhythmic values into up to ${visibleBeats} beat blocks per line to build a drum groove, or click a tile then click a block to place it — handy on a trackpad.`}
-          </p>
+          {!isMobile && (
+            <p className="text-sm text-white/50">
+              Drag rhythmic values into up to {visibleBeats} beat blocks per line to build a drum
+              groove, or click a tile then click a block to place it — handy on a trackpad.
+            </p>
+          )}
           {board ? (
             <div className="mt-1 flex flex-wrap items-center text-xs">
               {board.readOnly ? (
