@@ -69,6 +69,10 @@ const KICK_PEDAL_HINGE = { x: 322, y: 536 };
 const KICK_PEDAL_FOOT_REST = { x: 322, y: 528 };
 const KICK_STRIKE_POINT = { x: 322, y: 494 }; // where the beater actually touches the head
 const KICK_BEATER_REST = { x: 322, y: 558 };
+// The bass drum is drawn stood up on its side — front resonant head facing
+// the player — so you can actually see the pedal's beater strike it. Every
+// other drum is looked down on; this is the one you play with a foot.
+const KICK_HEAD = { cx: 322, cy: 470, r: 68 };
 
 const DRUM_SHAPES: DrumShape[] = [
   { id: "crash", label: "Crash", kind: "cymbal", cx: 132, cy: 96, rx: 54, ry: 15, labelDy: -25, standTopY: 96 },
@@ -78,7 +82,7 @@ const DRUM_SHAPES: DrumShape[] = [
   { id: "midTom", label: "Mid Tom", kind: "drum", cx: 408, cy: 172, rx: 38, ry: 28, labelDy: -38 },
   { id: "lowTom", label: "Floor Tom", kind: "drum", cx: 486, cy: 352, rx: 52, ry: 40, labelDy: -50 },
   { id: "snare", label: "Snare", kind: "drum", cx: 320, cy: 330, rx: 46, ry: 32, labelDy: -42 },
-  { id: "kick", label: "Kick", kind: "drum", cx: 322, cy: 460, rx: 96, ry: 46, labelDy: -55 },
+  { id: "kick", label: "Kick", kind: "drum", cx: 322, cy: 460, rx: 96, ry: 46, labelDy: -82 },
 ];
 
 const PIECE_POS: Record<VisualPiece, { x: number; y: number }> = Object.fromEntries(
@@ -778,10 +782,10 @@ export function DrumTeacherView({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col items-center gap-2 overflow-auto p-6">
+      <div className="flex flex-1 flex-col items-center gap-2 overflow-hidden p-4">
         <div
           className={[
-            "flex w-full max-w-6xl gap-4",
+            "flex min-h-0 w-full max-w-6xl flex-1 gap-4",
             showNotation ? "flex-col lg:flex-row lg:items-stretch" : "flex-col items-center justify-center",
           ].join(" ")}
         >
@@ -801,9 +805,14 @@ export function DrumTeacherView({
               )}
             </div>
           )}
-          <div className={showNotation ? "w-full flex-1 lg:max-w-2xl" : "w-full max-w-2xl"}>
-            <div className="rounded-lg bg-gradient-to-b from-slate-800 to-slate-900 p-4 shadow-xl">
-              <svg viewBox="0 0 640 610" className="w-full">
+          <div
+            className={[
+              "flex min-h-0 w-full flex-1 flex-col",
+              showNotation ? "lg:max-w-2xl" : "max-w-2xl",
+            ].join(" ")}
+          >
+            <div className="flex min-h-0 flex-1 items-center justify-center rounded-lg bg-gradient-to-b from-slate-800 to-slate-900 p-3 shadow-xl">
+              <svg viewBox="0 0 640 610" preserveAspectRatio="xMidYMid meet" className="block h-full max-h-full w-full">
             <defs>
               <radialGradient id="cymbalGrad" cx="35%" cy="35%" r="75%">
                 <stop offset="0%" stopColor="#fde68a" />
@@ -984,6 +993,63 @@ export function DrumTeacherView({
                       );
                     })}
                   </>
+                ) : p.id === "kick" ? (
+                  <>
+                    {/* Stood up on its side: the shell recedes behind, the
+                        front head faces the player, and the pedal's beater
+                        (drawn later, on top) strikes that head. */}
+                    <ellipse
+                      cx={KICK_HEAD.cx + 11}
+                      cy={KICK_HEAD.cy - 5}
+                      rx={KICK_HEAD.r}
+                      ry={KICK_HEAD.r}
+                      fill="#5b2410"
+                      stroke="#1e293b"
+                      strokeWidth={2}
+                    />
+                    {/* bass drum spurs (legs) */}
+                    <line
+                      x1={KICK_HEAD.cx - KICK_HEAD.r * 0.62}
+                      y1={KICK_HEAD.cy + KICK_HEAD.r * 0.72}
+                      x2={KICK_HEAD.cx - KICK_HEAD.r - 10}
+                      y2={KICK_HEAD.cy + KICK_HEAD.r + 18}
+                      stroke="#475569"
+                      strokeWidth={4}
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1={KICK_HEAD.cx + KICK_HEAD.r * 0.62}
+                      y1={KICK_HEAD.cy + KICK_HEAD.r * 0.72}
+                      x2={KICK_HEAD.cx + KICK_HEAD.r + 10}
+                      y2={KICK_HEAD.cy + KICK_HEAD.r + 18}
+                      stroke="#475569"
+                      strokeWidth={4}
+                      strokeLinecap="round"
+                    />
+                    {/* counterhoop + front head */}
+                    <circle cx={KICK_HEAD.cx} cy={KICK_HEAD.cy} r={KICK_HEAD.r} fill="#1e293b" />
+                    <circle
+                      cx={KICK_HEAD.cx}
+                      cy={KICK_HEAD.cy}
+                      r={KICK_HEAD.r - 6}
+                      fill="url(#shellGrad)"
+                      stroke="#cbd5e1"
+                      strokeWidth={2}
+                    />
+                    {/* tension lugs around the hoop */}
+                    {[30, 90, 150, 210, 270, 330].map((deg) => {
+                      const rad = (deg * Math.PI) / 180;
+                      return (
+                        <circle
+                          key={`lug-${deg}`}
+                          cx={KICK_HEAD.cx + Math.cos(rad) * (KICK_HEAD.r - 3)}
+                          cy={KICK_HEAD.cy + Math.sin(rad) * (KICK_HEAD.r - 3)}
+                          r={2.6}
+                          fill="#94a3b8"
+                        />
+                      );
+                    })}
+                  </>
                 ) : p.kind === "drum" ? (
                   <>
                     <rect
@@ -1006,9 +1072,25 @@ export function DrumTeacherView({
                     if (el) overlayRefs.current[p.id] = el;
                   }}
                   cx={p.cx}
-                  cy={p.id === "kick" && unhinged ? p.cy + p.ry * 0.18 : p.kind === "drum" ? p.cy - p.ry * 0.3 : p.cy}
-                  rx={p.id === "kick" && unhinged ? p.rx * 0.9 : p.rx}
-                  ry={p.id === "kick" && unhinged ? p.ry * 0.75 : p.kind === "drum" ? p.ry * 0.55 : p.ry}
+                  cy={
+                    p.id === "kick"
+                      ? unhinged
+                        ? p.cy + p.ry * 0.18
+                        : KICK_HEAD.cy
+                      : p.kind === "drum"
+                        ? p.cy - p.ry * 0.3
+                        : p.cy
+                  }
+                  rx={p.id === "kick" ? (unhinged ? p.rx * 0.9 : KICK_HEAD.r - 3) : p.rx}
+                  ry={
+                    p.id === "kick"
+                      ? unhinged
+                        ? p.ry * 0.75
+                        : KICK_HEAD.r - 3
+                      : p.kind === "drum"
+                        ? p.ry * 0.55
+                        : p.ry
+                  }
                   fill="#fde047"
                   opacity={0}
                 />

@@ -39,6 +39,7 @@ import {
   deserializeLines,
   measureLengthFromStoredLines,
   serializeLines,
+  timeSignatureLabel,
 } from "@/lib/song";
 import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine";
 import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
@@ -966,7 +967,7 @@ export function Editor({
                 className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/25"
                 title="Beats per bar — nudge the +/− at the grid's edge to change it"
               >
-                {visibleBeats} / 4
+                {timeSignatureLabel(visibleBeats)}
               </span>
               <button
                 type="button"

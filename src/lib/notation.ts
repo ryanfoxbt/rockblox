@@ -1,6 +1,7 @@
 import type * as VexflowModule from "vexflow";
 import { InstrumentId } from "./instruments";
 import { HitAccent, NoteName, NOTE_FRACTION, RhythmTile } from "./rhythm";
+import { measureSplit } from "./song";
 
 export type VF = typeof VexflowModule;
 
@@ -104,24 +105,34 @@ interface Segment {
   instruments: OnsetHit[] | null;
 }
 
-// Draws one measure's worth of stave/voice/beams/tuplets at the given
-// vertical offset, and returns the per-beat X boundaries needed to position
-// a playhead highlight over it. Shared by the single-measure view
-// (renderNotation) and the Stack Builder's multi-measure view
-// (renderStackNotation), which draws one of these per song step, stacked
-// vertically, at one shared tempo.
-function drawStave(
+// Draws one measure's stave/voice/beams/tuplets at (x, y) and returns each
+// beat's first-note X (for playhead highlighting) plus the stave's right
+// edge. `startBeat` offsets which of the pattern's beats this measure covers,
+// so an 8-beat pattern can be split across two 4/4 measures — see drawStave.
+interface MeasureDrawOptions {
+  x: number;
+  y: number;
+  width: number;
+  lines: NotationLine[];
+  startBeat: number;
+  numBeats: number;
+  showClefAndTime: boolean;
+  isContinuation: boolean;
+}
+
+function drawOneMeasure(
   VF: VF,
   context: ReturnType<VF["Renderer"]["prototype"]["getContext"]>,
-  y: number,
-  lines: NotationLine[],
-  measureLength: number,
-  width: number
-): NotationLayout {
-  const staveWidth = Math.max(width - STAVE_MARGIN_X * 2, 200);
-  const stave = new VF.Stave(STAVE_MARGIN_X, y, staveWidth);
-  stave.addClef("percussion");
-  stave.addTimeSignature(`${measureLength}/4`);
+  { x, y, width, lines, startBeat, numBeats, showClefAndTime, isContinuation }: MeasureDrawOptions
+): { beatStartX: number[]; noteEndX: number } {
+  const stave = new VF.Stave(x, y, Math.max(width, 120));
+  if (showClefAndTime) {
+    stave.addClef("percussion");
+    stave.addTimeSignature(`${numBeats}/4`);
+  }
+  // A continuation measure butts up against the previous one, so its own
+  // begin barline would double against that measure's end barline — drop it.
+  if (isContinuation) stave.setBegBarType(VF.Barline.type.NONE);
   stave.setContext(context).draw();
 
   // Real drum notation puts every instrument on one shared staff voice, with
@@ -130,14 +141,14 @@ function drawStave(
   // this file got wrong before: N separate voices meant N separate beams
   // stacked on top of each other, and per-voice formatting that never
   // actually aligned same-beat hits.
-  const voice = new VF.Voice({ numBeats: measureLength, beatValue: 4 });
+  const voice = new VF.Voice({ numBeats, beatValue: 4 });
   voice.setStrict(false);
 
   const notes: InstanceType<VF["StemmableNote"]>[] = [];
   const beams: InstanceType<VF["Beam"]>[] = [];
   const tuplets: InstanceType<VF["Tuplet"]>[] = [];
   const beatStartNotes: (InstanceType<VF["StemmableNote"]> | undefined)[] = new Array(
-    measureLength
+    numBeats
   ).fill(undefined);
 
   // A rest at the start or end of a would-be beam group isn't beamed in
@@ -158,7 +169,7 @@ function drawStave(
     return sounding >= 2 ? trimmed.map((g) => g.note) : null;
   };
 
-  for (let beat = 0; beat < measureLength; beat++) {
+  for (let beat = 0; beat < numBeats; beat++) {
     // Collect every note onset in this beat, across all instrument lines,
     // keyed by its tick offset — so hits that land on the same tick become
     // one chord instead of independently-positioned noteheads.
@@ -167,7 +178,7 @@ function drawStave(
     let anyRealNote = false;
 
     for (const line of lines) {
-      const tile = line.blocks[beat];
+      const tile = line.blocks[startBeat + beat];
       if (!tile) continue;
       anyTilePlaced = true;
 
@@ -298,14 +309,59 @@ function drawStave(
   beams.forEach((b) => b.setContext(context).draw());
   tuplets.forEach((t) => t.setContext(context).draw());
 
-  const beatBoundariesX = beatStartNotes.map((n) => n?.getAbsoluteX() ?? stave.getNoteStartX());
-  beatBoundariesX.push(stave.getNoteEndX());
-
   return {
-    beatBoundariesX,
-    staveTopY: y - 60,
-    staveBottomY: y + 60,
+    beatStartX: beatStartNotes.map((n) => n?.getAbsoluteX() ?? stave.getNoteStartX()),
+    noteEndX: stave.getNoteEndX(),
   };
+}
+
+// Draws a pattern as one or more measures on a single horizontal system at
+// vertical offset `y`, returning the per-beat X boundaries a playhead
+// highlight needs. An 8-beat pattern is written as two 4/4 measures (see
+// measureSplit) the way a drummer would actually read it; 3-7 beats stay a
+// single bar in their own time signature. Shared by renderNotation and the
+// Stack Builder's renderStackNotation.
+function drawStave(
+  VF: VF,
+  context: ReturnType<VF["Renderer"]["prototype"]["getContext"]>,
+  y: number,
+  lines: NotationLine[],
+  measureLength: number,
+  width: number
+): NotationLayout {
+  const bars = measureSplit(measureLength);
+  const usableWidth = Math.max(width - STAVE_MARGIN_X * 2, 200);
+  // The first measure carries the clef + time signature, so it needs the
+  // extra room; take that evenly off the continuation measures.
+  const clefTimeBonus = bars.length > 1 ? 44 : 0;
+  const evenWidth = usableWidth / bars.length;
+
+  const beatBoundariesX: number[] = [];
+  let x = STAVE_MARGIN_X;
+  let startBeat = 0;
+  let lastNoteEndX = x;
+
+  bars.forEach((numBeats, barIndex) => {
+    const barWidth =
+      barIndex === 0 ? evenWidth + clefTimeBonus : evenWidth - clefTimeBonus / (bars.length - 1);
+    const { beatStartX, noteEndX } = drawOneMeasure(VF, context, {
+      x,
+      y,
+      width: barWidth,
+      lines,
+      startBeat,
+      numBeats,
+      showClefAndTime: barIndex === 0,
+      isContinuation: barIndex > 0,
+    });
+    beatBoundariesX.push(...beatStartX);
+    lastNoteEndX = noteEndX;
+    x += barWidth;
+    startBeat += numBeats;
+  });
+  beatBoundariesX.push(lastNoteEndX);
+
+  return { beatBoundariesX, staveTopY: y - 60, staveBottomY: y + 60 };
 }
 
 export function renderNotation(
@@ -320,6 +376,40 @@ export function renderNotation(
   renderer.resize(width, CANVAS_HEIGHT);
   const context = renderer.getContext();
   return drawStave(VF, context, STAVE_Y, lines, measureLength, width);
+}
+
+// Renders exactly one measure — beats [startBeat, startBeat + numBeats) of
+// `lines` — as its own clef-and-time-signature stave filling the width. The
+// fullscreen Sheet Music view uses this to page through an 8-beat pattern
+// one 4/4 bar at a time; whole-pattern views use renderNotation /
+// renderStackNotation instead.
+export function renderNotationPage(
+  VF: VF,
+  container: HTMLDivElement,
+  lines: NotationLine[],
+  startBeat: number,
+  numBeats: number,
+  width: number
+): NotationLayout {
+  container.innerHTML = "";
+  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+  renderer.resize(width, CANVAS_HEIGHT);
+  const context = renderer.getContext();
+  const { beatStartX, noteEndX } = drawOneMeasure(VF, context, {
+    x: STAVE_MARGIN_X,
+    y: STAVE_Y,
+    width: Math.max(width - STAVE_MARGIN_X * 2, 200),
+    lines,
+    startBeat,
+    numBeats,
+    showClefAndTime: true,
+    isContinuation: false,
+  });
+  return {
+    beatBoundariesX: [...beatStartX, noteEndX],
+    staveTopY: STAVE_Y - 60,
+    staveBottomY: STAVE_Y + 60,
+  };
 }
 
 export interface StackNotationStep {

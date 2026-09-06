@@ -12,6 +12,23 @@ export const MAX_BEATS = 8;
 export const DEFAULT_GRID_BEATS = 4;
 export const MIN_GRID_BEATS = 3;
 
+// How a pattern's beats break into written measures. A length that's an
+// exact multiple of 4 and longer than one bar (i.e. 8) reads as that many
+// 4/4 measures — the way a musician would actually count and notate it —
+// rather than one long 8/4 bar. Odd lengths (3, 5, 6, 7) stay a single bar
+// in their own time signature.
+export function measureSplit(beats: number): number[] {
+  if (beats > 4 && beats % 4 === 0) return Array(beats / 4).fill(4);
+  return [beats];
+}
+
+// Human label for a pattern's meter: "7/4" for a single bar, "4/4 ×2" for a
+// multi-bar split.
+export function timeSignatureLabel(beats: number): string {
+  const bars = measureSplit(beats);
+  return bars.length > 1 ? `${bars[0]}/4 ×${bars.length}` : `${beats}/4`;
+}
+
 // Top to bottom: hi-hat, snare, bass drum — the three voices a fresh
 // pattern starts with. Adding a 4th+ piece falls back to defaultInstrumentFor.
 export const DEFAULT_LINE_INSTRUMENTS: InstrumentId[] = ["hihatClosed", "snare", "kick"];

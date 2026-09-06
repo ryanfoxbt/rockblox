@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LineData } from "@/lib/song";
-import { NotationLayout, renderNotation, VF } from "@/lib/notation";
+import { LineData, measureSplit, timeSignatureLabel } from "@/lib/song";
+import { NotationLayout, renderNotationPage, VF } from "@/lib/notation";
 
 export function SheetMusicView({
   lines,
@@ -28,6 +28,19 @@ export function SheetMusicView({
   const highlightRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<NotationLayout | null>(null);
   const [ready, setReady] = useState(false);
+
+  // An 8-beat pattern is written as two 4/4 measures, shown one per page
+  // (3-7 beats stay a single page). Playback turns the page automatically;
+  // the ◀/▶ buttons do it by hand while stopped.
+  const bars = measureSplit(measureLength);
+  const pageCount = bars.length;
+  const [page, setPage] = useState(0);
+  const safePage = Math.min(page, pageCount - 1);
+  const pageStartBeat = bars.slice(0, safePage).reduce((a, b) => a + b, 0);
+  const pageBeats = bars[safePage];
+  function goToPage(n: number) {
+    setPage(Math.min(Math.max(0, n), pageCount - 1));
+  }
 
   useEffect(() => {
     const el = containerRef.current;
@@ -71,7 +84,7 @@ export function SheetMusicView({
       await document.fonts.ready;
       const target = notationRef.current;
       if (cancelled || !target) return;
-      layoutRef.current = renderNotation(vfModule, target, lines, measureLength, width);
+      layoutRef.current = renderNotationPage(vfModule, target, lines, pageStartBeat, pageBeats, width);
       updateHighlight();
       setReady(true);
     }
@@ -103,7 +116,7 @@ export function SheetMusicView({
       observer.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lines, measureLength]);
+  }, [lines, measureLength, pageStartBeat, pageBeats]);
 
   function updateHighlight() {
     const layout = layoutRef.current;
@@ -113,8 +126,25 @@ export function SheetMusicView({
       el.style.opacity = "0";
       return;
     }
-    const x0 = layout.beatBoundariesX[playheadBeat] ?? 0;
-    const x1 = layout.beatBoundariesX[playheadBeat + 1] ?? x0 + 20;
+    // Which page (measure) the global playhead beat lands on, and where it
+    // sits within that measure's own beat numbering.
+    let acc = 0;
+    let beatPage = pageCount - 1;
+    for (let i = 0; i < pageCount; i++) {
+      if (playheadBeat < acc + bars[i]) {
+        beatPage = i;
+        break;
+      }
+      acc += bars[i];
+    }
+    if (beatPage !== safePage) {
+      el.style.opacity = "0";
+      goToPage(beatPage);
+      return;
+    }
+    const localBeat = playheadBeat - acc;
+    const x0 = layout.beatBoundariesX[localBeat] ?? 0;
+    const x1 = layout.beatBoundariesX[localBeat + 1] ?? x0 + 20;
     el.style.opacity = "1";
     el.style.left = `${x0 - 4}px`;
     el.style.width = `${Math.max(x1 - x0 + 4, 8)}px`;
@@ -122,7 +152,11 @@ export function SheetMusicView({
     el.style.height = `${layout.staveBottomY - layout.staveTopY}px`;
   }
 
-  useEffect(updateHighlight, [isPlaying, playheadBeat]);
+  // updateHighlight also reads bars/pageCount/goToPage, but those only change
+  // with measureLength (which re-renders the whole view anyway) — the beat,
+  // play state, and current page are what should re-run the highlight.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(updateHighlight, [isPlaying, playheadBeat, safePage]);
 
   return (
     <div
@@ -166,7 +200,34 @@ export function SheetMusicView({
           />
           <span className="w-16 text-sm text-white/80">{bpm} BPM</span>
         </div>
-        <span className="text-sm text-white/50">{measureLength}/4</span>
+        <span className="text-sm text-white/50">
+          {pageCount > 1 ? `${pageBeats}/4` : timeSignatureLabel(measureLength)}
+        </span>
+        {pageCount > 1 && (
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => goToPage(safePage - 1)}
+              disabled={isPlaying || safePage <= 0}
+              title="Previous measure"
+              className="rounded-md border border-white/15 px-2.5 py-1 text-sm text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+            >
+              ◀
+            </button>
+            <span className="text-sm text-white/50">
+              Measure {safePage + 1} / {pageCount}
+            </span>
+            <button
+              type="button"
+              onClick={() => goToPage(safePage + 1)}
+              disabled={isPlaying || safePage >= pageCount - 1}
+              title="Next measure"
+              className="rounded-md border border-white/15 px-2.5 py-1 text-sm text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+            >
+              ▶
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 items-center overflow-auto p-6">
