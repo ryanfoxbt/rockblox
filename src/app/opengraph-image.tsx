@@ -2,6 +2,8 @@ import { ImageResponse } from "next/og";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+export const alt =
+  "RockBlocks — a free online drum machine. A grid of beat blocks with several hits lit up.";
 
 const YELLOW = "#facc15";
 const LIGHT = "#e2e8f0";

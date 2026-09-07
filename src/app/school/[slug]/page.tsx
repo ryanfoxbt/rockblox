@@ -6,9 +6,10 @@ import { lessons } from "@/db/schema";
 import { SLOT_LETTERS } from "@/lib/board";
 import { DRUM_LESSONS } from "@/lib/drumSchool";
 import { buildShareMetadata } from "@/lib/shareMetadata";
-import { lessonJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, lessonJsonLd } from "@/lib/seo";
 import { Editor } from "@/components/Editor";
 import { JsonLd } from "@/components/JsonLd";
+import { LessonAbout } from "@/components/LessonAbout";
 
 export async function generateMetadata({
   params,
@@ -65,6 +66,13 @@ export default async function LessonPage({
           teaches: lesson.teaches,
         })}
       />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", url: "/" },
+          { name: "Drum School", url: "/school" },
+          { name: `Lesson ${lesson.lessonNumber}: ${lesson.title}`, url: `/school/${lesson.slug}` },
+        ])}
+      />
       <Editor
         board={{
           slug: lesson.slug,
@@ -80,6 +88,12 @@ export default async function LessonPage({
           prevHref: prevLesson ? `/school/${prevLesson.slug}` : null,
           nextHref: nextLesson ? `/school/${nextLesson.slug}` : null,
         }}
+      />
+      <LessonAbout
+        lesson={{ lessonNumber: lesson.lessonNumber, title: lesson.title, teaches: lesson.teaches }}
+        prev={prevLesson}
+        next={nextLesson}
+        total={DRUM_LESSONS.length}
       />
     </>
   );

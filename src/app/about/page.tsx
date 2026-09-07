@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 import { buildShareMetadata } from "@/lib/shareMetadata";
 import { JsonLd } from "@/components/JsonLd";
-import { aboutPageJsonLd, BRAND_DESCRIPTION } from "@/lib/seo";
+import { aboutPageJsonLd, breadcrumbJsonLd, BRAND_DESCRIPTION } from "@/lib/seo";
 
 export const metadata: Metadata = buildShareMetadata({
   title: "About RockBlocks",
@@ -15,6 +15,12 @@ export default function AboutPage() {
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 px-4 py-10 text-white sm:px-6">
       <JsonLd data={aboutPageJsonLd} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", url: "/" },
+          { name: "About", url: "/about" },
+        ])}
+      />
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
         <Link href="/" className="text-xs text-white/40 transition hover:text-yellow-400">
           ← Back home

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 import { DRUM_LESSONS } from "@/lib/drumSchool";
 import { buildShareMetadata } from "@/lib/shareMetadata";
-import { courseJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, courseJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
 
 export const metadata: Metadata = buildShareMetadata({
@@ -16,6 +16,12 @@ export default function DrumSchoolIndexPage() {
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 px-4 py-10 text-white sm:px-6">
       <JsonLd data={courseJsonLd(DRUM_LESSONS.length)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", url: "/" },
+          { name: "Drum School", url: "/school" },
+        ])}
+      />
       <div className="mx-auto w-full max-w-xl">
         <Link href="/" className="text-xs text-white/40 transition hover:text-yellow-400">
           ← Back home

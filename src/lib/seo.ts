@@ -256,6 +256,21 @@ export function lessonJsonLd(lesson: {
   };
 }
 
+// Breadcrumb trail for a nested page. Pass the full trail including the
+// current page; `url` is a site-relative path.
+export function breadcrumbJsonLd(items: { name: string; url: string }[]): Json {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      item: `${SITE_URL}${item.url}`,
+    })),
+  };
+}
+
 // A curated famous-song drum pattern.
 export function songJsonLd(song: { slug: string; title: string; artist: string }): Json {
   return {

@@ -5,9 +5,10 @@ import { getDb } from "@/db";
 import { songs } from "@/db/schema";
 import { SLOT_LETTERS } from "@/lib/board";
 import { buildShareMetadata } from "@/lib/shareMetadata";
-import { songJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, songJsonLd } from "@/lib/seo";
 import { Editor } from "@/components/Editor";
 import { JsonLd } from "@/components/JsonLd";
+import { SongAbout } from "@/components/SongAbout";
 
 export async function generateMetadata({
   params,
@@ -45,6 +46,13 @@ export default async function SongPage({
   return (
     <>
       <JsonLd data={songJsonLd({ slug: song.slug, title: song.title, artist: song.artist })} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", url: "/" },
+          { name: "Songs", url: "/songs" },
+          { name: song.title, url: `/songs/${song.slug}` },
+        ])}
+      />
       <Editor
         board={{
           slug: song.slug,
@@ -57,6 +65,7 @@ export default async function SongPage({
         }}
         initialSlot={initialSlot}
       />
+      <SongAbout title={song.title} artist={song.artist} />
     </>
   );
 }
