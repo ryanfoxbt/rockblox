@@ -90,5 +90,29 @@ export function quantizeClipToLines(
     }
     lines.push({ instrument, blocks, volume: 100 });
   }
+
+  // If the clip has hits but no cymbal voice at all, the hi-hat either
+  // wasn't played or wasn't detected — either way the groove needs something
+  // holding the pulse, so lay down straight eighth notes on the closed
+  // hi-hat. Inserted in kit order (just before crash) rather than appended.
+  const order = LINE_ORDER as readonly string[];
+  const CYMBALS = ["hihatClosed", "hihatOpen", "ride"];
+  if (lines.length > 0 && !lines.some((l) => CYMBALS.includes(l.instrument))) {
+    const eighthBlock = tileFromHits([
+      { type: "note", note: "sixteenth" },
+      { type: "rest", note: "sixteenth" },
+      { type: "note", note: "sixteenth" },
+      { type: "rest", note: "sixteenth" },
+    ]).id;
+    const hatLine: StoredLine = {
+      instrument: "hihatClosed",
+      blocks: new Array(blockCount).fill(eighthBlock),
+      volume: 100,
+    };
+    const insertAt = lines.findIndex((l) => order.indexOf(l.instrument) > order.indexOf("hihatClosed"));
+    if (insertAt === -1) lines.push(hatLine);
+    else lines.splice(insertAt, 0, hatLine);
+  }
+
   return lines;
 }

@@ -372,6 +372,24 @@ export function analyzeSongForCropping(wavBuffer: Buffer): SongCropAnalysis {
     instrument: classifyOnset(features[i], medianPeak, tomDecay),
   }));
 
+  // Dedicated hi-hat recall pass. The full-spectrum detector above is
+  // dominated by kick/snare energy and routinely misses the quiet closed-hat
+  // ticks between them ("the hats just aren't there"). This second detector
+  // only looks above HAT_ONSET_MIN_HZ — essentially cymbal-only — and folds
+  // its hits in as closed hi-hats. It runs after tempo/grid are fixed from
+  // the primary onsets, so a noisy high-band pass can't drag those around.
+  const hatTimes = detectHiHatOnsets(mono).map((t) => refineOnsetTime(mono, t));
+  for (const t of hatTimes) {
+    // A hat on top of a kick or snare is a real, wanted layer — keep it.
+    // Only skip when a primary onset *already classified as a cymbal* sits
+    // here, i.e. the same hit found by both passes.
+    const alreadyACymbal = onsets.some(
+      (o) => Math.abs(o.time - t) < MIN_ONSET_GAP_SECONDS && CYMBAL_VOICES.includes(o.instrument)
+    );
+    if (!alreadyACymbal) onsets.push({ time: t, instrument: "hihatClosed" });
+  }
+  onsets.sort((a, b) => a.time - b.time);
+
   return { bpm, beatSeconds, gridOrigin, durationSeconds: totalDurationSeconds, onsets };
 }
 
@@ -556,8 +574,11 @@ function attackWindow(size: number): Float32Array {
   return w;
 }
 
-function detectOnsets(mono: { sampleRate: number; samples: Float32Array }): number[] {
-  const { sampleRate, samples } = mono;
+// Half-wave-rectified spectral flux, optionally ignoring every bin below
+// `minBin` — passing a `minBin` above the kick/snare range gives a
+// cymbal-only flux curve (see detectHiHatOnsets).
+function computeSpectralFlux(mono: { sampleRate: number; samples: Float32Array }, minBin = 0): Float32Array {
+  const { samples } = mono;
   const fft = new FFT(ONSET_FFT_SIZE);
   const window = hannWindow(ONSET_FFT_SIZE);
   const bins = ONSET_FFT_SIZE / 2;
@@ -575,14 +596,14 @@ function detectOnsets(mono: { sampleRate: number; samples: Float32Array }): numb
     fft.completeSpectrum(complexOut);
 
     const mag = new Float32Array(bins);
-    for (let b = 0; b < bins; b++) {
+    for (let b = minBin; b < bins; b++) {
       const re = complexOut[2 * b];
       const im = complexOut[2 * b + 1];
       mag[b] = Math.sqrt(re * re + im * im);
     }
     if (prevMag) {
       let sum = 0;
-      for (let b = 0; b < bins; b++) {
+      for (let b = minBin; b < bins; b++) {
         const diff = mag[b] - prevMag[b];
         if (diff > 0) sum += diff;
       }
@@ -590,7 +611,14 @@ function detectOnsets(mono: { sampleRate: number; samples: Float32Array }): numb
     }
     prevMag = mag;
   }
+  return flux;
+}
 
+// Adaptive peak-picking over a flux curve: a frame is an onset when its flux
+// clears (local mean + factor·local std) over a ±ONSET_LOCAL_WINDOW window,
+// is a local maximum, and sits at least MIN_ONSET_GAP past the previous one.
+function pickFluxPeaks(flux: Float32Array, sampleRate: number, thresholdFactor: number): number[] {
+  const numFrames = flux.length;
   const windowFrames = Math.max(1, Math.round((ONSET_LOCAL_WINDOW_SECONDS * sampleRate) / ONSET_HOP_SIZE));
   const minGapFrames = Math.max(1, Math.round((MIN_ONSET_GAP_SECONDS * sampleRate) / ONSET_HOP_SIZE));
   const times: number[] = [];
@@ -606,7 +634,7 @@ function detectOnsets(mono: { sampleRate: number; samples: Float32Array }): numb
     let variance = 0;
     for (let j = lo; j <= hi; j++) variance += (flux[j] - mean) ** 2;
     const std = Math.sqrt(variance / count);
-    const threshold = mean + ONSET_THRESHOLD_FACTOR * std;
+    const threshold = mean + thresholdFactor * std;
 
     const isLocalPeak = flux[i] > threshold && flux[i] >= (flux[i - 1] ?? 0) && flux[i] >= (flux[i + 1] ?? 0);
     if (isLocalPeak && i - lastOnsetFrame >= minGapFrames) {
@@ -615,6 +643,29 @@ function detectOnsets(mono: { sampleRate: number; samples: Float32Array }): numb
     }
   }
   return times;
+}
+
+function detectOnsets(mono: { sampleRate: number; samples: Float32Array }): number[] {
+  return pickFluxPeaks(computeSpectralFlux(mono), mono.sampleRate, ONSET_THRESHOLD_FACTOR);
+}
+
+// Only spectral bins above this are summed for the hi-hat pass — kick and
+// snare fundamentals and body sit well below it, so what's left is almost
+// entirely cymbal energy.
+const HAT_ONSET_MIN_HZ = 5000;
+// This pass runs hotter than the main detector: closed-hat ticks are quiet
+// and fall between the kick/snare hits, so the full-spectrum flux (dominated
+// by kick/snare) skips them — but a high-band-only flux is also noisier, so
+// the bar has to be higher to keep cymbal wash and snare sizzle out.
+const HAT_ONSET_THRESHOLD_FACTOR = 1.7;
+
+// A cymbal-only onset detector, for recovering hi-hat hits the main
+// full-spectrum pass misses entirely. Its output is folded in downstream as
+// closed hi-hats; it never feeds tempo/grid estimation.
+function detectHiHatOnsets(mono: { sampleRate: number; samples: Float32Array }): number[] {
+  const binHz = mono.sampleRate / ONSET_FFT_SIZE;
+  const minBin = Math.max(1, Math.floor(HAT_ONSET_MIN_HZ / binHz));
+  return pickFluxPeaks(computeSpectralFlux(mono, minBin), mono.sampleRate, HAT_ONSET_THRESHOLD_FACTOR);
 }
 
 const REFINE_SEARCH_SECONDS = 0.04; // how far around the rough estimate to look
@@ -1288,11 +1339,14 @@ function cymbalHitsForCluster(bars: BarHit[][], cluster: BeatCluster): BarHit[] 
 
 // The default cymbal voice for a main beat that has no cymbal-family hits of
 // its own and no dominant-groove fallback to borrow either (see
-// CoreFallbacks) — a plain quarter-note closed hi-hat, since a cover drummer
-// needs *something* to keep time with rather than being left with just
-// kick+snare.
+// CoreFallbacks) — straight eighth notes on the closed hi-hat, since a cover
+// drummer needs *something* to keep time with rather than being left with
+// just kick+snare. (Slots past the bar's real length are ignored by
+// barToStoredLines.)
 function defaultCymbalHits(): BarHit[] {
-  return [0, 4, 8, 12].map((slot) => ({ slot, instrument: "hihatClosed" as InstrumentId }));
+  const hits: BarHit[] = [];
+  for (let slot = 0; slot < MAX_BEATS * 4; slot += 2) hits.push({ slot, instrument: "hihatClosed" });
+  return hits;
 }
 
 interface CoreFallbacks {
