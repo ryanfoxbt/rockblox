@@ -34,6 +34,10 @@ export function HomeContent() {
             <Link href="/songs" className="text-yellow-400 transition hover:text-yellow-300">
               famous song drum beats
             </Link>
+            ,{" "}
+            <Link href="/ai-music" className="text-yellow-400 transition hover:text-yellow-300">
+              drum beats for Suno &amp; AI music
+            </Link>
             , and{" "}
             <Link href="/about" className="text-yellow-400 transition hover:text-yellow-300">
               about RockBlocks
@@ -124,6 +128,9 @@ export function HomeContent() {
           </Link>
           <Link href="/songs" className="transition hover:text-yellow-400">
             Songs
+          </Link>
+          <Link href="/ai-music" className="transition hover:text-yellow-400">
+            AI music
           </Link>
           <Link href="/about" className="transition hover:text-yellow-400">
             About

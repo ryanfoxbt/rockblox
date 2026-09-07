@@ -31,6 +31,7 @@ export const FEATURE_LIST: string[] = [
   "Stacks: arrange repeats of your beats into a longer, full-song arrangement",
   "Save a beat to a personal no-login page at rockblocks.app/YourName, or share any pattern by link",
   "Export a beat as an MP3 or a MIDI file",
+  "Use your beats to power AI music: export an MP3 to seed a track in Suno, Udio, or Riffusion, or export MIDI to build the drums in a DAW",
   "Drum School: 100 free stepwise lessons that build a full groove one idea at a time",
 ];
 
@@ -111,12 +112,72 @@ export const FAQ: { q: string; a: string }[] = [
     a: "Yes. Beats you make are yours to use. Export them as an MP3 or a MIDI file and drop them into a track, a video, or a project.",
   },
   {
+    q: "Can I use RockBlocks beats with Suno or other AI music tools?",
+    a: "Yes. Export a beat as an MP3 and upload it as the audio input for Suno, Udio, or Riffusion so the generated song follows your drum pattern, or export MIDI to build the drums in a DAW first. Starting an AI song from a real drum groove gives it a rhythmic backbone a text prompt alone usually can't. See the AI music guide at rockblocks.app/ai-music.",
+  },
+  {
     q: "How is RockBlocks different from a step sequencer?",
     a: "A step sequencer gives you a fixed grid of on/off steps. RockBlocks gives you one block per beat and a palette of rhythm values — quarter notes, triplets, sixteenth runs — that you drag in, so one beat can hold any rhythm and a bar can be any length for odd time signatures.",
   },
   {
     q: "Is there a physical RockBlocks?",
     a: "A physical RockBlocks instrument for toy shops and music stores is planned. The web app is the same idea you can use today for free.",
+  },
+];
+
+// --- AI music workflow (the /ai-music pillar page) --------------------
+// People search for how to make their Suno / Udio / Riffusion tracks less
+// generic. RockBlocks' answer: design the drum part yourself and hand it to
+// the model as an audio seed (MP3) or a DAW part (MIDI). Same single-source
+// pattern as everything above — these feed the page copy, its JSON-LD, and
+// public/llms.txt.
+
+export const AI_MUSIC_DESCRIPTION =
+  "You can use RockBlocks to make the drum track for AI music. Build or generate a beat — odd time signatures, triplets, ghost notes, accents, fills, and a complexity dial all help — then export it as an MP3 to use as the audio input for Suno, Udio, Riffusion, or another AI music generator, or export it as a MIDI file to drop into a DAW. Starting an AI song from a real, deliberate drum pattern gives it a rhythmic backbone that a text prompt alone usually can't.";
+
+export const AI_MUSIC_STEPS: { name: string; text: string }[] = [
+  {
+    name: "Build or generate a beat with intent",
+    text: "Make the groove in RockBlocks and reach for what a text prompt can't specify: an odd time signature like 7/8, a triplet feel, ghost notes and accents, a fill into the chorus. Start from scratch, from the Inspiration generator with its complexity dial turned up, from TextyBeat, or from a famous-song pattern.",
+  },
+  {
+    name: "Export an MP3 of the drums",
+    text: "Use MP3 export to get an audio file of just your drum pattern, looped to the length you want.",
+  },
+  {
+    name: "Upload it as the audio input",
+    text: "In Suno, Udio, Riffusion, or your AI tool of choice, start a track from an uploaded audio clip (upload / cover / extend / \"add instrumental\") with your drum MP3 as the seed. Check each tool's current clip-length limit. The model then builds the song around your rhythm instead of inventing a generic one.",
+  },
+  {
+    name: "Or export MIDI for a DAW",
+    text: "Export the beat as a MIDI file, load it into a DAW with your own drum samples, render stems, and feed those to the AI tool — or keep the AI's vocals and instruments and swap in your MIDI-triggered drums at mixdown.",
+  },
+  {
+    name: "Iterate on the groove, not the prompt",
+    text: "If the AI result feels stiff or wrong, change the beat in RockBlocks — more syncopation, a different meter, a busier fill — re-export, and run it again. The drum pattern is the part you can control precisely.",
+  },
+];
+
+export const AI_MUSIC_FAQ: { q: string; a: string }[] = [
+  {
+    q: "Can I use RockBlocks beats with Suno?",
+    a: "Yes. Export your beat from RockBlocks as an MP3 and upload it as the audio input for a Suno track (via upload, cover, or extend). Suno builds the song around your drum pattern, which gives it a tighter, more intentional rhythm than a text prompt alone. MIDI export works too if you want to run the drums through a DAW first.",
+  },
+  {
+    q: "How do I make my Suno or Udio songs more rhythmically complex?",
+    a: "Give the model a drum track to follow instead of letting it guess. Build a beat in RockBlocks in an odd time signature, with triplets, ghost notes, accents, and fills — or turn up the Inspiration generator's complexity dial — export it as an MP3, and use it as the audio seed for the AI song. The generated track inherits the groove you designed.",
+  },
+  {
+    q: "What AI music tools work with RockBlocks exports?",
+    a: "Any tool that accepts an uploaded audio clip or a MIDI file. That includes Suno, Udio, and Riffusion for audio seeds, and any DAW-based AI plugin for MIDI. Use the MP3 export as an audio seed, or the MIDI export as a drum part in a DAW.",
+  },
+  {
+    q: "Should I upload an MP3 or a MIDI file to an AI music generator?",
+    a: "Upload the MP3 when the tool takes an audio seed directly (Suno, Udio, Riffusion). Use the MIDI file when you want to trigger your own drum samples in a DAW, render stems, or line the drums up with other MIDI parts before involving the AI tool.",
+  },
+  {
+    q: "Why start an AI song from a drum beat?",
+    a: "Text prompts describe a vibe; they don't specify where the kick and snare land, what the fill does, or that the song is in 5/4. Starting from an actual drum pattern locks in the rhythm section, so the AI fills in melody, harmony, and arrangement over a foundation you chose.",
   },
 ];
 
@@ -208,6 +269,47 @@ export const homePageJsonLd: Json = {
     },
     howToLd,
     faqPageLd,
+  ],
+};
+
+// /ai-music graph — the drums-for-AI-music pillar page. WebPage + a HowTo
+// for the workflow + an FAQPage, layered on top of the root graph.
+export const aiMusicPageJsonLd: Json = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": `${SITE_URL}/ai-music#webpage`,
+      url: `${SITE_URL}/ai-music`,
+      name: "Drum Beats for Suno & AI Music",
+      description: AI_MUSIC_DESCRIPTION,
+      isPartOf: { "@id": `${SITE_URL}/#website` },
+      about: { "@id": `${SITE_URL}/#app` },
+      primaryImageOfPage: `${SITE_URL}/opengraph-image`,
+    },
+    {
+      "@type": "HowTo",
+      name: "How to use RockBlocks drum beats in Suno and other AI music tools",
+      description:
+        "Make a drum pattern in RockBlocks, export it as an MP3 or MIDI file, and use it as the audio input for an AI music generator so the song follows a rhythm you designed.",
+      image: `${SITE_URL}/opengraph-image`,
+      totalTime: "PT5M",
+      step: AI_MUSIC_STEPS.map((s, i) => ({
+        "@type": "HowToStep",
+        position: i + 1,
+        name: s.name,
+        text: s.text,
+      })),
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/ai-music#faq`,
+      mainEntity: AI_MUSIC_FAQ.map(({ q, a }) => ({
+        "@type": "Question",
+        name: q,
+        acceptedAnswer: { "@type": "Answer", text: a },
+      })),
+    },
   ],
 };
 

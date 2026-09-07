@@ -63,7 +63,12 @@ export default function AboutPage() {
           <Link href="/songs" className="text-yellow-400 transition hover:text-yellow-300">
             famous songs mapped out beat-for-beat
           </Link>
-          . Save a beat to a personal page at rockblocks.app/YourName or share any pattern by link.
+          . Save a beat to a personal page at rockblocks.app/YourName or share any pattern by link. Export an
+          MP3 or MIDI to{" "}
+          <Link href="/ai-music" className="text-yellow-400 transition hover:text-yellow-300">
+            use as a drum track for Suno and other AI music tools
+          </Link>
+          .
         </p>
 
         <h2 className="mt-4 text-lg font-bold">The physical RockBlocks</h2>
@@ -90,6 +95,9 @@ export default function AboutPage() {
           </Link>
           <Link href="/songs" className="transition hover:text-yellow-400">
             Songs
+          </Link>
+          <Link href="/ai-music" className="transition hover:text-yellow-400">
+            AI music
           </Link>
         </nav>
       </div>
