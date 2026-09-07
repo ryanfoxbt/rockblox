@@ -10,7 +10,7 @@
 - Text to Beat: paste up to 280 characters of text and get a drum groove generated from it deterministically (same text always produces the same beat).
 - Stacks: arrange repeats of a page's four beats into a longer, full-song arrangement.
 - Song import: upload an MP3 and have its drum track transcribed into an editable RockBlocks pattern.
-- Randomize/Inspiration: generate a new random beat, or a variation/fill based on an existing one.
+- Randomize/Inspiration: generate a new random beat, or a groove variation, fill, or drum solo based on an existing one.
 - Download a beat as an MP3 or a MIDI file.
 - Every claimed page has a small public message wall visitors can read and add a short line to.
 

@@ -12,7 +12,9 @@ export interface VariationSource {
   label: string;
 }
 
-export type VariationKind = "groove" | "fill";
+export type VariationKind = "groove" | "fill" | "solo";
+
+const VARIATION_KINDS: VariationKind[] = ["groove", "fill", "solo"];
 
 // Dice button + a small popover: either a fresh random beat, or a
 // variation/fill based on another slot's beat — a song is usually one theme
@@ -159,28 +161,20 @@ export function RandomizeButton({
                 </label>
 
                 <div className="flex rounded-md border border-white/10 bg-white/5 p-0.5 text-sm">
-                  <button
-                    type="button"
-                    onClick={() => setVariationKind("groove")}
-                    className={`flex-1 rounded px-2 py-1 transition ${
-                      variationKind === "groove"
-                        ? "bg-yellow-400 font-semibold text-slate-900"
-                        : "text-white/60 hover:text-white"
-                    }`}
-                  >
-                    Groove
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setVariationKind("fill")}
-                    className={`flex-1 rounded px-2 py-1 transition ${
-                      variationKind === "fill"
-                        ? "bg-yellow-400 font-semibold text-slate-900"
-                        : "text-white/60 hover:text-white"
-                    }`}
-                  >
-                    Fill
-                  </button>
+                  {VARIATION_KINDS.map((kind) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      onClick={() => setVariationKind(kind)}
+                      className={`flex-1 rounded px-2 py-1 capitalize transition ${
+                        variationKind === kind
+                          ? "bg-yellow-400 font-semibold text-slate-900"
+                          : "text-white/60 hover:text-white"
+                      }`}
+                    >
+                      {kind}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}

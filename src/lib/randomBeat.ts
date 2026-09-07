@@ -11,11 +11,12 @@
 // leaves room for other lines to be busier, instead of every line
 // independently rolling the same chaotic odds.
 //
-// generateGrooveVariation and generateFillVariation instead start from an
-// existing beat (typically the song's main groove) — most songs are built
-// from one theme repeated with small changes plus the occasional fill, not
-// four unrelated random beats, so once a first groove exists the natural
-// next step is "give me B/C/D inspired by A" rather than "randomize again."
+// generateGrooveVariation, generateFillVariation and generateSoloVariation
+// instead start from an existing beat (typically the song's main groove) —
+// most songs are built from one theme repeated with small changes plus the
+// occasional fill or solo break, not four unrelated random beats, so once a
+// first groove exists the natural next step is "give me B/C/D inspired by A"
+// rather than "randomize again."
 //
 // A single 1-10 "complexity" dial (see paramsForComplexity) drives how wild
 // any of this gets: how much the measure length varies (generateRandomBeat
@@ -27,7 +28,7 @@
 // onto one axis — if that distinction turns out to matter, split it into two
 // dials later.
 import { InstrumentId } from "./instruments";
-import { NOTE_FRACTION, NOTE_TILES, RhythmHit, RhythmTile, TRIPLET_TILES, tileFromHits } from "./rhythm";
+import { NOTE_FRACTION, NoteName, NOTE_TILES, RhythmHit, RhythmTile, TRIPLET_TILES, tileFromHits } from "./rhythm";
 import { computeMeasureLength, DEFAULT_VOLUME, LineData, MAX_BEATS } from "./song";
 
 export const MIN_COMPLEXITY = 1;
@@ -466,4 +467,169 @@ export function generateFillVariation(
   const nonEmptyLines = lines.filter((l) => l.blocks.some((b) => b));
   forceReachMeasureLength(nonEmptyLines, measureLength, 0.1, 0);
   return nonEmptyLines;
+}
+
+// --- Drum solo -----------------------------------------------------------
+// A solo, unlike a fill, replaces the groove for the whole bar and ranges
+// across the kit. The rule that keeps it playable by an actual person is two
+// hands and two feet. This kit has exactly one foot voice (the kick — there
+// is no hi-hat pedal), so in practice the constraints are:
+//   * at most TWO hand voices sounding on any single grid cell, and
+//   * at most ONE kick on any single grid cell,
+//   * a "walking" lead hand that only steps to an ADJACENT drum between
+//     consecutive notes rather than leaping across the kit, and
+//   * one subdivision per beat — no limb playing triplets against another
+//     limb's straight sixteenths in the same beat.
+// The result reads as a single-stroke roll around the snare and toms with
+// kick accents underneath and a crash to open (and sometimes close) the
+// phrase — i.e. something a drummer can actually sit down and play.
+
+// Snare + toms in physical (high-to-low) order: the lead hand may only move
+// one step along this ladder per note.
+const SOLO_HAND_LADDER: InstrumentId[] = ["highTom", "midTom", "lowTom", "snare"];
+// The off hand keeps time on one of these, but only while the beat is in
+// straight eighths — once the roll is in triplets/sixteenths or faster, both
+// hands are in the roll and there is no spare hand for a time voice.
+const SOLO_TIME_VOICES: InstrumentId[] = ["hihatClosed", "ride"];
+// Every voice a hand can strike, ordered by keep-priority for the
+// two-hands-per-cell safety net (time voice is dropped first).
+const SOLO_HAND_VOICES: InstrumentId[] = [...SOLO_HAND_LADDER, "crash", ...SOLO_TIME_VOICES];
+// Output line order — kick first (anchor convention), then melodic voices,
+// then the time voice and crash.
+const SOLO_LINE_ORDER: InstrumentId[] = [
+  "kick",
+  "snare",
+  "highTom",
+  "midTom",
+  "lowTom",
+  "hihatClosed",
+  "ride",
+  "crash",
+];
+
+// How many equal cells a beat is cut into, and the note value each cell gets.
+const SOLO_SUB_NOTE: Record<number, NoteName> = {
+  2: "eighth",
+  3: "eighthTriplet",
+  4: "sixteenth",
+  6: "sixteenthTriplet",
+};
+
+interface SoloBeat {
+  note: NoteName;
+  // instrument -> per-cell onset flags for this beat
+  grids: Map<InstrumentId, boolean[]>;
+}
+
+// A drum solo inspired by an existing groove: the groove is set aside and
+// the whole bar becomes a kit solo. `complexity` drives the subdivision
+// (steady eighths at the low end, sixteenth-note triplets at the top), how
+// continuously the lead hand rolls, and how hard the kick works underneath.
+// The source is used only for its bar length and for matching line volumes.
+export function generateSoloVariation(
+  sourceLines: LineData[],
+  complexity: number,
+  beats?: number
+): LineData[] {
+  const measureLength = beats != null ? clampBeats(beats) : computeMeasureLength(sourceLines);
+  if (measureLength === 0) return [];
+
+  const tripletChance = scaleByComplexity(complexity, [[1, 0], [4, 0.15], [7, 0.4], [10, 0.6]]);
+  const fastChance = scaleByComplexity(complexity, [[1, 0.1], [4, 0.55], [7, 0.85], [10, 0.95]]);
+  const leadDensity = scaleByComplexity(complexity, [[1, 0.55], [10, 0.95]]);
+  const kickDensity = scaleByComplexity(complexity, [[1, 0.28], [10, 0.55]]);
+  const offHandChance = scaleByComplexity(complexity, [[1, 0.35], [10, 0.8]]);
+
+  const timeVoice = SOLO_TIME_VOICES[randomInt(0, SOLO_TIME_VOICES.length - 1)];
+  const used = new Set<InstrumentId>();
+  const soloBeats: SoloBeat[] = [];
+  let handPos = randomInt(0, SOLO_HAND_LADDER.length - 1);
+
+  for (let b = 0; b < measureLength; b++) {
+    const triplet = Math.random() < tripletChance;
+    const fast = Math.random() < fastChance;
+    const sub = triplet ? (fast ? 6 : 3) : fast ? 4 : 2;
+    const note = SOLO_SUB_NOTE[sub];
+    const grids = new Map<InstrumentId, boolean[]>();
+    const cell = (id: InstrumentId): boolean[] => {
+      let g = grids.get(id);
+      if (!g) {
+        g = Array(sub).fill(false);
+        grids.set(id, g);
+      }
+      return g;
+    };
+    // A separate time-keeping hand only fits under a straight-eighth roll;
+    // anything faster is a two-handed roll on the lead voice alone.
+    const offHandActive = sub === 2;
+
+    for (let c = 0; c < sub; c++) {
+      const strong = c === 0 || (sub % 2 === 0 && c === sub / 2);
+      // Guarantee the final beat lands a note so the bar keeps its length.
+      const forceLead = b === measureLength - 1 && c === 0;
+
+      if (forceLead || Math.random() < leadDensity) {
+        if (!forceLead && Math.random() < 0.55) {
+          const step = Math.random() < 0.5 ? -1 : 1;
+          handPos = Math.max(0, Math.min(SOLO_HAND_LADDER.length - 1, handPos + step));
+        }
+        const inst = SOLO_HAND_LADDER[handPos];
+        cell(inst)[c] = true;
+        used.add(inst);
+      }
+
+      if (offHandActive && (strong || Math.random() < 0.25) && Math.random() < offHandChance) {
+        cell(timeVoice)[c] = true;
+        used.add(timeVoice);
+      }
+
+      if (c === 0 || (strong && Math.random() < kickDensity) || Math.random() < kickDensity * 0.5) {
+        cell("kick")[c] = true;
+        used.add("kick");
+      }
+    }
+
+    // Crash opens the bar and sometimes closes it. It is a hand hit, so it
+    // evicts the time voice from that cell to stay within two hands.
+    if (b === 0 || (b === measureLength - 1 && Math.random() < 0.4)) {
+      cell("crash")[0] = true;
+      used.add("crash");
+      const tv = grids.get(timeVoice);
+      if (tv) tv[0] = false;
+    }
+
+    // Safety net: never let more than two hand voices land on one cell.
+    for (let c = 0; c < sub; c++) {
+      const here = SOLO_HAND_VOICES.filter((id) => grids.get(id)?.[c]);
+      for (const id of here.slice(2)) grids.get(id)![c] = false;
+    }
+
+    // Keep the foot human: no more than two kick strokes in an unbroken run.
+    const kg = grids.get("kick");
+    if (kg) {
+      let run = 0;
+      for (let c = 0; c < sub; c++) {
+        run = kg[c] ? run + 1 : 0;
+        if (run > 2) kg[c] = false;
+      }
+    }
+
+    soloBeats.push({ note, grids });
+  }
+
+  const lines: LineData[] = [];
+  let index = 0;
+  for (const inst of SOLO_LINE_ORDER) {
+    if (!used.has(inst)) continue;
+    const blocks: (RhythmTile | null)[] = Array(MAX_BEATS).fill(null);
+    for (let b = 0; b < measureLength; b++) {
+      const g = soloBeats[b].grids.get(inst);
+      if (!g || !g.some(Boolean)) continue;
+      blocks[b] = tileFromHits(g.map((on) => ({ type: on ? "note" : "rest", note: soloBeats[b].note })));
+    }
+    if (!blocks.some((x) => x)) continue;
+    const volume = sourceLines.find((l) => l.instrument === inst)?.volume ?? DEFAULT_VOLUME;
+    lines.push({ id: randomLineId(index++), instrument: inst, blocks, volume });
+  }
+  return lines;
 }

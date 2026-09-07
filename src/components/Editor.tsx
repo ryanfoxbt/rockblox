@@ -24,7 +24,12 @@ import { TextToBeatButton } from "@/components/TextToBeatButton";
 import { WallButton } from "@/components/WallButton";
 import { PresenceIndicator } from "@/components/PresenceIndicator";
 import { cycleHitAccent, RhythmTile, toggleHitRest } from "@/lib/rhythm";
-import { generateFillVariation, generateGrooveVariation, generateRandomBeat } from "@/lib/randomBeat";
+import {
+  generateFillVariation,
+  generateGrooveVariation,
+  generateRandomBeat,
+  generateSoloVariation,
+} from "@/lib/randomBeat";
 import { InstrumentId } from "@/lib/instruments";
 import { useIsMobile } from "@/lib/useIsMobile";
 import {
@@ -609,11 +614,13 @@ export function Editor({
     const data = slotsRef.current[sourceSlot as ExtendedSlotLetter];
     if (!data) return;
     const sourceLines = deserializeLines(data.lines);
-    setLines(
+    const generate =
       kind === "fill"
-        ? generateFillVariation(sourceLines, complexity, beats)
-        : generateGrooveVariation(sourceLines, complexity, beats)
-    );
+        ? generateFillVariation
+        : kind === "solo"
+          ? generateSoloVariation
+          : generateGrooveVariation;
+    setLines(generate(sourceLines, complexity, beats));
   }
 
   function clearBlock(id: string, index: number) {
