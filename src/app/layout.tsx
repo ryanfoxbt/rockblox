@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ComplainButton } from "@/components/ComplainButton";
+import { JsonLd } from "@/components/JsonLd";
+import { ENTITY_DESCRIPTION, rootJsonLd, SITE_NAME, SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,66 +16,63 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = "https://rockblocks.app";
-const SITE_NAME = "RockBlocks";
-const DESCRIPTION =
-  "RockBlocks is a free, browser-based drum machine — build a beat by dragging rhythmic values into a grid, no login or download required. Save it to your own page, turn a sentence into a groove, arrange beats into a full song, or transcribe an MP3's drums automatically.";
+const TITLE = "RockBlocks — Free Online Drum Machine & Beat Maker";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "RockBlocks — Free Online Drum Machine & Beat Maker",
+    default: TITLE,
     template: "%s | RockBlocks",
   },
-  description: DESCRIPTION,
+  description: ENTITY_DESCRIPTION,
   keywords: [
     "drum machine",
-    "beat maker",
     "online drum machine",
+    "free online drum machine",
+    "beat maker",
+    "free beat maker",
     "make a beat online",
     "drum sequencer",
-    "step sequencer",
-    "free drum machine",
+    "step sequencer online",
     "drum pattern maker",
+    "drum machine no download",
+    "browser drum machine",
+    "808 drum machine online",
+    "odd time signature drum machine",
+    "drum beat generator",
+    "drum fill generator",
+    "text to beat",
+    "mp3 to drum pattern",
+    "learn to play drums online",
+    "how to make a drum beat",
+    "drum machine for kids",
+    "beat maker for kids",
+    "music education beat sequencer",
   ],
+  category: "music",
   applicationName: SITE_NAME,
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,
+  publisher: SITE_NAME,
   robots: { index: true, follow: true },
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: "RockBlocks — Free Online Drum Machine & Beat Maker",
-    description: DESCRIPTION,
+    title: TITLE,
+    description: ENTITY_DESCRIPTION,
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "RockBlocks — Free Online Drum Machine & Beat Maker",
-    description: DESCRIPTION,
+    title: TITLE,
+    description: ENTITY_DESCRIPTION,
   },
 };
 
 export const viewport: Viewport = {
   themeColor: "#0f172a",
-};
-
-// SoftwareApplication structured data — mainly for rich-result eligibility
-// in traditional search, but the same clear, unambiguous facts (what this
-// is, that it's free, that it runs in-browser) are exactly what an LLM-based
-// answer engine crawling the page latches onto too, same intent as
-// public/llms.txt.
-const JSON_LD = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: SITE_NAME,
-  url: SITE_URL,
-  applicationCategory: "MultimediaApplication",
-  operatingSystem: "Any (runs in a web browser)",
-  description: DESCRIPTION,
-  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 };
 
 export default function RootLayout({
@@ -87,10 +86,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
-        />
+        <JsonLd data={rootJsonLd} />
       </head>
       <body className="min-h-full flex flex-col">
         {children}

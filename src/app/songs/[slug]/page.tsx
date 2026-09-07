@@ -5,7 +5,9 @@ import { getDb } from "@/db";
 import { songs } from "@/db/schema";
 import { SLOT_LETTERS } from "@/lib/board";
 import { buildShareMetadata } from "@/lib/shareMetadata";
+import { songJsonLd } from "@/lib/seo";
 import { Editor } from "@/components/Editor";
+import { JsonLd } from "@/components/JsonLd";
 
 export async function generateMetadata({
   params,
@@ -41,17 +43,20 @@ export default async function SongPage({
   const initialSlot = SLOT_LETTERS.find((l) => l === slot);
 
   return (
-    <Editor
-      board={{
-        slug: song.slug,
-        displayName: song.title,
-        slots: { A: song.slotA, B: song.slotB, C: song.slotC, D: song.slotD },
-        stack: song.stack,
-        readOnly: true,
-        basePath: `/songs/${song.slug}`,
-        subtitle: `${song.title} — ${song.artist}`,
-      }}
-      initialSlot={initialSlot}
-    />
+    <>
+      <JsonLd data={songJsonLd({ slug: song.slug, title: song.title, artist: song.artist })} />
+      <Editor
+        board={{
+          slug: song.slug,
+          displayName: song.title,
+          slots: { A: song.slotA, B: song.slotB, C: song.slotC, D: song.slotD },
+          stack: song.stack,
+          readOnly: true,
+          basePath: `/songs/${song.slug}`,
+          subtitle: `${song.title} — ${song.artist}`,
+        }}
+        initialSlot={initialSlot}
+      />
+    </>
   );
 }

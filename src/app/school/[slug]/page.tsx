@@ -6,7 +6,9 @@ import { lessons } from "@/db/schema";
 import { SLOT_LETTERS } from "@/lib/board";
 import { DRUM_LESSONS } from "@/lib/drumSchool";
 import { buildShareMetadata } from "@/lib/shareMetadata";
+import { lessonJsonLd } from "@/lib/seo";
 import { Editor } from "@/components/Editor";
+import { JsonLd } from "@/components/JsonLd";
 
 export async function generateMetadata({
   params,
@@ -54,21 +56,31 @@ export default async function LessonPage({
     lessonIndex >= 0 && lessonIndex < DRUM_LESSONS.length - 1 ? DRUM_LESSONS[lessonIndex + 1] : null;
 
   return (
-    <Editor
-      board={{
-        slug: lesson.slug,
-        displayName: lesson.title,
-        slots: { A: lesson.slotA, B: lesson.slotB, C: lesson.slotC, D: lesson.slotD },
-        stack: lesson.stack,
-        readOnly: true,
-        basePath: `/school/${lesson.slug}`,
-        subtitle: `Lesson ${lesson.lessonNumber}: ${lesson.title} — ${lesson.teaches}`,
-      }}
-      initialSlot={initialSlot}
-      lessonNav={{
-        prevHref: prevLesson ? `/school/${prevLesson.slug}` : null,
-        nextHref: nextLesson ? `/school/${nextLesson.slug}` : null,
-      }}
-    />
+    <>
+      <JsonLd
+        data={lessonJsonLd({
+          slug: lesson.slug,
+          lessonNumber: lesson.lessonNumber,
+          title: lesson.title,
+          teaches: lesson.teaches,
+        })}
+      />
+      <Editor
+        board={{
+          slug: lesson.slug,
+          displayName: lesson.title,
+          slots: { A: lesson.slotA, B: lesson.slotB, C: lesson.slotC, D: lesson.slotD },
+          stack: lesson.stack,
+          readOnly: true,
+          basePath: `/school/${lesson.slug}`,
+          subtitle: `Lesson ${lesson.lessonNumber}: ${lesson.title} — ${lesson.teaches}`,
+        }}
+        initialSlot={initialSlot}
+        lessonNav={{
+          prevHref: prevLesson ? `/school/${prevLesson.slug}` : null,
+          nextHref: nextLesson ? `/school/${nextLesson.slug}` : null,
+        }}
+      />
+    </>
   );
 }

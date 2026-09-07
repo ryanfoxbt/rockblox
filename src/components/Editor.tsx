@@ -675,10 +675,13 @@ export function Editor({
       <header className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
         <div className="max-w-xl">
           <div className="flex items-start justify-between gap-3">
-            <Link href="/" title="Home" className="inline-block">
-              <h1 className="text-xl font-black tracking-tight transition hover:text-yellow-400 sm:text-2xl">
+            <Link href="/" title="Home" aria-label="RockBlocks home" className="inline-block">
+              {/* Wordmark, not a document heading — each page's real <h1> lives
+                  in its own server-rendered content (see HomeContent, the
+                  song/lesson prose blocks) so it can carry that page's topic. */}
+              <span className="block text-xl font-black tracking-tight transition hover:text-yellow-400 sm:text-2xl">
                 Rock<span className="text-yellow-400">Blocks</span>
-              </h1>
+              </span>
             </Link>
             <SuperPowersMenu />
           </div>
