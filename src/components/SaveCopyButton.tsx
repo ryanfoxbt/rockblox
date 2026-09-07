@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BoardSlotData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
+import { SLOT_LETTERS, SlotMap } from "@/lib/board";
 import { StackArrangement } from "@/lib/stack";
 import { NO_PASSWORD_MANAGER_ATTRS } from "@/lib/formAttrs";
 
@@ -19,7 +19,7 @@ export function SaveCopyButton({
   getStack,
   variant = "menuItem",
 }: {
-  getSlots: () => Record<SlotLetter, BoardSlotData | null>;
+  getSlots: () => SlotMap;
   getStack?: () => StackArrangement | null;
   variant?: "button" | "menuItem";
 }) {

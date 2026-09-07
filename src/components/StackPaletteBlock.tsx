@@ -1,7 +1,7 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import { SlotLetter } from "@/lib/board";
+import { ExtendedSlotLetter } from "@/lib/board";
 
 export function StackPaletteBlock({
   slot,
@@ -11,7 +11,7 @@ export function StackPaletteBlock({
   isArmed,
   onArm,
 }: {
-  slot: SlotLetter;
+  slot: ExtendedSlotLetter;
   summary: string;
   disabled: boolean;
   isMobile: boolean;

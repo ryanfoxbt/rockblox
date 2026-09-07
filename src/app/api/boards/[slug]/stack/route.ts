@@ -35,13 +35,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   // Recompute against this board's *current* saved patterns — never trust
   // the client's own duration math, and reject steps pointing at a slot
   // that's empty (or has since been emptied).
-  const measureLengths = {} as Record<SlotLetter, number>;
+  const measureLengths: Partial<Record<SlotLetter, number>> = {};
   for (const letter of SLOT_LETTERS) {
     const slot = board[SLOT_COLUMN[letter]];
     measureLengths[letter] = slot ? measureLengthFromStoredLines(slot.lines) : 0;
   }
 
-  if (body.steps.some((step) => measureLengths[step.slot] < 1)) {
+  // A public board's Stack only ever references A-D; a step landing outside
+  // that (0 here) is treated as empty and rejected.
+  if (body.steps.some((step) => (measureLengths[step.slot as SlotLetter] ?? 0) < 1)) {
     return NextResponse.json({ error: "Can't add an empty beat to the song" }, { status: 400 });
   }
 

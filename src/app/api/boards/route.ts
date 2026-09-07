@@ -2,45 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { boards } from "@/db/schema";
 import { BoardSlotData, isReservedBoardName, isValidBoardName, normalizeBoardSlug, SLOT_LETTERS, SlotLetter } from "@/lib/board";
-import { StoredLine } from "@/lib/song";
-import { CustomSamples, isValidCustomSamples } from "@/lib/customSamples";
+import { RawSlotPayload, toSlotData } from "@/lib/slotPayload";
+import { listBoardsForExplore } from "@/lib/boardList";
 
-function isValidStoredLines(lines: unknown): lines is StoredLine[] {
-  return (
-    Array.isArray(lines) &&
-    lines.every(
-      (l) =>
-        l &&
-        typeof l === "object" &&
-        typeof (l as { instrument?: unknown }).instrument === "string" &&
-        Array.isArray((l as { blocks?: unknown }).blocks)
-    )
-  );
-}
-
-interface RawSlotPayload {
-  bpm?: unknown;
-  lines?: unknown;
-  kit?: unknown;
-  customSamples?: unknown;
-}
-
-function toSlotData(raw: RawSlotPayload): BoardSlotData | undefined {
-  if (
-    typeof raw.bpm === "number" &&
-    Number.isFinite(raw.bpm) &&
-    isValidStoredLines(raw.lines) &&
-    raw.lines.length > 0 &&
-    isValidCustomSamples(raw.customSamples)
-  ) {
-    return {
-      bpm: raw.bpm,
-      lines: raw.lines,
-      kit: typeof raw.kit === "string" ? raw.kit : undefined,
-      customSamples: raw.customSamples as CustomSamples | undefined,
-    };
-  }
-  return undefined;
+// The Explore starfield's board list. Board pages are already public; the
+// /explore route that shows this is signed-in only.
+export async function GET() {
+  return NextResponse.json({ boards: await listBoardsForExplore() });
 }
 
 export async function POST(request: NextRequest) {

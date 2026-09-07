@@ -1,7 +1,7 @@
 "use client";
 
 import { useDraggable, useDroppable } from "@dnd-kit/core";
-import { SlotLetter } from "@/lib/board";
+import { ExtendedSlotLetter } from "@/lib/board";
 
 export function StackStepChip({
   index,
@@ -16,7 +16,7 @@ export function StackStepChip({
   onRemove,
 }: {
   index: number;
-  slot: SlotLetter;
+  slot: ExtendedSlotLetter;
   label: string;
   isMobile: boolean;
   picked: boolean;

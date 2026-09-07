@@ -3,11 +3,7 @@ import { and, eq, gt, ne, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { boardPresence } from "@/db/schema";
 import { normalizeBoardSlug } from "@/lib/board";
-
-// How long since a heartbeat before a visitor reads as "not here anymore" —
-// well over the client's own ~20s heartbeat interval so one missed beat
-// (a slow request, a backgrounded tab) doesn't flicker someone in and out.
-const ACTIVE_WINDOW_SECONDS = 45;
+import { ACTIVE_WINDOW_SECONDS } from "@/lib/presence";
 
 const MAX_VISITOR_ID_LENGTH = 100;
 

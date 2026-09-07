@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { boards } from "@/db/schema";
-import { normalizeBoardSlug, SlotLetter } from "@/lib/board";
-import { StoredLine } from "@/lib/song";
-import { CustomSamples, isValidCustomSamples } from "@/lib/customSamples";
+import { normalizeBoardSlug, SLOT_LETTERS } from "@/lib/board";
+import { isValidSingleSlotBody } from "@/lib/slotPayload";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -29,36 +28,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   });
 }
 
-interface SaveSlotBody {
-  slot: SlotLetter;
-  bpm: number;
-  lines: StoredLine[];
-  kit?: string;
-  customSamples?: CustomSamples;
-}
-
-function isValidBody(body: unknown): body is SaveSlotBody {
-  if (!body || typeof body !== "object") return false;
-  const b = body as Record<string, unknown>;
-  if (b.slot !== "A" && b.slot !== "B" && b.slot !== "C" && b.slot !== "D") return false;
-  if (typeof b.bpm !== "number" || !Number.isFinite(b.bpm)) return false;
-  if (!Array.isArray(b.lines)) return false;
-  if (b.kit !== undefined && typeof b.kit !== "string") return false;
-  if (!isValidCustomSamples(b.customSamples)) return false;
-  return b.lines.every(
-    (l) =>
-      l &&
-      typeof l === "object" &&
-      typeof (l as { instrument?: unknown }).instrument === "string" &&
-      Array.isArray((l as { blocks?: unknown }).blocks)
-  );
-}
-
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const body = await request.json().catch(() => null);
 
-  if (!isValidBody(body)) {
+  if (!isValidSingleSlotBody(body, SLOT_LETTERS)) {
     return NextResponse.json({ error: "Invalid slot payload" }, { status: 400 });
   }
 

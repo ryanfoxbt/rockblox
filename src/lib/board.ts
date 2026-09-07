@@ -6,6 +6,24 @@ export type SlotLetter = "A" | "B" | "C" | "D";
 
 export const SLOT_LETTERS: SlotLetter[] = ["A", "B", "C", "D"];
 
+// Super Powers: a signed-in user's private saved songs get eight slots
+// instead of four. The base `SlotLetter`/`SLOT_LETTERS` above stay at A-D so
+// every existing path (public boards, /songs, /school, Stack Builder, Text to
+// Beat, the Song Crop tool) is untouched; only the saved-song Editor and its
+// API opt into the wider set.
+export type ExtendedSlotLetter = SlotLetter | "E" | "F" | "G" | "H";
+
+export const EXTENDED_SLOT_LETTERS: ExtendedSlotLetter[] = ["A", "B", "C", "D", "E", "F", "G", "H"];
+
+// A slot map that may hold either the 4-slot (A-D) or 8-slot (A-H) set. Kept
+// partial so a 4-key record still satisfies it — `SlotLetter` is assignable
+// to `ExtendedSlotLetter`, so existing 4-slot callers pass through unchanged.
+export type SlotMap = Partial<Record<ExtendedSlotLetter, BoardSlotData | null>>;
+
+export function isExtendedSlotLetter(value: unknown): value is ExtendedSlotLetter {
+  return typeof value === "string" && (EXTENDED_SLOT_LETTERS as string[]).includes(value);
+}
+
 export interface BoardSlotData {
   bpm: number;
   lines: StoredLine[];
@@ -20,7 +38,9 @@ export interface BoardSlotData {
 export interface BoardData {
   slug: string;
   displayName: string;
-  slots: Record<SlotLetter, BoardSlotData | null>;
+  // A-D for public boards / songs / lessons; A-H for a signed-in user's
+  // private saved song (see SlotMap and the Editor's `slotLetters` prop).
+  slots: SlotMap;
   // The Stack Builder arrangement (sequencing repeats of A-D into one longer
   // song), if this page's owner has built one. Board-level, not per-slot.
   stack?: StackArrangement | null;
@@ -49,6 +69,8 @@ const RESERVED_NAMES = new Set([
   "p",
   "api",
   "admin",
+  "my",
+  "auth",
   "rockblocks",
   "www",
   "app",

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
-import { BoardData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
+import { BoardData, ExtendedSlotLetter, SLOT_LETTERS } from "@/lib/board";
 import { computeMeasureLength, deserializeLines } from "@/lib/song";
 import { CustomSamples } from "@/lib/customSamples";
 import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
@@ -50,7 +50,20 @@ function AppendDropZone({ index, onTap }: { index: number; onTap: () => void }) 
   );
 }
 
-export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSlot?: SlotLetter }) {
+export function StackBuilder({
+  board,
+  returnSlot,
+  slotLetters = SLOT_LETTERS,
+  savedSongId,
+}: {
+  board: BoardData;
+  returnSlot?: ExtendedSlotLetter;
+  // A-D for a public board (default); A-H for a private saved song.
+  slotLetters?: ExtendedSlotLetter[];
+  // When set, the arrangement autosaves to /api/my-songs/[id] instead of the
+  // public board stack route.
+  savedSongId?: string;
+}) {
   const isMobile = useIsMobile();
   const basePath = board.basePath ?? `/${board.displayName}`;
   // Send the user back to whichever slot they were editing before they came
@@ -58,8 +71,8 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
   const editorHref = `${basePath}${returnSlot ? `?slot=${returnSlot}` : ""}`;
 
   const slotInfo = useMemo(() => {
-    const info = {} as Record<SlotLetter, SlotInfo>;
-    for (const letter of SLOT_LETTERS) {
+    const info = {} as Record<ExtendedSlotLetter, SlotInfo>;
+    for (const letter of slotLetters) {
       const data = board.slots[letter];
       if (!data || data.lines.length === 0) {
         info[letter] = { lineStates: [], measureLength: 0, kit: DEFAULT_KIT, empty: true, summary: "Empty" };
@@ -79,13 +92,13 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
       };
     }
     return info;
-  }, [board]);
+  }, [board, slotLetters]);
 
   const measureLengths = useMemo(() => {
-    const m = {} as Record<SlotLetter, number>;
-    for (const letter of SLOT_LETTERS) m[letter] = slotInfo[letter].measureLength;
+    const m = {} as Record<ExtendedSlotLetter, number>;
+    for (const letter of slotLetters) m[letter] = slotInfo[letter].measureLength;
     return m;
-  }, [slotInfo]);
+  }, [slotInfo, slotLetters]);
 
   const [steps, setSteps] = useState<StackStep[]>(() => board.stack?.steps ?? []);
   const [bpm, setBpm] = useState<number>(() => board.stack?.bpm ?? 100);
@@ -95,7 +108,7 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState<{ elapsed: number; total: number } | null>(null);
   const [rendering, setRendering] = useState(false);
-  const [armedSlot, setArmedSlot] = useState<SlotLetter | null>(null);
+  const [armedSlot, setArmedSlot] = useState<ExtendedSlotLetter | null>(null);
   const [movingFrom, setMovingFrom] = useState<{ index: number; step: StackStep } | null>(null);
   // Auto-on by default so people can jam along with the beat right away.
   const [loop, setLoop] = useState(true);
@@ -113,7 +126,7 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   const totalSeconds = totalStackSeconds(steps, measureLengths, bpm);
-  const hasAnyBeats = SLOT_LETTERS.some((l) => !slotInfo[l].empty);
+  const hasAnyBeats = slotLetters.some((l) => !slotInfo[l].empty);
 
   useEffect(() => {
     const player = new StackPlayer();
@@ -128,19 +141,24 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
     const player = playerRef.current;
     if (!player) return;
     setSamplesLoading(true);
-    const sources: StackSlotSource[] = SLOT_LETTERS.filter((l) => !slotInfo[l].empty).map((l) => ({
-      slot: l,
-      kit: kitOverride ?? slotInfo[l].kit,
-      customSamples: kitOverride ? undefined : slotInfo[l].customSamples,
-    }));
+    const sources: StackSlotSource[] = slotLetters
+      .filter((l) => !slotInfo[l].empty)
+      .map((l) => ({
+        slot: l,
+        kit: kitOverride ?? slotInfo[l].kit,
+        customSamples: kitOverride ? undefined : slotInfo[l].customSamples,
+      }));
     player.loadSlots(sources).then(() => setSamplesLoading(false));
-  }, [slotInfo, kitOverride]);
+  }, [slotInfo, kitOverride, slotLetters]);
 
   // Autosave, same debounced-PUT-on-change pattern as the main editor's board
   // autosave — skipped entirely for a read-only /songs page, same as Editor's.
+  // A private saved song PUTs /api/my-songs/[id] with a `{ stack }` wrapper; a
+  // public board PUTs its own /stack route with the bare arrangement.
   useEffect(() => {
     if (board.readOnly) return;
-    const payload = JSON.stringify({ bpm, steps, kitOverride });
+    const arrangement = { bpm, steps, kitOverride };
+    const payload = JSON.stringify(arrangement);
     if (lastSavedRef.current === null) {
       lastSavedRef.current = payload;
       return;
@@ -150,11 +168,17 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
     setSaveStatus("saving");
     const handle = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/boards/${board.slug}/stack`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
-        });
+        const res = savedSongId
+          ? await fetch(`/api/my-songs/${savedSongId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ stack: arrangement }),
+            })
+          : await fetch(`/api/boards/${board.slug}/stack`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: payload,
+            });
         if (res.ok) {
           lastSavedRef.current = payload;
         } else {
@@ -167,7 +191,7 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
       }
     }, 800);
     return () => clearTimeout(handle);
-  }, [bpm, steps, kitOverride, board.slug, board.readOnly]);
+  }, [bpm, steps, kitOverride, board.slug, board.readOnly, savedSongId]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -203,7 +227,7 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
     capErrorTimerRef.current = window.setTimeout(() => setCapError(null), 2500);
   }
 
-  function insertStep(slot: SlotLetter, targetIndex: number, sourceIndex?: number) {
+  function insertStep(slot: ExtendedSlotLetter, targetIndex: number, sourceIndex?: number) {
     if (slotInfo[slot].empty) return;
     setSteps((prev) => {
       const next = [...prev];
@@ -234,7 +258,7 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
   function handleDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     if (!over) return;
-    const slot = active.data.current?.slot as SlotLetter | undefined;
+    const slot = active.data.current?.slot as ExtendedSlotLetter | undefined;
     if (!slot) return;
     const source = active.data.current?.source as number | undefined;
     const [kind, indexStr] = String(over.id).split(":");
@@ -242,7 +266,7 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
     insertStep(slot, Number(indexStr), source);
   }
 
-  function handleArmSlot(slot: SlotLetter) {
+  function handleArmSlot(slot: ExtendedSlotLetter) {
     if (slotInfo[slot].empty) return;
     setMovingFrom(null);
     setArmedSlot((prev) => (prev === slot ? null : slot));
@@ -509,14 +533,14 @@ export function StackBuilder({ board, returnSlot }: { board: BoardData; returnSl
 
           {!hasAnyBeats ? (
             <p className="text-sm text-white/50">
-              Build at least one beat (A, B, C or D) on your <Link href={editorHref} className="text-yellow-400 underline decoration-dotted">page</Link> first, then come back to arrange them into a song.
+              Build at least one beat ({slotLetters[0]}–{slotLetters[slotLetters.length - 1]}) on your <Link href={editorHref} className="text-yellow-400 underline decoration-dotted">page</Link> first, then come back to arrange them into a song.
             </p>
           ) : (
             <>
               <section>
                 <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-white/60">Your beats</h2>
                 <div className="flex flex-wrap gap-2">
-                  {SLOT_LETTERS.map((letter) => (
+                  {slotLetters.map((letter) => (
                     <StackPaletteBlock
                       key={letter}
                       slot={letter}

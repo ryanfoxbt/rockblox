@@ -24,9 +24,13 @@ const GENERATED_BPM = 100;
 // with all four slots already filled in one call.
 export function TextToBeatButton({
   board,
+  savedSongId,
   variant = "button",
 }: {
   board?: BoardData;
+  // When set, generated grooves save into this private saved song (slots A-D)
+  // via /api/my-songs/[id] instead of the public board's per-slot PUT.
+  savedSongId?: string;
   // "menuItem" renders as a plain full-width row for the header's
   // consolidated tools menu (see Editor.tsx) instead of its own bordered
   // pill button — same open/save logic either way.
@@ -75,12 +79,16 @@ export function TextToBeatButton({
     const toSave = slotsToSave(result);
     if (toSave.length === 0) return;
 
+    // Same single-slot PUT body either way; a saved song accepts it at
+    // /api/my-songs/[id], a public board at /api/boards/[slug].
+    const target = savedSongId ? `/api/my-songs/${savedSongId}` : `/api/boards/${board.slug}`;
+
     setSaving(true);
     setError(null);
     try {
       const responses = await Promise.all(
         toSave.map(({ slot, lines }) =>
-          fetch(`/api/boards/${board.slug}`, {
+          fetch(target, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ slot, bpm: GENERATED_BPM, lines: serializeLines(lines), kit: DEFAULT_KIT }),

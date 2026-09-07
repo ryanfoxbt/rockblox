@@ -44,11 +44,13 @@ import {
 import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine";
 import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
 import { useHistoryState } from "@/lib/useHistoryState";
-import { BoardData, BoardSlotData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
+import { BoardData, ExtendedSlotLetter, SLOT_LETTERS, SlotMap } from "@/lib/board";
 import { CustomSamples, arrayBufferToBase64 } from "@/lib/customSamples";
 import { loadDraft, saveDraft } from "@/lib/draftStorage";
 import { ClaimUrlBox } from "@/components/ClaimUrlBox";
 import { SaveCopyButton } from "@/components/SaveCopyButton";
+import { SaveToLibraryButton } from "@/components/SaveToLibraryButton";
+import { SuperPowersMenu } from "@/components/SuperPowersMenu";
 
 // Which slots have an actual beat in them, excluding `exclude` (typically
 // the slot on screen) — what the Variation popover offers as "base this
@@ -56,15 +58,18 @@ import { SaveCopyButton } from "@/components/SaveCopyButton";
 // handler, or a useState initializer) rather than it reading a ref at
 // render time.
 function computeVariationSources(
-  slots: Record<SlotLetter, BoardSlotData | null> | null,
-  exclude: SlotLetter
-): { slot: SlotLetter; label: string }[] {
+  slots: SlotMap | null,
+  letters: ExtendedSlotLetter[],
+  exclude: ExtendedSlotLetter
+): { slot: ExtendedSlotLetter; label: string }[] {
   if (!slots) return [];
-  return SLOT_LETTERS.filter((slot) => {
-    if (slot === exclude) return false;
-    const data = slots[slot];
-    return !!data && measureLengthFromStoredLines(data.lines) > 0;
-  }).map((slot) => ({ slot, label: `Slot ${slot}` }));
+  return letters
+    .filter((slot) => {
+      if (slot === exclude) return false;
+      const data = slots[slot];
+      return !!data && measureLengthFromStoredLines(data.lines) > 0;
+    })
+    .map((slot) => ({ slot, label: `Slot ${slot}` }));
 }
 
 export function Editor({
@@ -75,6 +80,8 @@ export function Editor({
   initialSlug,
   initialSlot,
   board,
+  slotLetters = SLOT_LETTERS,
+  savedSong,
   lessonNav,
 }: {
   initialBpm?: number;
@@ -84,8 +91,15 @@ export function Editor({
   initialSlug?: string;
   // Which slot to open on, e.g. from a `?slot=` URL param set when returning
   // from Stacks — falls back to the first non-empty slot when absent.
-  initialSlot?: SlotLetter;
+  initialSlot?: ExtendedSlotLetter;
   board?: BoardData;
+  // The slot set this editor exposes: A-D (default) for public boards, songs
+  // and lessons; A-H for a signed-in user's private saved song. The switcher
+  // only shows four at a time and pages between groups (see below).
+  slotLetters?: ExtendedSlotLetter[];
+  // Set when editing a private saved song — routes autosave to
+  // /api/my-songs/[id] instead of /api/boards/[slug].
+  savedSong?: { id: string; title: string };
   // Drum School's prev/next lesson links, set only by /school/[slug] — null
   // for either end means there's nothing to link to (Lesson 1's "Previous",
   // the last lesson's "Next").
@@ -100,8 +114,8 @@ export function Editor({
   // /DisplayName — see BoardData.basePath.
   const basePath = board ? board.basePath ?? `/${board.displayName}` : "";
 
-  const [activeSlot, setActiveSlot] = useState<SlotLetter>(
-    () => initialSlot || (board && SLOT_LETTERS.find((l) => board.slots[l])) || "A"
+  const [activeSlot, setActiveSlot] = useState<ExtendedSlotLetter>(
+    () => initialSlot || (board && slotLetters.find((l) => board.slots[l])) || "A"
   );
   // Tracks the last payload known to be persisted for this slot, so the
   // autosave effect only fires on real edits — not on mount, not when
@@ -113,9 +127,7 @@ export function Editor({
   // one-time snapshot from page load, so without this, switching to a slot
   // edited earlier in the same session (then switching away and back) would
   // show stale, pre-edit data instead of what's actually on screen.
-  const slotsRef = useRef<Record<SlotLetter, BoardSlotData | null>>(
-    board?.slots ?? { A: null, B: null, C: null, D: null }
-  );
+  const slotsRef = useRef<SlotMap>(board?.slots ?? {});
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const [lines, setLines, { undo, redo, reset: resetLines, canUndo, canRedo }] = useHistoryState<LineData[]>(() => {
@@ -139,6 +151,18 @@ export function Editor({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playheadBeat, setPlayheadBeat] = useState<number | null>(null);
   const [activeTile, setActiveTile] = useState<RhythmTile | null>(null);
+  // The slot switcher shows at most four letters at once. `slotGroups` chunks
+  // the available slots (A-D, or A-H for a saved song) into pages of four;
+  // `slotPage` is which page is on screen. Toggling pages never changes the
+  // active slot — you page over, then click.
+  const slotGroups = useMemo<ExtendedSlotLetter[][]>(() => {
+    const groups: ExtendedSlotLetter[][] = [];
+    for (let i = 0; i < slotLetters.length; i += 4) groups.push(slotLetters.slice(i, i + 4));
+    return groups;
+  }, [slotLetters]);
+  const [slotPage, setSlotPage] = useState(() =>
+    Math.max(0, slotGroups.findIndex((g) => g.includes(activeSlot)))
+  );
   const [showSheet, setShowSheet] = useState(false);
   const [showDrumTeacher, setShowDrumTeacher] = useState(false);
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
@@ -151,8 +175,10 @@ export function Editor({
     board ? null : typeof window !== "undefined" ? window.sessionStorage.getItem("rockblocks:lastBoard") : null
   );
   useEffect(() => {
-    if (board && !board.readOnly) window.sessionStorage.setItem("rockblocks:lastBoard", board.displayName);
-  }, [board]);
+    if (board && !board.readOnly && !savedSong) {
+      window.sessionStorage.setItem("rockblocks:lastBoard", board.displayName);
+    }
+  }, [board, savedSong]);
   const [armedTile, setArmedTile] = useState<RhythmTile | null>(null);
   const [movingFrom, setMovingFrom] = useState<{ lineId: string; index: number; tile: RhythmTile } | null>(null);
   const [kit, setKit] = useState<string>(() => {
@@ -298,13 +324,13 @@ export function Editor({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [undo, redo, movingFrom, armedTile]);
 
-  function switchSlot(slot: SlotLetter) {
+  function switchSlot(slot: ExtendedSlotLetter) {
     if (!board || slot === activeSlot) return;
     // Snapshot the outgoing slot's current state into our client-side copy
     // before leaving it, so switching back later reflects this session's
     // edits rather than the stale data the server sent on page load.
     slotsRef.current[activeSlot] = { bpm, lines: serializeLines(lines), kit, customSamples };
-    setVariationSources(computeVariationSources(slotsRef.current, slot));
+    setVariationSources(computeVariationSources(slotsRef.current, slotLetters, slot));
     // Keep the URL in sync with the active slot (replace, not push, so
     // switching slots doesn't pile up back-button history) — this is what
     // lets the browser's actual back button, not just the in-app link,
@@ -326,6 +352,8 @@ export function Editor({
       customSamples: nextCustomSamples,
     });
     setActiveSlot(slot);
+    const groupIdx = slotGroups.findIndex((g) => g.includes(slot));
+    if (groupIdx >= 0) setSlotPage(groupIdx);
     setArmedTile(null);
     setMovingFrom(null);
     resetLines(nextLines);
@@ -341,18 +369,20 @@ export function Editor({
   // whatever's in the active slot right now (which hasn't been flushed into
   // slotsRef yet — that only happens on switchSlot/unmount) — see
   // SaveCopyButton, only ever rendered for a read-only board.
-  function currentSlotsSnapshot(): Record<SlotLetter, BoardSlotData | null> {
+  function currentSlotsSnapshot(): SlotMap {
     return {
       ...slotsRef.current,
       [activeSlot]: { bpm, lines: serializeLines(lines), kit, customSamples },
     };
   }
 
-  // Autosave the active slot to this board's page whenever the pattern
-  // changes, so a personalized URL always reflects what's on screen without
-  // needing an explicit save action.
+  // Autosave the active slot whenever the pattern changes, so the page always
+  // reflects what's on screen without an explicit save action. For a private
+  // saved song this PUTs /api/my-songs/[id]; for a claimed public board,
+  // /api/boards/[slug]. Same one-slot payload shape either way.
+  const autosaveUrl = savedSong ? `/api/my-songs/${savedSong.id}` : board ? `/api/boards/${board.slug}` : null;
   useEffect(() => {
-    if (!board || board.readOnly) return;
+    if (!board || board.readOnly || !autosaveUrl) return;
     const payload = JSON.stringify({ slot: activeSlot, bpm, lines: serializeLines(lines), kit, customSamples });
     if (lastSavedRef.current === null) {
       lastSavedRef.current = payload;
@@ -363,7 +393,7 @@ export function Editor({
     setSaveStatus("saving");
     const handle = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/boards/${board.slug}`, {
+        const res = await fetch(autosaveUrl, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: payload,
@@ -375,7 +405,7 @@ export function Editor({
       }
     }, 800);
     return () => clearTimeout(handle);
-  }, [lines, bpm, kit, customSamples, activeSlot, board]);
+  }, [lines, bpm, kit, customSamples, activeSlot, board, autosaveUrl]);
 
   // The homepage scratchpad's equivalent of the autosave effect above, but
   // to localStorage instead of the server — see draftStorage.ts and
@@ -566,8 +596,8 @@ export function Editor({
   // them — what the Variation popover offers as "base this on." Only ever
   // recomputed from a plain event handler (the initial useState here, and
   // switchSlot below), never read off slotsRef during render.
-  const [variationSources, setVariationSources] = useState<{ slot: SlotLetter; label: string }[]>(() =>
-    computeVariationSources(board?.slots ?? null, activeSlot)
+  const [variationSources, setVariationSources] = useState<{ slot: ExtendedSlotLetter; label: string }[]>(() =>
+    computeVariationSources(board?.slots ?? null, slotLetters, activeSlot)
   );
 
   function randomizeVariation(
@@ -576,7 +606,7 @@ export function Editor({
     complexity: number,
     beats: number
   ) {
-    const data = slotsRef.current[sourceSlot as SlotLetter];
+    const data = slotsRef.current[sourceSlot as ExtendedSlotLetter];
     if (!data) return;
     const sourceLines = deserializeLines(data.lines);
     setLines(
@@ -637,11 +667,14 @@ export function Editor({
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
       <header className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
         <div className="max-w-xl">
-          <Link href="/" title="Home" className="inline-block">
-            <h1 className="text-xl font-black tracking-tight transition hover:text-yellow-400 sm:text-2xl">
-              Rock<span className="text-yellow-400">Blocks</span>
-            </h1>
-          </Link>
+          <div className="flex items-start justify-between gap-3">
+            <Link href="/" title="Home" className="inline-block">
+              <h1 className="text-xl font-black tracking-tight transition hover:text-yellow-400 sm:text-2xl">
+                Rock<span className="text-yellow-400">Blocks</span>
+              </h1>
+            </Link>
+            <SuperPowersMenu />
+          </div>
           {!isMobile && (
             <p className="text-sm text-white/50">
               Drag rhythmic values into up to {visibleBeats} beat blocks per line to build a drum
@@ -655,6 +688,15 @@ export function Editor({
                   🎵 {board.subtitle} —{" "}
                   <span className="text-yellow-400">mess around all you want, nothing here saves</span>
                 </span>
+              ) : savedSong ? (
+                <Link href="/my" className="text-white/40 transition hover:text-yellow-400">
+                  ⚡ <span className="text-yellow-400">{savedSong.title}</span> · in My Songs
+                  {saveStatus !== "idle" && (
+                    <span className="ml-2">
+                      {saveStatus === "saving" ? "· Saving…" : saveStatus === "error" ? "· Error" : "· Saved"}
+                    </span>
+                  )}
+                </Link>
               ) : (
                 <>
                   <button
@@ -706,6 +748,7 @@ export function Editor({
           {!board && (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <ClaimUrlBox bpm={bpm} lines={lines} kit={kit} customSamples={customSamples} />
+              <SaveToLibraryButton getSlots={currentSlotsSnapshot} />
               {lastBoardName && (
                 <Link
                   href={`/${lastBoardName}`}
@@ -731,23 +774,49 @@ export function Editor({
         <div className="flex flex-nowrap items-center justify-between gap-1.5">
           <div className="flex shrink-0 flex-nowrap items-center gap-1.5">
             {board && (
-              <div className="flex overflow-hidden rounded-md border border-white/15">
-                {SLOT_LETTERS.map((slot) => (
+              <div className="flex items-center gap-1">
+                {slotGroups.length > 1 && (
                   <button
-                    key={slot}
                     type="button"
-                    onClick={() => switchSlot(slot)}
-                    title={`Beat ${slot}`}
-                    className={[
-                      "flex h-9 w-9 items-center justify-center text-sm font-semibold transition",
-                      slot === activeSlot
-                        ? "bg-yellow-400 text-slate-900"
-                        : "bg-white/5 text-white/60 hover:bg-white/10",
-                    ].join(" ")}
+                    onClick={() => setSlotPage((p) => Math.max(0, p - 1))}
+                    disabled={slotPage === 0}
+                    title="Previous beat slots"
+                    aria-label="Previous beat slots"
+                    className="flex h-9 w-6 items-center justify-center rounded-md text-white/40 transition hover:text-yellow-400 disabled:pointer-events-none disabled:opacity-20"
                   >
-                    {slot}
+                    ‹
                   </button>
-                ))}
+                )}
+                <div className="flex overflow-hidden rounded-md border border-white/15">
+                  {(slotGroups[slotPage] ?? slotLetters).map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => switchSlot(slot)}
+                      title={`Beat ${slot}`}
+                      className={[
+                        "flex h-9 w-9 items-center justify-center text-sm font-semibold transition",
+                        slot === activeSlot
+                          ? "bg-yellow-400 text-slate-900"
+                          : "bg-white/5 text-white/60 hover:bg-white/10",
+                      ].join(" ")}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+                {slotGroups.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setSlotPage((p) => Math.min(slotGroups.length - 1, p + 1))}
+                    disabled={slotPage >= slotGroups.length - 1}
+                    title="More beat slots"
+                    aria-label="More beat slots"
+                    className="flex h-9 w-6 items-center justify-center rounded-md text-white/40 transition hover:text-yellow-400 disabled:pointer-events-none disabled:opacity-20"
+                  >
+                    ›
+                  </button>
+                )}
               </div>
             )}
             {undoRedoButtons}
@@ -792,16 +861,23 @@ export function Editor({
                       </Link>
                       {!board.readOnly && (
                         <>
-                          <TextToBeatButton board={board} variant="menuItem" />
-                          <WallButton boardSlug={board.slug} />
+                          <TextToBeatButton
+                            board={board}
+                            savedSongId={savedSong?.id}
+                            variant="menuItem"
+                          />
+                          {!savedSong && <WallButton boardSlug={board.slug} />}
                         </>
                       )}
                       {board.readOnly && (
-                        <SaveCopyButton
-                          variant="menuItem"
-                          getSlots={currentSlotsSnapshot}
-                          getStack={() => board.stack ?? null}
-                        />
+                        <>
+                          <SaveCopyButton
+                            variant="menuItem"
+                            getSlots={currentSlotsSnapshot}
+                            getStack={() => board.stack ?? null}
+                          />
+                          <SaveToLibraryButton variant="menuItem" getSlots={currentSlotsSnapshot} />
+                        </>
                       )}
                     </>
                   )}

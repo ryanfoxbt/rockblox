@@ -1,11 +1,12 @@
-import { SLOT_LETTERS, SlotLetter } from "./board";
+import { SLOT_LETTERS, type ExtendedSlotLetter } from "./board";
 
-// A user's claimed page holds up to 4 beats (A-D, see board.ts). Stack
-// Builder lets them arrange repeats of those beats into one longer song,
-// all played at one shared tempo instead of each slot's own saved bpm.
+// A claimed public page holds up to 4 beats (A-D); a signed-in user's private
+// saved song holds 8 (A-H, see board.ts). Stack Builder lets them arrange
+// repeats of those beats into one longer song, all played at one shared tempo
+// instead of each slot's own saved bpm.
 export interface StackStep {
   id: string;
-  slot: SlotLetter;
+  slot: ExtendedSlotLetter;
 }
 
 export interface StackArrangement {
@@ -31,7 +32,7 @@ export function stepDurationSeconds(measureLength: number, bpm: number): number 
 
 export function totalStackSeconds(
   steps: StackStep[],
-  measureLengths: Record<SlotLetter, number>,
+  measureLengths: Partial<Record<ExtendedSlotLetter, number>>,
   bpm: number
 ): number {
   return steps.reduce((sum, step) => sum + stepDurationSeconds(measureLengths[step.slot] ?? 0, bpm), 0);
@@ -79,7 +80,12 @@ export function formatDuration(seconds: number): string {
   return `${minutes}:${secs.toString().padStart(2, "0")}`;
 }
 
-export function isValidStackArrangement(value: unknown): value is StackArrangement {
+// `allowedSlots` is the slot-letter set a step may reference — SLOT_LETTERS
+// (A-D) for a public board, EXTENDED_SLOT_LETTERS (A-H) for a saved song.
+export function isValidStackArrangement(
+  value: unknown,
+  allowedSlots: readonly string[] = SLOT_LETTERS
+): value is StackArrangement {
   if (value === undefined || value === null) return true;
   if (typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
@@ -91,6 +97,7 @@ export function isValidStackArrangement(value: unknown): value is StackArrangeme
       s &&
       typeof s === "object" &&
       typeof (s as { id?: unknown }).id === "string" &&
-      SLOT_LETTERS.includes((s as { slot?: unknown }).slot as SlotLetter)
+      typeof (s as { slot?: unknown }).slot === "string" &&
+      allowedSlots.includes((s as { slot: string }).slot)
   );
 }

@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { NotationLine, STACK_STAVE_SPACING, StackNotationLayout, VF, renderStackNotation } from "@/lib/notation";
-import { SlotLetter } from "@/lib/board";
+import { ExtendedSlotLetter } from "@/lib/board";
 
 export interface StackSheetStep {
-  slot: SlotLetter;
+  slot: ExtendedSlotLetter;
   lines: NotationLine[];
   measureLength: number;
 }

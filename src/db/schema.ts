@@ -1,5 +1,5 @@
 import { boolean, doublePrecision, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import type { BoardSlotData } from "@/lib/board";
+import type { BoardSlotData, SlotMap } from "@/lib/board";
 import type { CustomSamples } from "@/lib/customSamples";
 import type { StackArrangement } from "@/lib/stack";
 import type {
@@ -50,9 +50,35 @@ export const boards = pgTable("boards", {
   // (time signature formula, density curve, per-word rhythm/accent choices)
   // alongside the generated grooves — see lib/textToBeat.ts's trace output.
   textToBeatShowRules: boolean("text_to_beat_show_rules").notNull().default(true),
+  // Neon Auth user id of the account that "owns" this public URL, once the
+  // future "buy a claimed URL" feature exists. Null for every board today
+  // (claiming is still anonymous and unlocked) — a public URL stays publicly
+  // readable regardless; ownership only ever gates who may *edit* it.
+  ownerId: text("owner_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// A signed-in user's private, saved drum song — the "Super Powers" payoff.
+// Unlike `boards` (a public, anonymously-claimed vanity URL capped at 4
+// slots), a user_song is visible only to its owner, there can be any number
+// of them per account, and it carries the doubled 8-slot set (A-H, see
+// SlotMap). `slots` is one JSON object keyed by slot letter rather than eight
+// columns so the width can vary and the whole doc autosaves in one write.
+export const userSongs = pgTable(
+  "user_songs",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id").notNull(),
+    title: text("title").notNull().default("Untitled"),
+    slots: jsonb("slots").$type<SlotMap>().notNull().default({}),
+    // Stack Builder arrangement over this song's slots, if the owner built one.
+    stack: jsonb("stack").$type<StackArrangement>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("user_songs_owner_idx").on(table.ownerId)]
+);
 
 // A curated, staff-picked drum mapping of a famous song — e.g. the Ramones'
 // "Blitzkrieg Bop" — shaped just like `boards` (slots A-D plus a Stack
@@ -117,6 +143,9 @@ export const boardPresence = pgTable(
   (table) => [
     uniqueIndex("board_presence_board_visitor_idx").on(table.boardSlug, table.visitorId),
     index("board_presence_board_slug_idx").on(table.boardSlug),
+    // Cross-board "who's active anywhere right now" scan for /api/activity
+    // (Spy + Explore).
+    index("board_presence_last_seen_idx").on(table.lastSeenAt),
   ]
 );
 
