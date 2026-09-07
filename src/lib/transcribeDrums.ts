@@ -80,6 +80,15 @@ const ONSET_HOP_SIZE = 512;
 // enter the onset list (no downstream fix, in classification or
 // quantization, can recover a hit that was never detected). Worth raising
 // back toward 1.6 if this starts producing false/noisy hits instead.
+//
+// Note: log-compressed flux and an asymmetric threshold window were both
+// tried here to lift quiet hits. Each raised the raw onset count 15–65% on
+// this batch, and the denser onset train pushed estimateTempo into
+// half/double errors on the slower songs — reverted. Pursuing that path
+// wants a weighted onset-strength envelope threaded into estimateTempo (so
+// the strong beat-level hits dominate the tempo autocorrelation regardless
+// of how many quiet subdivision hits are added) plus ear-checking the
+// clips, not just watching the report's structural numbers.
 const ONSET_THRESHOLD_FACTOR = 1.4;
 const ONSET_LOCAL_WINDOW_SECONDS = 0.5;
 const MIN_ONSET_GAP_SECONDS = 0.06;
@@ -106,6 +115,13 @@ const KICK_LOW_RATIO = 0.45;
 // almost nothing below a few kHz — doesn't have, so it's checked first.
 const SNARE_MID_RATIO = 0.12;
 const HIHAT_HIGH_RATIO = 0.4;
+// Only for hits that clear none of the three band gates above (broadBand ===
+// "none"): route by full-spectrum centroid instead of defaulting to snare.
+// Wide margins on purpose — this decides only the genuinely ambiguous tail,
+// so it should catch the obvious dark/bright cases and leave everything else
+// a snare.
+const UNBANDED_KICK_MAX_CENTROID_HZ = 250;
+const UNBANDED_HIHAT_MIN_CENTROID_HZ = 3500;
 
 // A resonant drum (tom) rings noticeably longer than the punchy transient of
 // a kick or the crack+choke of a snare — that's the signal that pulls toms
@@ -1004,7 +1020,15 @@ function refineOnsetTime(mono: { sampleRate: number; samples: Float32Array }, ro
 
 // Autocorrelates a coarse onset-impulse train against every candidate beat
 // period in [MIN_BPM, MAX_BPM] and keeps the strongest — standard technique
-// for pulling a steady tempo out of a set of onset times.
+// for pulling a steady tempo out of a set of onset times. A gentle perceptual
+// prior + explicit half/double disambiguation were tried on top of this to
+// stop octave errors and regressed the slower half of the test batch (a
+// log-normal prior centred at 120 BPM actually prefers 166 to 83, since 166
+// is proportionally nearer) — that needs a weighted onset-strength train and
+// ear-checking, not a bare prior. What's kept: the integer winner is
+// unchanged from before, then refined to a fractional BPM by parabolic
+// interpolation on the score curve, so a whole-song grid doesn't drift
+// audibly over a couple of minutes (see SongCropAnalysis).
 function estimateTempo(onsetTimes: number[], totalDurationSeconds: number): number {
   const binSeconds = 0.01;
   const numBins = Math.max(1, Math.ceil(totalDurationSeconds / binSeconds));
@@ -1014,16 +1038,32 @@ function estimateTempo(onsetTimes: number[], totalDurationSeconds: number): numb
     if (bin >= 0 && bin < numBins) train[bin] = 1;
   }
 
+  const scoreByBpm = new Map<number, number>();
   let bestBpm = 120;
   let bestScore = -Infinity;
   for (let bpm = MIN_BPM; bpm <= MAX_BPM; bpm++) {
     const periodBins = Math.round(60 / bpm / binSeconds);
-    if (periodBins < 1) continue;
+    if (periodBins < 1 || periodBins >= numBins) continue;
     let score = 0;
     for (let i = 0; i + periodBins < numBins; i++) score += train[i] * train[i + periodBins];
+    scoreByBpm.set(bpm, score);
     if (score > bestScore) {
       bestScore = score;
       bestBpm = bpm;
+    }
+  }
+
+  // Sub-integer refinement: fit a parabola to the winning BPM and its two
+  // neighbours and take the vertex, when the three points actually form a
+  // peak. Doesn't change which integer BPM won — only nudges within ±1.
+  const sm1 = scoreByBpm.get(bestBpm - 1);
+  const s0 = scoreByBpm.get(bestBpm);
+  const sp1 = scoreByBpm.get(bestBpm + 1);
+  if (sm1 != null && s0 != null && sp1 != null) {
+    const denom = sm1 - 2 * s0 + sp1;
+    if (denom < 0) {
+      const delta = (0.5 * (sm1 - sp1)) / denom;
+      if (Math.abs(delta) <= 1) return bestBpm + delta;
     }
   }
   return bestBpm;
@@ -1035,13 +1075,22 @@ function estimateTempo(onsetTimes: number[], totalDurationSeconds: number): numb
 // from every real onset.
 function estimateGridPhase(onsetTimes: number[], beatSeconds: number): number {
   const resolution = beatSeconds / 16;
+  const sixteenth = beatSeconds / 4;
   let bestPhase = 0;
   let bestScore = -Infinity;
   for (let phase = 0; phase < beatSeconds; phase += resolution) {
     let score = 0;
     for (const t of onsetTimes) {
       const intoGrid = (((t - phase) % beatSeconds) + beatSeconds) % beatSeconds;
-      const distance = Math.min(intoGrid, beatSeconds - intoGrid);
+      // Score distance to the nearest *sixteenth-note* line, not the nearest
+      // beat line — that's the grid groupIntoBars actually quantizes onto, and
+      // it means an onset on an eighth or a sixteenth (a driving hi-hat, a
+      // snare on the "e" of a beat) pulls the phase toward where it really
+      // sits instead of looking maximally off-grid and contributing almost
+      // nothing. Songs with sparse downbeats but busy subdivisions locked to
+      // a poor phase before this.
+      const intoSixteenth = intoGrid % sixteenth;
+      const distance = Math.min(intoSixteenth, sixteenth - intoSixteenth);
       score += 1 / (1 + distance / resolution);
     }
     if (score > bestScore) {
@@ -1060,6 +1109,7 @@ interface OnsetFeatures {
   highRatio: number;
   highPeakiness: number; // how concentrated the high-band energy is in one narrow peak vs spread broadband
   lowMidCentroidHz: number; // weighted-average frequency in the tom pitch range, for low/mid/high tom bucketing
+  spectralCentroidHz: number; // full-spectrum energy centroid — a coarse bright/dark axis for hits no band gate claims
   decayRatio: number; // late/early raw-RMS envelope ratio — how long the hit rings out
   peakRms: number; // raw loudness, for comparing a hit against the song's typical hit loudness
 }
@@ -1122,6 +1172,7 @@ function extractOnsetFeatures(
   let highBinCount = 0;
   let lowMidEnergySum = 0;
   let lowMidWeightedFreqSum = 0;
+  let centroidWeightedSum = 0;
 
   for (let b = 1; b < bins; b++) {
     const re = out[2 * b];
@@ -1129,6 +1180,7 @@ function extractOnsetFeatures(
     const energy = re * re + im * im;
     const hz = b * binHz;
     totalEnergy += energy;
+    centroidWeightedSum += energy * hz;
     if (hz < CLASSIFY_LOW_HZ) lowEnergy += energy;
     else if (hz < CLASSIFY_MID_HIGH_HZ) midEnergy += energy;
     else {
@@ -1150,6 +1202,7 @@ function extractOnsetFeatures(
     highRatio: totalEnergy > 0 ? highEnergy / totalEnergy : 0,
     highPeakiness: highAvgEnergy > 0 ? highPeakEnergy / highAvgEnergy : 0,
     lowMidCentroidHz: lowMidEnergySum > 0 ? lowMidWeightedFreqSum / lowMidEnergySum : 0,
+    spectralCentroidHz: totalEnergy > 0 ? centroidWeightedSum / totalEnergy : 0,
     decayRatio: decayRatio(samples, sampleRate, startSample, nextOnsetGapSeconds),
     peakRms: rmsEnergy(samples, startSample, startSample + Math.round(0.02 * sampleRate)),
   };
@@ -1216,6 +1269,14 @@ function classifyOnset(f: OnsetFeatures, medianPeak: number, tomDecay: TomDecayT
     return f.decayRatio > tomDecay.mid ? tomForPitch(f.lowMidCentroidHz) : "snare";
   }
   if (band === "high") return classifyCymbal(f, medianPeak);
+
+  // band === "none": the hit's energy is spread out and no ratio gate claimed
+  // it. Rather than blindly calling every such hit a snare (historically ~7%
+  // of all hits, many of them filtered/synth kicks and hi-hats), place it by
+  // overall spectral centroid — a clearly dark hit is a kick, a clearly
+  // bright one a closed hi-hat, the broad middle stays snare.
+  if (f.spectralCentroidHz > 0 && f.spectralCentroidHz < UNBANDED_KICK_MAX_CENTROID_HZ) return "kick";
+  if (f.spectralCentroidHz > UNBANDED_HIHAT_MIN_CENTROID_HZ) return "hihatClosed";
   return "snare";
 }
 
@@ -1259,7 +1320,13 @@ const MAX_BEATS_PER_BAR = MAX_BEATS;
 // candidates) matters — a broad, noisy field of similarly-mediocre scores
 // otherwise lets whichever one happens to be checked first win by default,
 // which is what produced false positives on ordinary songs during tuning.
-const TIME_SIGNATURE_OVERRIDE_THRESHOLD = 0.88;
+//
+// Raised 0.88 → 0.92: at 0.88, the batch's most metronomic songs — the same
+// ones the 8/4 exclusion above just rescued — cleared the bar at 3 or 6
+// instead (a dead-steady groove is near-perfectly periodic at every divisor,
+// not just its true bar length). 0.92 still sits well under the confirmed
+// 7/4's 0.96 but above the ~0.88–0.91 those false 3//6 detections scored.
+const TIME_SIGNATURE_OVERRIDE_THRESHOLD = 0.92;
 
 // How many beats make up one repeating bar — detected from the audio rather
 // than assumed to be 4. A hardcoded 4-beat bar silently breaks any song that
@@ -1311,14 +1378,19 @@ function estimateBeatsPerBar(
   }
 
   // 4 is the default and the baseline every other candidate is measured
-  // against. 2 is excluded from ever overriding it: it's the shortest,
+  // against. 2 and 8 are excluded from ever overriding it. 2 is the shortest,
   // most generic possible grouping (does beat 0 look like beat 2), and even
-  // clearly-4/4 songs in testing showed 2 scoring as high as or higher than
-  // their own true length — it's noise, not signal, for this purpose.
+  // clearly-4/4 songs showed it scoring as high as their true length. 8 is
+  // the mirror problem: it's two bars of 4, so any steady 4/4 groove is
+  // trivially near-perfectly periodic at 8 as well and clears the override
+  // threshold — 8 of 21 songs in the batch were being mislabeled 8/4 (their
+  // bar count halved, pairs of real bars fused into one) before this. A
+  // genuine 8-beat cycle still reads correctly as two 4s. That leaves 3, 5,
+  // 6, 7 as the meters worth detecting.
   const fourScore = effectiveScores.get(4) ?? 0;
   let best = 4;
   for (let n = MAX_BEATS_PER_BAR; n >= 3; n--) {
-    if (n === 4) continue;
+    if (n === 4 || n === 8) continue;
     const score = effectiveScores.get(n) ?? 0;
     if (score > 0 && score >= fourScore * TIME_SIGNATURE_OVERRIDE_THRESHOLD) {
       best = n;
