@@ -55,8 +55,8 @@ export function PresenceIndicator({ boardSlug }: { boardSlug: string }) {
           const place = list.find((o) => o.location)?.location;
           setToast(
             place
-              ? `Your musical weiner cousin is here too — visiting from ${place}.`
-              : "Your musical weiner cousin is here too."
+              ? `Yeah! Another Block Buddy is here — visiting from ${place}.`
+              : "Yeah! Another Block Buddy is here."
           );
           setTimeout(() => setToast(null), 6000);
         }
