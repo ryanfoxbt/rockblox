@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { songAnalyses } from "@/db/schema";
+import { getCurrentUser } from "@/lib/auth/session";
 import { SongCropAnalysisRequestedData, inngest } from "@/inngest/client";
 
 function createAnalysisId(): string {
@@ -8,8 +9,12 @@ function createAnalysisId(): string {
 }
 
 // /test-only: kicks off a whole-song analysis for the manual-crop workflow
-// (see analyzeSongForCropping) — never tied to a board.
+// (see analyzeSongForCropping) — never tied to a board. Sign-in gated to
+// match the /test page (a paid Replicate run per call); payment gate later.
 export async function POST(request: NextRequest) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Sign in to use song analysis" }, { status: 401 });
+
   const body = (await request.json().catch(() => null)) as { blobUrl?: unknown; originalFilename?: unknown } | null;
 
   const blobUrl = typeof body?.blobUrl === "string" ? body.blobUrl : "";
