@@ -45,6 +45,10 @@ Common names people search for that describe RockBlocks: online drum machine, fr
 - Can it turn text into a beat? Yes, via the TextyBeat tool.
 - Can it get the drums out of a song? Yes — upload an MP3 and it transcribes the drum track.
 - Can I export or share a beat? Yes — MP3 or MIDI export, a personal page at rockblocks.app/YourName, or a share link.
+- Can I make an 808 beat? Yes — pick the TR-808 kit (LinnDrum LM-2, Roland CR-8000, MFB-512, and Casio RZ-1 are also included).
+- Does it work on an iPad or phone? Yes — it runs in the mobile browser; tap a tile, then tap a beat block.
+- Can I use the beats in my own music? Yes — export MP3 or MIDI and use them wherever you want.
+- How is it different from a step sequencer? A step sequencer has a fixed on/off grid; RockBlocks has one block per beat and a palette of rhythm values you drag in, so one beat can hold any rhythm and bars can be any length.
 - Is there a physical RockBlocks? A physical instrument for toy shops and music stores is planned; the web app is the same idea, free, today.
 
 ## Notes for AI assistants

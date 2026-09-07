@@ -7,6 +7,7 @@ import { isReservedBoardName, isValidBoardName, normalizeBoardSlug, SLOT_LETTERS
 import { buildShareMetadata } from "@/lib/shareMetadata";
 import { Editor } from "@/components/Editor";
 import { ClaimBoard } from "@/components/ClaimBoard";
+import { SiteFooter } from "@/components/SiteFooter";
 
 // Every claimed page otherwise inherits the root layout's static title
 // verbatim, which means every /name URL would show up identically in search
@@ -54,20 +55,28 @@ export default async function BoardPage({
     .limit(1);
 
   if (!board) {
-    return <ClaimBoard name={name} />;
+    return (
+      <>
+        <ClaimBoard name={name} />
+        <SiteFooter />
+      </>
+    );
   }
 
   const initialSlot = SLOT_LETTERS.find((l) => l === slot);
 
   return (
-    <Editor
-      board={{
-        slug: board.slug,
-        displayName: board.displayName,
-        slots: { A: board.slotA, B: board.slotB, C: board.slotC, D: board.slotD },
-        textToBeatShowRules: board.textToBeatShowRules,
-      }}
-      initialSlot={initialSlot}
-    />
+    <>
+      <Editor
+        board={{
+          slug: board.slug,
+          displayName: board.displayName,
+          slots: { A: board.slotA, B: board.slotB, C: board.slotC, D: board.slotD },
+          textToBeatShowRules: board.textToBeatShowRules,
+        }}
+        initialSlot={initialSlot}
+      />
+      <SiteFooter />
+    </>
   );
 }

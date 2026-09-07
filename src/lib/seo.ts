@@ -99,6 +99,22 @@ export const FAQ: { q: string; a: string }[] = [
     a: "Yes. Export any beat as an MP3 or a MIDI file, save it to a personal page at rockblocks.app/YourName, or share a pattern with a link.",
   },
   {
+    q: "Can I make an 808 beat?",
+    a: "Yes. Choose the TR-808 kit and build a pattern the same way you would with any kit. RockBlocks also has LinnDrum LM-2, Roland CR-8000, MFB-512, and Casio RZ-1 sample sets, plus an acoustic kit.",
+  },
+  {
+    q: "Does RockBlocks work on an iPad or a phone?",
+    a: "Yes. It runs in the mobile browser on iPad, iPhone, and Android. Tap a rhythm tile, then tap a beat block to place it.",
+  },
+  {
+    q: "Can I use RockBlocks beats in my own music?",
+    a: "Yes. Beats you make are yours to use. Export them as an MP3 or a MIDI file and drop them into a track, a video, or a project.",
+  },
+  {
+    q: "How is RockBlocks different from a step sequencer?",
+    a: "A step sequencer gives you a fixed grid of on/off steps. RockBlocks gives you one block per beat and a palette of rhythm values — quarter notes, triplets, sixteenth runs — that you drag in, so one beat can hold any rhythm and a bar can be any length for odd time signatures.",
+  },
+  {
     q: "Is there a physical RockBlocks?",
     a: "A physical RockBlocks instrument for toy shops and music stores is planned. The web app is the same idea you can use today for free.",
   },
@@ -227,6 +243,27 @@ export function courseJsonLd(lessonCount: number): Json {
       courseMode: "online",
       courseWorkload: `PT${Math.max(1, Math.round(lessonCount / 4))}H`,
     },
+  };
+}
+
+// The whole Drum School curriculum as an ordered list — lets an engine see
+// the 100 lessons and their sequence from the index page alone.
+export function lessonListJsonLd(
+  lessons: { slug: string; lessonNumber: number; title: string }[]
+): Json {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "RockBlocks Drum School lessons",
+    url: `${SITE_URL}/school`,
+    numberOfItems: lessons.length,
+    itemListOrder: "https://schema.org/ItemListOrderAscending",
+    itemListElement: lessons.map((l) => ({
+      "@type": "ListItem",
+      position: l.lessonNumber,
+      url: `${SITE_URL}/school/${l.slug}`,
+      name: `Lesson ${l.lessonNumber}: ${l.title}`,
+    })),
   };
 }
 
