@@ -6,8 +6,9 @@ import { upload } from "@vercel/blob/client";
 import { DEFAULT_KIT } from "@/lib/drumKits";
 import { SLOT_LETTERS, SlotLetter } from "@/lib/board";
 import { InstrumentId } from "@/lib/instruments";
-import { StoredLine } from "@/lib/song";
+import { StoredLine, deserializeLines } from "@/lib/song";
 import { quantizeClipToLines } from "@/lib/quantizeClip";
+import { BufferMap, LineState, loadEffectiveBuffers, scheduleLoopEvents } from "@/lib/audioEngine";
 import { NO_PASSWORD_MANAGER_ATTRS } from "@/lib/formAttrs";
 
 type Phase = "idle" | "uploading" | "processing" | "ready" | "error";
@@ -37,6 +38,11 @@ interface SlotCrop {
 const POLL_INTERVAL_MS = 3000;
 const PIXELS_PER_SECOND = 80;
 const WAVEFORM_HEIGHT = 120;
+// How many times through the clip the "vs song" A/B check plays: the
+// detected pattern (on a drum kit) scheduled on the beat grid, over the
+// original song from the clip's exact timestamp, so a wrong kick/snare
+// placement or a missing hi-hat is immediately audible against the source.
+const COMPARE_LOOPS = 2;
 // Independent of lib/song's MAX_BEATS (they happen to coincide at 8 today):
 // a manually-picked clip here is allowed to run to a full 8-beat (2-bar)
 // phrase whatever the editor's cap is set to. StoredLine.blocks isn't
@@ -142,6 +148,7 @@ export function SongCropTool() {
 
   const [activeSlot, setActiveSlot] = useState<SlotLetter>("A");
   const [slots, setSlots] = useState<Partial<Record<SlotLetter, SlotCrop>>>({});
+  const [comparingSlot, setComparingSlot] = useState<SlotLetter | null>(null);
 
   const [songTitle, setSongTitle] = useState("");
   const [saving, setSaving] = useState(false);
@@ -153,6 +160,15 @@ export function SongCropTool() {
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const stopAtRef = useRef<number | null>(null);
+  // "vs song" A/B playback: a drums-only AudioContext (kept separate from the
+  // <audio> element rather than routed through it — a few ms of clock slop is
+  // fine for judging placement by ear, and it leaves the plain Play/Preview
+  // buttons untouched), its decoded kit buffers, the currently-scheduled hit
+  // sources, and a backstop timer to tear it all down.
+  const drumCtxRef = useRef<AudioContext | null>(null);
+  const drumBuffersRef = useRef<BufferMap | null>(null);
+  const drumSourcesRef = useRef<AudioBufferSourceNode[]>([]);
+  const compareTimerRef = useRef<number | null>(null);
 
   function clearPoll() {
     if (pollTimerRef.current !== null) {
@@ -178,6 +194,23 @@ export function SongCropTool() {
   }, [phase]);
 
   useEffect(() => clearPoll, []);
+
+  // Tear the A/B drum context down for good when the tool unmounts.
+  useEffect(() => {
+    return () => {
+      if (compareTimerRef.current !== null) window.clearTimeout(compareTimerRef.current);
+      for (const src of drumSourcesRef.current) {
+        try {
+          src.stop();
+        } catch {
+          // already stopped
+        }
+      }
+      drumCtxRef.current?.close().catch(() => {});
+      drumCtxRef.current = null;
+      drumBuffersRef.current = null;
+    };
+  }, []);
 
   // Decode the original upload once analysis is ready, and compute waveform
   // peaks at a fixed zoom level (PIXELS_PER_SECOND) — the whole point of
@@ -306,6 +339,7 @@ export function SongCropTool() {
 
   function reset() {
     clearPoll();
+    stopCompare();
     setPhase("idle");
     setProgress(0);
     setErrorMessage(null);
@@ -322,6 +356,97 @@ export function SongCropTool() {
     setActiveSlot("A");
     setSongTitle("");
     setSaveError(null);
+  }
+
+  // --- "vs song" A/B playback -------------------------------------------
+
+  async function ensureDrumAudio(): Promise<{ ctx: AudioContext; buffers: BufferMap } | null> {
+    if (!drumCtxRef.current) {
+      const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      drumCtxRef.current = new AC();
+    }
+    const ctx = drumCtxRef.current;
+    if (ctx.state === "suspended") await ctx.resume();
+    if (!drumBuffersRef.current) {
+      try {
+        drumBuffersRef.current = await loadEffectiveBuffers(ctx, DEFAULT_KIT);
+      } catch {
+        return null;
+      }
+    }
+    return { ctx, buffers: drumBuffersRef.current };
+  }
+
+  function stopCompare() {
+    if (compareTimerRef.current !== null) {
+      window.clearTimeout(compareTimerRef.current);
+      compareTimerRef.current = null;
+    }
+    for (const src of drumSourcesRef.current) {
+      try {
+        src.stop();
+      } catch {
+        // already stopped
+      }
+    }
+    drumSourcesRef.current = [];
+    audioRef.current?.pause();
+    stopAtRef.current = null;
+    setComparingSlot(null);
+  }
+
+  // Plays the slot's detected pattern on a drum kit, on the whole-song beat
+  // grid, over the original song starting at the clip's exact timestamp —
+  // COMPARE_LOOPS passes, then stop. Lets a wrong hit placement or a missing
+  // voice be heard directly against the source.
+  async function toggleCompareWithSong(letter: SlotLetter) {
+    if (comparingSlot === letter) {
+      stopCompare();
+      return;
+    }
+    stopCompare();
+
+    const audio = audioRef.current;
+    const crop = slots[letter];
+    if (!audio || !crop || effectiveGridOrigin == null || !analysis?.beatSeconds) return;
+
+    const beatSeconds = analysis.beatSeconds;
+    const clipStart = effectiveGridOrigin + crop.startBeat * beatSeconds;
+    const clipDur = crop.blockCount * beatSeconds;
+
+    const drum = await ensureDrumAudio();
+    if (!drum) return;
+    const { ctx, buffers } = drum;
+
+    const lineStates: LineState[] = deserializeLines(crop.lines).map((l) => ({
+      instrument: l.instrument,
+      blocks: l.blocks,
+      volume: l.volume,
+    }));
+
+    const master = ctx.createGain();
+    master.gain.value = 0.9;
+    master.connect(ctx.destination);
+
+    const startAt = ctx.currentTime + 0.14;
+    const sources: AudioBufferSourceNode[] = [];
+    for (let loop = 0; loop < COMPARE_LOOPS; loop++) {
+      sources.push(
+        ...scheduleLoopEvents(ctx, master, buffers, lineStates, crop.blockCount, beatSeconds, startAt + loop * clipDur)
+      );
+    }
+    drumSourcesRef.current = sources;
+
+    audio.pause();
+    audio.currentTime = clipStart;
+    stopAtRef.current = clipStart + COMPARE_LOOPS * clipDur;
+    await audio.play().catch(() => {});
+    setComparingSlot(letter);
+
+    compareTimerRef.current = window.setTimeout(
+      () => stopCompare(),
+      (COMPARE_LOOPS * clipDur + 0.5) * 1000
+    );
   }
 
   async function handleFile(file: File) {
@@ -430,6 +555,10 @@ export function SongCropTool() {
   function togglePlayback() {
     const audio = audioRef.current;
     if (!audio) return;
+    if (comparingSlot) {
+      stopCompare();
+      return;
+    }
     if (isPlaying) {
       audio.pause();
     } else {
@@ -439,6 +568,10 @@ export function SongCropTool() {
   }
 
   function previewSelection() {
+    if (comparingSlot) {
+      stopCompare();
+      return;
+    }
     const audio = audioRef.current;
     if (!audio || !selection || effectiveGridOrigin == null || !analysis?.beatSeconds) return;
     const start = effectiveGridOrigin + selection.startBeat * analysis.beatSeconds;
@@ -530,7 +663,9 @@ export function SongCropTool() {
           Nothing&apos;s guessed for you: you pick the main beat and fills exactly like covering the song by
           ear. Clips here can run up to 8 blocks (a full 2-bar phrase) — a one-off allowance just for this
           feature; every hand-built board and the normal editor stay at the usual 7. Saving creates a private
-          song in your library — no public page URL.
+          song in your library — no public page URL. Once a slot is filled, <span className="text-white/70">▶ vs
+          song</span> plays the detected pattern on a kit over the original audio from that clip&apos;s spot, so a
+          wrong hit or a missing voice is audible against the source.
         </p>
       </div>
 
@@ -792,13 +927,31 @@ export function SongCropTool() {
                       <span className="text-white/30">Not set</span>
                     )}
                     {crop && (
-                      <button
-                        type="button"
-                        onClick={() => setSlots((prev) => ({ ...prev, [letter]: undefined }))}
-                        className="text-xs text-white/40 underline decoration-dotted hover:text-red-400"
-                      >
-                        Clear
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => toggleCompareWithSong(letter)}
+                          className={[
+                            "rounded-md border px-2 py-0.5 text-xs transition",
+                            comparingSlot === letter
+                              ? "border-yellow-400 bg-yellow-400/10 text-yellow-400"
+                              : "border-white/15 text-white/70 hover:border-yellow-400 hover:text-yellow-400",
+                          ].join(" ")}
+                          title="Play the detected pattern on a kit, over the song, from this clip's spot"
+                        >
+                          {comparingSlot === letter ? "■ Stop" : "▶ vs song"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (comparingSlot === letter) stopCompare();
+                            setSlots((prev) => ({ ...prev, [letter]: undefined }));
+                          }}
+                          className="text-xs text-white/40 underline decoration-dotted hover:text-red-400"
+                        >
+                          Clear
+                        </button>
+                      </>
                     )}
                   </li>
                 );
