@@ -8,12 +8,10 @@ import {
   scheduleLoopEvents,
 } from "./audioEngine";
 
-// `slot` is a plain string, not lib/board's SlotLetter ("A"-"D") — a real
-// board's Stack is always built from exactly those four, but this player is
-// also reused by /test's full-song preview, which can have as many
-// arbitrarily-labeled slots as a song actually needs (see
-// transcribeDrums.ts's transcribeFullSong). A SlotLetter is itself a valid
-// string, so every existing board-Stack call site keeps working unchanged.
+// `slot` is a plain string, not lib/board's SlotLetter ("A"-"D"), so callers
+// that build a Stack from arbitrarily-labeled slots keep working; a
+// SlotLetter is itself a valid string, so every board-Stack call site is
+// unchanged.
 export interface StackSlotSource {
   slot: string;
   kit: string;

@@ -5,6 +5,14 @@ import Replicate from "replicate";
 // transcribeDrums.ts's WAV parser).
 const DEMUCS_MODEL = "ryan5453/demucs:5a7041cc9b82e5a558fea6b3d7b12dea89625e89da33f0447bd727c2d0ab9e77" as const;
 
+// htdemucs_ft — the fine-tuned four-source model. Noticeably cleaner drum
+// isolation than plain htdemucs (less bleed from bass and vocal transients,
+// which is exactly what was making the onset detector fire on non-drum
+// hits), at the cost of a slower separation pass. Worth it: separation runs
+// once per song and the result is what everything downstream transcribes
+// from.
+const DEMUCS_MODEL_VARIANT = "htdemucs_ft" as const;
+
 /** Runs the uploaded song through Demucs on Replicate and returns just the isolated drums stem, as 16-bit PCM WAV bytes. */
 export async function separateDrumStem(audio: Buffer): Promise<Buffer> {
   const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
@@ -13,7 +21,7 @@ export async function separateDrumStem(audio: Buffer): Promise<Buffer> {
     input: {
       audio,
       stem: "drums",
-      model: "htdemucs",
+      model: DEMUCS_MODEL_VARIANT,
       output_format: "wav",
       wav_format: "int16",
     },
@@ -27,53 +35,4 @@ export async function separateDrumStem(audio: Buffer): Promise<Buffer> {
   }
   const blob = await (file as { blob: () => Promise<Blob> }).blob();
   return Buffer.from(await blob.arrayBuffer());
-}
-
-export interface SeparatedStems {
-  drums: Buffer;
-  bass: Buffer;
-  other: Buffer;
-  vocals: Buffer;
-}
-
-/**
- * Runs the uploaded song through Demucs once and returns all four isolated
- * stems, as 16-bit PCM WAV bytes each — for layering non-drum instruments'
- * rhythm (vocals, bass, "other") on top of the drum transcription. `stem:
- * "none"` (the model's own default) is what returns every stem individually
- * rather than one-target-plus-everything-else — Demucs computes all four
- * internally in a single forward pass regardless of the `stem` filter, so
- * this costs the same one Replicate run as separateDrumStem above, just
- * with nothing discarded.
- */
-export async function separateStems(audio: Buffer): Promise<SeparatedStems> {
-  const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
-
-  const output = await replicate.run(DEMUCS_MODEL, {
-    input: {
-      audio,
-      stem: "none",
-      model: "htdemucs",
-      output_format: "wav",
-      wav_format: "int16",
-    },
-  });
-
-  const obj = output as Record<string, unknown> | null;
-  async function toBuffer(key: keyof SeparatedStems): Promise<Buffer> {
-    const file = obj?.[key];
-    if (!file || typeof (file as { blob?: unknown }).blob !== "function") {
-      throw new Error(`Unexpected Demucs output shape from Replicate: missing "${key}" stem`);
-    }
-    const blob = await (file as { blob: () => Promise<Blob> }).blob();
-    return Buffer.from(await blob.arrayBuffer());
-  }
-
-  const [drums, bass, other, vocals] = await Promise.all([
-    toBuffer("drums"),
-    toBuffer("bass"),
-    toBuffer("other"),
-    toBuffer("vocals"),
-  ]);
-  return { drums, bass, other, vocals };
 }

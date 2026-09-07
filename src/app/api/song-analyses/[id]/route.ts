@@ -26,6 +26,5 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     gridOrigin: row.gridOrigin,
     durationSeconds: row.durationSeconds,
     onsets: row.onsets,
-    otherOnsets: row.otherOnsets,
   });
 }

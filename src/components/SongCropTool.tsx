@@ -18,13 +18,6 @@ interface AnalysisOnset {
   instrument: InstrumentId;
 }
 
-type OtherRhythmSource = "vocals" | "bass" | "other";
-
-interface OtherAnalysisOnset {
-  time: number;
-  source: OtherRhythmSource;
-}
-
 interface AnalysisResult {
   status: PipelineStatus;
   errorMessage: string | null;
@@ -33,16 +26,12 @@ interface AnalysisResult {
   gridOrigin: number | null;
   durationSeconds: number | null;
   onsets: AnalysisOnset[] | null;
-  otherOnsets: OtherAnalysisOnset[] | null;
 }
 
 interface SlotCrop {
   startBeat: number;
   blockCount: number;
   lines: StoredLine[];
-  // Which non-drum stem (if any) was busy enough within this specific clip
-  // to layer its rhythm onto Rimshot — see MIN_OTHER_ONSETS_TO_LAYER.
-  extraSource: OtherRhythmSource | null;
 }
 
 const POLL_INTERVAL_MS = 3000;
@@ -54,10 +43,6 @@ const WAVEFORM_HEIGHT = 120;
 // fixed-length (LineRow renders however many blocks actually exist), so an
 // 8-block crop still displays and plays fine once saved to a real board.
 const CROP_MAX_BEATS = 8;
-// A single stray hit in a clip's window shouldn't earn a Rimshot line —
-// only a source that's actually doing something rhythmic within this
-// specific clip.
-const MIN_OTHER_ONSETS_TO_LAYER = 2;
 
 function formatTimestamp(seconds: number): string {
   if (!Number.isFinite(seconds)) return "0:00";
@@ -158,10 +143,9 @@ export function SongCropTool() {
   const [activeSlot, setActiveSlot] = useState<SlotLetter>("A");
   const [slots, setSlots] = useState<Partial<Record<SlotLetter, SlotCrop>>>({});
 
-  const [pageName, setPageName] = useState("");
+  const [songTitle, setSongTitle] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [takenName, setTakenName] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollTimerRef = useRef<number | null>(null);
@@ -273,16 +257,6 @@ export function SongCropTool() {
         ctx.fillRect(x, WAVEFORM_HEIGHT - 4, 1, 4);
       }
     }
-    // A second row of ticks (top edge) for vocals/bass/"other" — spotting
-    // where those get busy is exactly what helps pick a clip where layering
-    // one onto Rimshot is actually worth doing.
-    if (analysis.otherOnsets) {
-      ctx.fillStyle = "rgba(96,165,250,0.7)";
-      for (const onset of analysis.otherOnsets) {
-        const x = Math.round(onset.time * PIXELS_PER_SECOND);
-        ctx.fillRect(x, 0, 1, 4);
-      }
-    }
   }, [peaks, waveformWidth, analysis, effectiveGridOrigin]);
 
   // rAF playhead tracking — writes directly to the DOM rather than through
@@ -346,9 +320,8 @@ export function SongCropTool() {
     setSelection(null);
     setSlots({});
     setActiveSlot("A");
-    setPageName("");
+    setSongTitle("");
     setSaveError(null);
-    setTakenName(null);
   }
 
   async function handleFile(file: File) {
@@ -484,44 +457,20 @@ export function SongCropTool() {
   function assignSelectionToSlot() {
     if (!selection || effectiveGridOrigin == null || !analysis?.beatSeconds || !analysis.onsets) return;
     const clipStartSeconds = effectiveGridOrigin + selection.startBeat * analysis.beatSeconds;
-    const clipEndSeconds = clipStartSeconds + selection.blockCount * analysis.beatSeconds;
 
-    // Whichever non-drum stem is busiest within this specific clip (not the
-    // whole song — different sections can feature different instruments)
-    // gets layered onto Rimshot, same "pick one so multiple unrelated
-    // rhythms don't collide on the one free voice" reasoning as the earlier
-    // whole-song version of this idea (see transcribeDrums.ts).
-    let extraSource: OtherRhythmSource | null = null;
-    let extraOnsets: AnalysisOnset[] = [];
-    if (analysis.otherOnsets) {
-      const inClip = analysis.otherOnsets.filter((o) => o.time >= clipStartSeconds && o.time < clipEndSeconds);
-      const counts = new Map<OtherRhythmSource, number>();
-      for (const o of inClip) counts.set(o.source, (counts.get(o.source) ?? 0) + 1);
-      let bestCount = 0;
-      for (const [source, count] of counts) {
-        if (count > bestCount) {
-          bestCount = count;
-          extraSource = source;
-        }
-      }
-      if (extraSource && bestCount >= MIN_OTHER_ONSETS_TO_LAYER) {
-        extraOnsets = inClip.filter((o) => o.source === extraSource).map((o) => ({ time: o.time, instrument: "rimshot" as InstrumentId }));
-      } else {
-        extraSource = null;
-      }
-    }
-
-    const combinedOnsets = extraOnsets.length > 0 ? [...analysis.onsets, ...extraOnsets] : analysis.onsets;
-    const lines = quantizeClipToLines(combinedOnsets, effectiveGridOrigin, analysis.beatSeconds, clipStartSeconds, selection.blockCount);
-    setSlots((prev) => ({ ...prev, [activeSlot]: { startBeat: selection.startBeat, blockCount: selection.blockCount, lines, extraSource } }));
+    const lines = quantizeClipToLines(analysis.onsets, effectiveGridOrigin, analysis.beatSeconds, clipStartSeconds, selection.blockCount);
+    setSlots((prev) => ({ ...prev, [activeSlot]: { startBeat: selection.startBeat, blockCount: selection.blockCount, lines } }));
     const nextEmpty = SLOT_LETTERS.find((l) => l !== activeSlot && !slots[l]);
     if (nextEmpty) setActiveSlot(nextEmpty);
     setSelection(null);
   }
 
-  async function createPage() {
-    const name = pageName.trim();
-    if (!name || !analysis?.bpm) return;
+  // Saves the picked clips as one private song in the signed-in user's
+  // library (/test is login-gated) and opens it in the editor — no public
+  // board URL is minted.
+  async function saveSong() {
+    const title = songTitle.trim();
+    if (!title || !analysis?.bpm) return;
     const slotPayload: Partial<Record<SlotLetter, { bpm: number; lines: StoredLine[]; kit: string }>> = {};
     for (const letter of SLOT_LETTERS) {
       const crop = slots[letter];
@@ -531,21 +480,19 @@ export function SongCropTool() {
 
     setSaving(true);
     setSaveError(null);
-    setTakenName(null);
     try {
-      const res = await fetch("/api/boards", {
+      const res = await fetch("/api/my-songs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slots: slotPayload }),
+        body: JSON.stringify({ title, slots: slotPayload }),
       });
-      const data = (await res.json().catch(() => null)) as { error?: string; displayName?: string } | null;
-      if (!res.ok) {
-        if (res.status === 409) setTakenName(name);
-        else setSaveError(data?.error ?? "Couldn't save that page — try again.");
+      const data = (await res.json().catch(() => null)) as { error?: string; id?: string } | null;
+      if (!res.ok || !data?.id) {
+        setSaveError(data?.error ?? "Couldn't save — try again.");
         setSaving(false);
         return;
       }
-      router.push(`/${data?.displayName ?? name}`);
+      router.push(`/my/${data.id}`);
     } catch {
       setSaveError("Couldn't save — try again.");
       setSaving(false);
@@ -578,13 +525,12 @@ export function SongCropTool() {
           Song <span className="text-yellow-400">Crop</span> Test
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-white/50">
-          Private harness, not linked from anywhere in the app. Upload a song, then pick up to 4 clips yourself —
-          drag on the waveform, snapped to the beat grid — and drop them into Slots A-D. Nothing&apos;s guessed for
-          you: you pick the main beat and fills exactly like covering the song by ear. Clips here can run up to 8
-          blocks (a full 2-bar phrase) — a one-off allowance just for this feature; every hand-built board and the
-          normal editor stay at the usual 7. Vocals/bass/&quot;other&quot; are analyzed too (blue ticks along the
-          top) — whichever&apos;s busiest within a clip gets layered onto that clip&apos;s pattern as an extra
-          Rimshot line.
+          Private harness, sign-in only, not linked from anywhere in the app. Upload a song, then pick up to 4
+          clips yourself — drag on the waveform, snapped to the beat grid — and drop them into Slots A-D.
+          Nothing&apos;s guessed for you: you pick the main beat and fills exactly like covering the song by
+          ear. Clips here can run up to 8 blocks (a full 2-bar phrase) — a one-off allowance just for this
+          feature; every hand-built board and the normal editor stay at the usual 7. Saving creates a private
+          song in your library — no public page URL.
         </p>
       </div>
 
@@ -841,7 +787,6 @@ export function SongCropTool() {
                       <span className="text-white/60">
                         {crop.blockCount} block{crop.blockCount === 1 ? "" : "s"} · {crop.lines.length} instrument
                         {crop.lines.length === 1 ? "" : "s"}
-                        {crop.extraSource && <> · +{crop.extraSource} on Rimshot</>}
                       </span>
                     ) : (
                       <span className="text-white/30">Not set</span>
@@ -864,33 +809,28 @@ export function SongCropTool() {
             {filledSlotCount > 0 && (
               <div className="flex flex-wrap items-end gap-2 rounded-md border border-white/10 bg-white/5 p-3">
                 <label className="flex flex-col gap-1 text-sm text-white/70">
-                  Save as a new page
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-white/40">/</span>
-                    <input
-                      {...NO_PASSWORD_MANAGER_ATTRS}
-                      value={pageName}
-                      onChange={(e) => {
-                        setPageName(e.target.value);
-                        setTakenName(null);
-                        setSaveError(null);
-                      }}
-                      placeholder="PageName"
-                      maxLength={24}
-                      className="rounded-md border border-white/15 bg-white/5 px-2 py-1.5 text-base text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none sm:text-sm"
-                    />
-                  </div>
+                  Save to your songs
+                  <input
+                    {...NO_PASSWORD_MANAGER_ATTRS}
+                    value={songTitle}
+                    onChange={(e) => {
+                      setSongTitle(e.target.value);
+                      setSaveError(null);
+                    }}
+                    placeholder="Song title"
+                    maxLength={80}
+                    className="rounded-md border border-white/15 bg-white/5 px-2 py-1.5 text-base text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none sm:text-sm"
+                  />
                 </label>
                 <button
                   type="button"
-                  onClick={createPage}
-                  disabled={saving || pageName.trim().length === 0}
+                  onClick={saveSong}
+                  disabled={saving || songTitle.trim().length === 0}
                   className="rounded-full bg-yellow-400 px-4 py-1.5 text-sm font-bold text-slate-900 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {saving ? "Saving…" : "Save & Open"}
                 </button>
                 {saveError && <p className="text-sm text-red-400">{saveError}</p>}
-                {takenName && <p className="text-xs text-white/40">/{takenName} is already taken — try another name.</p>}
               </div>
             )}
           </div>

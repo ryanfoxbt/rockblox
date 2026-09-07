@@ -4,8 +4,8 @@ import { get } from "@vercel/blob";
 // Streams a private blob back to the browser, honoring Range requests (by
 // slicing the buffered file server-side — the installed @vercel/blob
 // version has no range-passthrough option of its own) so an <audio>
-// element can seek within it. Shared by both /api/imports/[id]/audio and
-// /api/full-imports/[id]/audio, which otherwise just differ in which table
+// element can seek within it. Shared by /api/imports/[id]/audio and
+// /api/song-analyses/[id]/audio, which otherwise just differ in which table
 // they look the blobUrl up from.
 export async function streamPrivateBlobAudio(blobUrl: string, request: NextRequest): Promise<NextResponse> {
   const result = await get(blobUrl, { access: "private" });

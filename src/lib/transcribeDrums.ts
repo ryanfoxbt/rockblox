@@ -28,17 +28,6 @@ export interface PatternDiagnostics {
   instruments: string[];
 }
 
-export type ExtraInstrumentSourceStem = "vocals" | "bass" | "other";
-
-export interface ExtraInstrumentDiagnostics {
-  // Always "rimshot" today — the one kit voice the drum classifier itself
-  // never assigns, so a layered-in non-drum rhythm can't collide with a real
-  // drum hit. See EXTRA_INSTRUMENT_VOICE.
-  instrument: InstrumentId;
-  sourceStem: ExtraInstrumentSourceStem;
-  onsetCount: number;
-}
-
 export interface TranscribeDiagnostics {
   durationSeconds: number;
   onsetCount: number;
@@ -47,11 +36,6 @@ export interface TranscribeDiagnostics {
   patternB: PatternDiagnostics | null;
   patternC: PatternDiagnostics | null;
   patternD: PatternDiagnostics | null;
-  // Which non-drum stem (if any) had the busiest, most distinctly rhythmic
-  // part — its rhythm gets layered onto every pattern as an extra Rimshot
-  // line. Null when no extra stems were supplied, or none of them had
-  // enough onsets to bother with (see MIN_ONSET_COUNT).
-  extraInstrument: ExtraInstrumentDiagnostics | null;
 }
 
 export interface TranscribedSong {
@@ -200,20 +184,7 @@ const MIN_CLUSTER_REPEATS = 2;
 // from getting artificially split into two or three fake variations.
 const SAME_GROOVE_MERGE_SIMILARITY = 0.4;
 
-// The one kit voice the drum classifier (classifyOnset, above) never
-// assigns on its own — every real drum hit lands on kick/snare/hihat*/ride/
-// crash/*Tom, so this is the only spot free to carry a completely different
-// signal (another instrument's rhythm) without it reading as a misdetected
-// drum hit sitting on top of real ones.
-const EXTRA_INSTRUMENT_VOICE: InstrumentId = "rimshot";
-
-export interface ExtraInstrumentStems {
-  vocals?: Buffer;
-  bass?: Buffer;
-  other?: Buffer;
-}
-
-export function transcribeDrums(wavBuffer: Buffer, extraStems?: ExtraInstrumentStems): TranscribedSong {
+export function transcribeDrums(wavBuffer: Buffer): TranscribedSong {
   const wav = parseWav(wavBuffer);
   const mono = toMono(wav);
 
@@ -314,34 +285,8 @@ export function transcribeDrums(wavBuffer: Buffer, extraStems?: ExtraInstrumentS
     });
   }
 
-  const extraInstrument = extraStems
-    ? pickExtraInstrumentRhythm(extraStems, gridOrigin, beatSeconds, beatsPerBar)
-    : null;
-
-  const grooves = clusters.map((c) => {
-    const pattern = renderBeatPattern(bars, c, fallback, beatsPerBar);
-    if (extraInstrument) {
-      const slots = votedSlotsForInstrument(extraInstrument.bars, c, EXTRA_INSTRUMENT_VOICE);
-      if (slots.size > 0) {
-        pattern.push(
-          ...barToStoredLines(
-            [...slots].map((slot) => ({ slot, instrument: EXTRA_INSTRUMENT_VOICE })),
-            [EXTRA_INSTRUMENT_VOICE],
-            beatsPerBar
-          )
-        );
-      }
-    }
-    return pattern;
-  });
-  const fills = fillIndices.map((i) => {
-    const pattern = barToStoredLines(bars[i], FILL_INSTRUMENT_ORDER, beatsPerBar);
-    const extraHits = extraInstrument?.bars[i]?.filter((h) => h.instrument === EXTRA_INSTRUMENT_VOICE) ?? [];
-    if (extraHits.length > 0) {
-      pattern.push(...barToStoredLines(extraHits, [EXTRA_INSTRUMENT_VOICE], beatsPerBar));
-    }
-    return pattern;
-  });
+  const grooves = clusters.map((c) => renderBeatPattern(bars, c, fallback, beatsPerBar));
+  const fills = fillIndices.map((i) => barToStoredLines(bars[i], FILL_INSTRUMENT_ORDER, beatsPerBar));
   const slotPatterns: (StoredLine[] | null)[] = [...grooves, ...fills];
   while (slotPatterns.length < TOTAL_SLOTS) slotPatterns.push(null);
   const [patternA, patternB, patternC, patternD] = slotPatterns;
@@ -357,9 +302,6 @@ export function transcribeDrums(wavBuffer: Buffer, extraStems?: ExtraInstrumentS
     patternB: patternDiagnostics(patternB, slotIndices[1], gridOrigin, beatSeconds, beatsPerBar, bars.length),
     patternC: patternDiagnostics(patternC, slotIndices[2], gridOrigin, beatSeconds, beatsPerBar, bars.length),
     patternD: patternDiagnostics(patternD, slotIndices[3], gridOrigin, beatSeconds, beatsPerBar, bars.length),
-    extraInstrument: extraInstrument
-      ? { instrument: EXTRA_INSTRUMENT_VOICE, sourceStem: extraInstrument.sourceStem, onsetCount: extraInstrument.onsetCount }
-      : null,
   };
 
   return {
@@ -374,242 +316,9 @@ export function transcribeDrums(wavBuffer: Buffer, extraStems?: ExtraInstrumentS
   };
 }
 
-// The actual goal here isn't "detect every statistically distinct bar" —
-// it's "give a drummer covering this song the main beat for each of its
-// sections (verse, chorus, pre-chorus, bridge, ...) plus a few genuinely
-// notable fills," the same handful of ideas a drummer would actually learn.
-// A real song rarely has more than a handful of distinct sections, so this
-// is a firm cap, not a generous ceiling — MAX_FULL_SONG_GROOVES leaves room
-// for most songs' verse/chorus/pre/bridge/outro without inviting the
-// clustering to over-fragment into near-duplicates, and MAX_FULL_SONG_FILLS
-// keeps fills to "a few notable ones," not "one per remaining slot."
-const MAX_FULL_SONG_GROOVES = 6;
-const MAX_FULL_SONG_FILLS = 3;
-const MAX_FULL_SONG_SLOTS = MAX_FULL_SONG_GROOVES + MAX_FULL_SONG_FILLS;
-// A song bar has to be at least this similar (full-kit Jaccard) to a
-// discovered slot's own representative bar to count as "another occurrence
-// of it" during the whole-song assignment pass below — otherwise it's
-// transitional/unclassifiable material (a fill-in, a crash leading into a
-// section change) that doesn't cleanly belong to any one detected pattern,
-// and gets left out of the arrangement rather than forced into whichever
-// slot happens to score highest despite barely resembling it. Higher than
-// clustering's own CLUSTER_MEMBER_SIMILARITY on purpose: a bar earning a
-// spot on the actual song timeline should read as "yes, that's this beat,"
-// not just "closer to this one than the alternatives."
-const ASSIGNMENT_MIN_SIMILARITY = 0.35;
-// A real, playable groove has kick, snare, AND a cymbal voice all present —
-// a bar with only one or two of those, or barely any hits at all, is a
-// transition/pickup/half-there moment, not a beat a drummer would learn as
-// "the verse groove." Gates which bars are even eligible to become a
-// discovered groove in the first place (see grooveCandidateIndices below) —
-// distinct from OFF_KIT_FILL_INSTRUMENTS, which is about what makes a *fill*
-// notable, not what makes a groove complete.
-const CORE_GROOVE_MIN_HITS = 4;
-
-function isCompleteGrooveBar(bar: BarHit[]): boolean {
-  let hasKick = false;
-  let hasSnare = false;
-  let hasCymbal = false;
-  for (const hit of bar) {
-    if (hit.instrument === "kick") hasKick = true;
-    else if (hit.instrument === "snare") hasSnare = true;
-    else if (CYMBAL_VOICES.includes(hit.instrument)) hasCymbal = true;
-  }
-  return hasKick && hasSnare && hasCymbal && bar.length >= CORE_GROOVE_MIN_HITS;
-}
-
-export interface FullSongSlot {
-  // "A", "B", "C", ... in order of first appearance across the whole song —
-  // not capped at D like a real board's slots (see MAX_FULL_SONG_SLOTS).
-  label: string;
-  kind: "groove" | "fill";
-  lines: StoredLine[];
-  // How many bars across the whole song matched this slot closely enough to
-  // count as another occurrence of it (see ASSIGNMENT_MIN_SIMILARITY) — a
-  // rough "how central is this to the song" signal.
-  repeatCount: number;
-  // One representative, listenable clip (same 4-8s window logic as
-  // patternDiagnostics/representativeBarWindow) drawn from every bar this
-  // slot was actually matched to across the song, not just its original
-  // discovery bars — a slot found from two early repeats but matched to ten
-  // more later on gets a clip informed by all twelve.
-  sampleRange: [number, number] | null;
-}
-
-export interface FullSongArrangementStep {
-  slotLabel: string;
-  barIndex: number;
-  startSeconds: number;
-  endSeconds: number;
-}
-
-export interface FullSongTranscription {
-  bpm: number;
-  measureLength: number;
-  durationSeconds: number;
-  slots: FullSongSlot[];
-  arrangement: FullSongArrangementStep[];
-}
-
-// The /test-only counterpart to transcribeDrums above: instead of capping
-// output at Slots A-D (a real board's hard limit), finds every genuinely
-// distinct groove and fill the whole song actually has and reconstructs the
-// song's real structure as a bar-by-bar arrangement across however many
-// slots that takes — see FullSongSlot/FullSongArrangementStep. Drums only,
-// deliberately: no vocals/bass/"other" layering (see transcribeDrums's
-// ExtraInstrumentStems) while that side of the pipeline is still being
-// tuned independently.
-export function transcribeFullSong(wavBuffer: Buffer): FullSongTranscription {
-  const wav = parseWav(wavBuffer);
-  const mono = toMono(wav);
-
-  const roughOnsetTimes = detectOnsets(mono);
-  if (roughOnsetTimes.length < MIN_ONSET_COUNT) {
-    throw new Error("Couldn't find enough distinct drum hits in this track to transcribe a pattern.");
-  }
-  const onsetTimes = roughOnsetTimes.map((t) => refineOnsetTime(mono, t));
-
-  const totalDurationSeconds = mono.samples.length / mono.sampleRate;
-  const bpm = estimateTempo(onsetTimes, totalDurationSeconds);
-  const beatSeconds = 60 / bpm;
-  const gridOrigin = estimateGridPhase(onsetTimes, beatSeconds);
-
-  const features = onsetTimes.map((time, i) => {
-    const gap = i + 1 < onsetTimes.length ? onsetTimes[i + 1] - time : Infinity;
-    return extractOnsetFeatures(mono, time, gap);
-  });
-  const medianPeak = median(features.map((f) => f.peakRms));
-  const tomDecay: TomDecayThresholds = {
-    low: tomDecayThreshold(features.filter((f) => broadBand(f) === "low").map((f) => f.decayRatio)),
-    mid: tomDecayThreshold(features.filter((f) => broadBand(f) === "mid").map((f) => f.decayRatio)),
-  };
-  const classified = onsetTimes.map((time, i) => ({
-    time,
-    instrument: classifyOnset(features[i], medianPeak, tomDecay),
-  }));
-
-  const beatsPerBar = estimateBeatsPerBar(classified, gridOrigin, beatSeconds);
-  const bars = groupIntoBars(classified, gridOrigin, beatSeconds, beatsPerBar);
-  const interiorIndices = bars.length > 4 ? bars.map((_, i) => i).slice(1, -1) : bars.map((_, i) => i);
-  // Only a complete, full-sounding bar (kick + snare + cymbal, not just a
-  // fragment of the beat) is eligible to define a groove — see
-  // isCompleteGrooveBar. A sparse/partial bar can still end up matched to a
-  // discovered groove later, during the whole-song assignment pass, if it's
-  // similar enough (ASSIGNMENT_MIN_SIMILARITY) — this only gates which bars
-  // get to originate one.
-  const grooveCandidateIndices = interiorIndices.filter((i) => isCompleteGrooveBar(bars[i]));
-
-  const clusters = clusterBeatBars(bars, grooveCandidateIndices, MAX_FULL_SONG_GROOVES);
-  clusters.sort((a, b) => Math.min(...a.memberIndices) - Math.min(...b.memberIndices));
-
-  const dominantCluster =
-    clusters.length > 0
-      ? clusters.reduce((best, c) => (c.memberIndices.length > best.memberIndices.length ? c : best))
-      : null;
-  const fallback: CoreFallbacks = dominantCluster
-    ? {
-        kick: coreHitsForCluster(bars, dominantCluster, "kick"),
-        snare: coreHitsForCluster(bars, dominantCluster, "snare"),
-        cymbal: cymbalHitsForCluster(bars, dominantCluster) ?? defaultCymbalHits(),
-      }
-    : { kick: [], snare: [], cymbal: defaultCymbalHits() };
-
-  // Fill candidates can come from any leftover bar (including the sparse
-  // ones grooves aren't eligible to use) — a fill's whole nature is a short,
-  // punchy break from the pattern, not a dense recurring groove.
-  const claimed = new Set(clusters.flatMap((c) => c.memberIndices));
-  const fillCandidateIndices = interiorIndices.filter((i) => !claimed.has(i));
-  const fillBudget = Math.max(0, Math.min(MAX_FULL_SONG_FILLS, MAX_FULL_SONG_SLOTS - clusters.length));
-  const fillIndices = pickFillBars(bars, fillCandidateIndices, fillBudget);
-
-  interface Discovered {
-    firstBar: number;
-    kind: "groove" | "fill";
-    lines: StoredLine[];
-    signature: Set<string>;
-  }
-  const discovered: Discovered[] = [
-    ...clusters.map((c) => ({
-      firstBar: Math.min(...c.memberIndices),
-      kind: "groove" as const,
-      lines: renderBeatPattern(bars, c, fallback, beatsPerBar),
-      signature: flattenFullKit(bars[c.medoidIndex]),
-    })),
-    ...fillIndices.map((i) => ({
-      firstBar: i,
-      kind: "fill" as const,
-      lines: barToStoredLines(bars[i], FILL_INSTRUMENT_ORDER, beatsPerBar),
-      signature: flattenFullKit(bars[i]),
-    })),
-  ].sort((a, b) => a.firstBar - b.firstBar);
-
-  const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const labels = discovered.map((_, i) => LETTERS[i] ?? `S${i + 1}`);
-
-  // Whole-song assignment pass: every bar with any hits at all (including
-  // the edge bars the discovery pass above skips as noise-prone — they're
-  // fine to include here now that they're only being matched, not used to
-  // define a slot in the first place), matched to its nearest slot. This is
-  // what turns "here are the distinct patterns" into "here is the song."
-  const barSeconds = beatsPerBar * beatSeconds;
-  const assignedBarsBySlot: number[][] = discovered.map(() => []);
-  const arrangement: FullSongArrangementStep[] = [];
-  for (let i = 0; i < bars.length; i++) {
-    if (bars[i].length === 0) continue;
-    const flat = flattenFullKit(bars[i]);
-    let bestIndex = -1;
-    let bestScore = -Infinity;
-    for (let s = 0; s < discovered.length; s++) {
-      const score = jaccardSimilarity(flat, discovered[s].signature);
-      if (score > bestScore) {
-        bestScore = score;
-        bestIndex = s;
-      }
-    }
-    if (bestIndex === -1 || bestScore < ASSIGNMENT_MIN_SIMILARITY) continue;
-    assignedBarsBySlot[bestIndex].push(i);
-    const start = gridOrigin + i * barSeconds;
-    arrangement.push({
-      slotLabel: labels[bestIndex],
-      barIndex: i,
-      startSeconds: round1(start),
-      endSeconds: round1(start + barSeconds),
-    });
-  }
-
-  const slots: FullSongSlot[] = discovered.map((d, i) => {
-    const assigned = assignedBarsBySlot[i];
-    const sample = assigned.length > 0 ? representativeBarWindow(assigned, bars.length, barSeconds) : null;
-    return {
-      label: labels[i],
-      kind: d.kind,
-      lines: d.lines,
-      repeatCount: assigned.length,
-      sampleRange: sample ? [round1(gridOrigin + sample[0] * barSeconds), round1(gridOrigin + sample[1] * barSeconds)] : null,
-    };
-  });
-
-  return {
-    bpm: Math.round(bpm),
-    measureLength: beatsPerBar,
-    durationSeconds: round1(totalDurationSeconds),
-    slots,
-    arrangement,
-  };
-}
-
 export interface SongOnset {
   time: number;
   instrument: InstrumentId;
-}
-
-export interface OtherRhythmOnset {
-  time: number;
-  // Which non-drum stem this hit came from — not classified into a drum
-  // voice (that would be meaningless for a sung/played note), just tagged
-  // by source so the crop tool can label it and pick per-clip which one to
-  // layer in. See ExtraInstrumentSourceStem.
-  source: ExtraInstrumentSourceStem;
 }
 
 export interface SongCropAnalysis {
@@ -620,28 +329,21 @@ export interface SongCropAnalysis {
   beatSeconds: number;
   gridOrigin: number;
   durationSeconds: number;
-  // Every classified hit across the whole song — cropping a clip and
+  // Every classified drum hit across the whole song — cropping a clip and
   // quantizing it into a Slot's pattern is just filtering this list to a
   // time range and bucketing onto that clip's own beat grid, done entirely
   // client-side (see lib/quantizeClip.ts) so picking clips feels instant
   // rather than waiting on a job per slot.
   onsets: SongOnset[];
-  // Vocals/bass/"other" onsets across the whole song, for the same
-  // client-side per-clip treatment — see SongCropTool: whichever source is
-  // busiest within a given clip gets layered onto that clip's pattern as an
-  // extra Rimshot line, the one kit voice the drum classifier never assigns
-  // on its own.
-  otherOnsets: OtherRhythmOnset[];
 }
 
-// Backs /test's manual-crop workflow: isolates every stem (same slow,
-// Replicate-backed step as transcribeDrums/transcribeFullSong above),
-// classifies every drum hit in the whole song, and detects (but doesn't
-// classify — there's no "kick vs snare" equivalent for a voice) every
-// vocals/bass/"other" onset too. Does none of transcribeDrums's
-// bar-grouping, clustering, or fill-picking — the human picks which clips
-// matter by ear, this just hands back what to quantize them against.
-export function analyzeSongForCropping(wavBuffer: Buffer, extraStems?: ExtraInstrumentStems): SongCropAnalysis {
+// Backs /test's manual-crop workflow: takes the isolated drum stem (the
+// slow, Replicate-backed separation happens in the caller), classifies
+// every drum hit in the whole song, and hands back the beat grid. Does none
+// of transcribeDrums's bar-grouping, clustering, or fill-picking — the human
+// picks which clips matter by ear, this just hands back what to quantize
+// them against.
+export function analyzeSongForCropping(wavBuffer: Buffer): SongCropAnalysis {
   const wav = parseWav(wavBuffer);
   const mono = toMono(wav);
 
@@ -670,74 +372,7 @@ export function analyzeSongForCropping(wavBuffer: Buffer, extraStems?: ExtraInst
     instrument: classifyOnset(features[i], medianPeak, tomDecay),
   }));
 
-  const otherOnsets: OtherRhythmOnset[] = [];
-  const otherStems: { key: ExtraInstrumentSourceStem; buffer: Buffer }[] = [];
-  if (extraStems?.vocals) otherStems.push({ key: "vocals", buffer: extraStems.vocals });
-  if (extraStems?.bass) otherStems.push({ key: "bass", buffer: extraStems.bass });
-  if (extraStems?.other) otherStems.push({ key: "other", buffer: extraStems.other });
-  for (const { key, buffer } of otherStems) {
-    let stemMono: { sampleRate: number; samples: Float32Array };
-    try {
-      stemMono = toMono(parseWav(buffer));
-    } catch {
-      continue; // an unparseable/empty stem shouldn't fail the whole analysis
-    }
-    const rough = detectOnsets(stemMono);
-    for (const t of rough) otherOnsets.push({ time: refineOnsetTime(stemMono, t), source: key });
-  }
-  otherOnsets.sort((a, b) => a.time - b.time);
-
-  return { bpm, beatSeconds, gridOrigin, durationSeconds: totalDurationSeconds, onsets, otherOnsets };
-}
-
-interface ExtraInstrumentRhythm {
-  sourceStem: ExtraInstrumentSourceStem;
-  onsetCount: number;
-  // Every hit tagged EXTRA_INSTRUMENT_VOICE, bar-indexed against the exact
-  // same gridOrigin/beatSeconds/beatsPerBar as the drum stem's own `bars` —
-  // that shared indexing is what lets votedSlotsForInstrument/direct lookup
-  // pull "this stem's hits during that same groove/fill" below.
-  bars: BarHit[][];
-}
-
-// Which non-drum stem's rhythm (if any) is worth layering onto the drum
-// patterns as an extra Rimshot line — "most rhythmically busy" is a coarse
-// proxy (raw onset count clearing the same MIN_ONSET_COUNT floor real drum
-// transcription requires) for "most worth a listener's attention," but it's
-// the right kind of coarse: a syncopated vocal delivery (the Shaun Paul
-// "Temperature" case this was built for) or a driving bassline both produce
-// many onsets, while a stem that's mostly sustained pads/held notes barely
-// produces any — exactly the distinction that matters here. Picks one stem
-// rather than merging all three because they'd otherwise collide on the one
-// shared voice (EXTRA_INSTRUMENT_VOICE) and turn into unintelligible noise.
-function pickExtraInstrumentRhythm(
-  extraStems: ExtraInstrumentStems,
-  gridOrigin: number,
-  beatSeconds: number,
-  beatsPerBar: number
-): ExtraInstrumentRhythm | null {
-  const candidates: { key: ExtraInstrumentSourceStem; buffer: Buffer }[] = [];
-  if (extraStems.vocals) candidates.push({ key: "vocals", buffer: extraStems.vocals });
-  if (extraStems.bass) candidates.push({ key: "bass", buffer: extraStems.bass });
-  if (extraStems.other) candidates.push({ key: "other", buffer: extraStems.other });
-
-  let best: ExtraInstrumentRhythm | null = null;
-  for (const { key, buffer } of candidates) {
-    let mono: { sampleRate: number; samples: Float32Array };
-    try {
-      mono = toMono(parseWav(buffer));
-    } catch {
-      continue; // an unparseable/empty stem shouldn't fail the whole import
-    }
-    const rough = detectOnsets(mono);
-    if (rough.length < MIN_ONSET_COUNT) continue;
-    if (best && rough.length <= best.onsetCount) continue; // cheaper than refining a stem that can't win anyway
-    const refined = rough.map((t) => refineOnsetTime(mono, t));
-    const tagged = refined.map((time) => ({ time, instrument: EXTRA_INSTRUMENT_VOICE }));
-    const bars = groupIntoBars(tagged, gridOrigin, beatSeconds, beatsPerBar);
-    best = { sourceStem: key, onsetCount: refined.length, bars };
-  }
-  return best;
+  return { bpm, beatSeconds, gridOrigin, durationSeconds: totalDurationSeconds, onsets };
 }
 
 function round1(n: number): number {
@@ -1594,10 +1229,6 @@ function votedSlotsForInstrument(bars: BarHit[][], cluster: BeatCluster, instrum
   const slotVotes = new Map<number, number>();
   for (const idx of cluster.memberIndices) {
     const slotsSeenInThisBar = new Set<number>();
-    // `bars` may be shorter here than the drum stem's own `bars` array — a
-    // non-drum stem grid-aligned against the drums' bar numbering (see
-    // pickExtraInstrumentRhythm) can simply run out of bars near the song's
-    // end if that stem goes quiet there.
     for (const hit of bars[idx] ?? []) {
       if (hit.instrument !== instrument) continue;
       if (!slotsSeenInThisBar.has(hit.slot)) {

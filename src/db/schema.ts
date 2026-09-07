@@ -2,13 +2,7 @@ import { boolean, doublePrecision, index, integer, jsonb, pgTable, text, timesta
 import type { BoardSlotData, SlotMap } from "@/lib/board";
 import type { CustomSamples } from "@/lib/customSamples";
 import type { StackArrangement } from "@/lib/stack";
-import type {
-  FullSongArrangementStep,
-  FullSongSlot,
-  OtherRhythmOnset,
-  SongOnset,
-  TranscribeDiagnostics,
-} from "@/lib/transcribeDrums";
+import type { SongOnset, TranscribeDiagnostics } from "@/lib/transcribeDrums";
 
 export interface StoredLine {
   instrument: string;
@@ -176,7 +170,7 @@ export const complaints = pgTable("complaints", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// "transcribing" is a same-step status ping (see importFullSong in
+// "transcribing" is a same-step status ping (see analyzeSongCrop in
 // inngest/functions.ts) — not a distinct pipeline stage of its own, just a
 // way for /test's status bar to distinguish "still separating drums on
 // Replicate" (usually the long part) from "computing the pattern"
@@ -220,38 +214,12 @@ export const songImports = pgTable("song_imports", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// The /test-only counterpart to songImports above (see transcribeFullSong in
-// transcribeDrums.ts): not tied to a board at all — there's no owner, no
-// slot cap, just a whole song's worth of detected grooves/fills and the
-// bar-by-bar arrangement reconstructing how they actually play through the
-// song, for previewing/playing back on /test. Drums only, no vocals/bass/
-// "other" layering.
-// Superseded by songAnalyses below — automatic whole-song clustering didn't
-// match what a drummer actually wants (the main beat per section, picked by
-// ear, not an algorithm's guess at "distinct"). Left in place, unused by any
-// UI, rather than dropped outright.
-export const fullSongImports = pgTable("full_song_imports", {
-  id: text("id").primaryKey(),
-  status: text("status").$type<SongImportStatus>().notNull().default("uploaded"),
-  originalFilename: text("original_filename").notNull(),
-  blobUrl: text("blob_url").notNull(),
-  errorMessage: text("error_message"),
-  bpm: integer("bpm"),
-  measureLength: integer("measure_length"),
-  durationSeconds: integer("duration_seconds"),
-  slots: jsonb("slots").$type<FullSongSlot[]>(),
-  arrangement: jsonb("arrangement").$type<FullSongArrangementStep[]>(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-// Backs /test's manual-crop workflow: separates every stem once (the slow,
-// Replicate-backed part) and classifies every drum hit in the whole song
-// plus every vocals/bass/"other" onset (unclassified — just tagged by
-// source), then hands the browser a beat grid (bpm/gridOrigin/beatSeconds)
-// plus both onset lists — cropping and quantizing a clip into a Slot's
-// pattern happens entirely client-side from there (see lib/quantizeClip.ts),
-// so picking 4 clips feels instant instead of waiting on a job per slot.
+// Backs /test's manual-crop workflow: isolates the drum stem once (the slow,
+// Replicate-backed part) and classifies every drum hit in the whole song,
+// then hands the browser a beat grid (bpm/gridOrigin/beatSeconds) plus the
+// onset list — cropping and quantizing a clip into a Slot's pattern happens
+// entirely client-side from there (see lib/quantizeClip.ts), so picking 4
+// clips feels instant instead of waiting on a job per slot.
 export const songAnalyses = pgTable("song_analyses", {
   id: text("id").primaryKey(),
   status: text("status").$type<SongImportStatus>().notNull().default("uploaded"),
@@ -263,7 +231,6 @@ export const songAnalyses = pgTable("song_analyses", {
   gridOrigin: doublePrecision("grid_origin"),
   durationSeconds: doublePrecision("duration_seconds"),
   onsets: jsonb("onsets").$type<SongOnset[]>(),
-  otherOnsets: jsonb("other_onsets").$type<OtherRhythmOnset[]>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

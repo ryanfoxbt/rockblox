@@ -6,10 +6,6 @@ export interface SongImportRequestedData {
   importId: string;
 }
 
-export interface FullSongImportRequestedData {
-  importId: string;
-}
-
 export interface SongCropAnalysisRequestedData {
   analysisId: string;
 }
