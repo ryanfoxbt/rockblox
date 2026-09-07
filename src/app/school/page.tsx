@@ -24,9 +24,12 @@ export default function DrumSchoolIndexPage() {
         ])}
       />
       <div className="mx-auto w-full max-w-xl">
-        <Link href="/" className="text-xs text-white/40 transition hover:text-yellow-400">
-          ← Back home
-        </Link>
+        <nav aria-label="Breadcrumb" className="text-xs text-white/40">
+          <Link href="/" className="transition hover:text-yellow-400">
+            Home
+          </Link>{" "}
+          / <span className="text-white/60">Drum School</span>
+        </nav>
         <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
           Rock<span className="text-yellow-400">Blocks</span> Drum School
         </h1>

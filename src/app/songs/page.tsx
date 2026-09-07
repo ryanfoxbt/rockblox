@@ -19,7 +19,13 @@ const collectionJsonLd = {
   url: `${SITE_URL}/songs`,
   description:
     "A library of famous songs' drum patterns, mapped out on RockBlocks and playable in the browser.",
-  hasPart: FAMOUS_SONGS.map((s) => songJsonLd(s)),
+  // Strip the per-item @context — it's only needed when songJsonLd stands
+  // alone on a song page, not when nested here.
+  hasPart: FAMOUS_SONGS.map((s) => {
+    const node: Record<string, unknown> = { ...songJsonLd(s) };
+    delete node["@context"];
+    return node;
+  }),
 };
 
 export default function SongsIndexPage() {
@@ -33,9 +39,12 @@ export default function SongsIndexPage() {
         ])}
       />
       <div className="mx-auto w-full max-w-xl">
-        <Link href="/" className="text-xs text-white/40 transition hover:text-yellow-400">
-          ← Back home
-        </Link>
+        <nav aria-label="Breadcrumb" className="text-xs text-white/40">
+          <Link href="/" className="transition hover:text-yellow-400">
+            Home
+          </Link>{" "}
+          / <span className="text-white/60">Songs</span>
+        </nav>
         <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
           Famous Song Drum Beats
         </h1>

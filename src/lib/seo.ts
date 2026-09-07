@@ -182,6 +182,7 @@ const howToLd: Json = {
   name: "How to make a drum beat with RockBlocks",
   description:
     "Make a drum beat online for free by dragging rhythmic values into a grid of beat blocks, one row per drum piece.",
+  image: `${SITE_URL}/opengraph-image`,
   totalTime: "PT2M",
   step: HOW_TO_STEPS.map((s, i) => ({
     "@type": "HowToStep",
