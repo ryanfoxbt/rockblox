@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BoardData, SLOT_LETTERS, SlotLetter } from "@/lib/board";
+import { BoardData, EXTENDED_SLOT_LETTERS, ExtendedSlotLetter, SLOT_LETTERS } from "@/lib/board";
 import { DEFAULT_KIT } from "@/lib/drumKits";
 import { serializeLines } from "@/lib/song";
 import { generateBeatFromText, MAX_TEXT_LENGTH, MAX_TEXT_SLOTS, TextToBeatResult } from "@/lib/textToBeat";
@@ -45,11 +45,37 @@ export function TextToBeatButton({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [takenName, setTakenName] = useState<string | null>(null);
-  const [expandedSlot, setExpandedSlot] = useState<SlotLetter | null>(null);
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
+  // One target slot per generated sentence (parallel to result.usedSentences);
+  // null means "don't save this one." Editable in the preview so the grooves
+  // don't have to land on A, B, C, D in order.
+  const [assignments, setAssignments] = useState<(ExtendedSlotLetter | null)[]>([]);
 
   // No board yet (homepage) means nothing has opted out, so default to
   // shown — matches the DB column's own default of true.
   const showRules = board ? board.textToBeatShowRules !== false : true;
+
+  // A signed-in user's private saved song has eight slots (A-H); everything
+  // else — public boards, and the claim-a-new-page path — has four (A-D).
+  const availableSlots: ExtendedSlotLetter[] = savedSongId ? EXTENDED_SLOT_LETTERS : SLOT_LETTERS;
+
+  function defaultAssignments(r: TextToBeatResult): (ExtendedSlotLetter | null)[] {
+    return r.usedSentences.map((_, i) => availableSlots[i] ?? null);
+  }
+
+  // Reassigning a slot that another row already holds swaps them, so the set
+  // of targets stays collision-free without disabling options.
+  function reassign(row: number, slot: ExtendedSlotLetter | null) {
+    setAssignments((prev) => {
+      const next = [...prev];
+      if (slot) {
+        const other = next.findIndex((s, k) => k !== row && s === slot);
+        if (other >= 0) next[other] = next[row];
+      }
+      next[row] = slot;
+      return next;
+    });
+  }
 
   function close() {
     setOpen(false);
@@ -60,20 +86,34 @@ export function TextToBeatButton({
     setSaved(false);
     setError(null);
     setTakenName(null);
-    setExpandedSlot(null);
+    setExpandedRow(null);
+    setAssignments([]);
   }
 
   function generate() {
-    setResult(generateBeatFromText(text));
+    const r = generateBeatFromText(text);
+    setResult(r);
+    setAssignments(defaultAssignments(r));
     setSaved(false);
     setError(null);
   }
 
   function slotsToSave(result: TextToBeatResult) {
-    return SLOT_LETTERS
+    const seen = new Set<ExtendedSlotLetter>();
+    return assignments
       .map((slot, i) => ({ slot, lines: result.slots[i] }))
-      .filter((s): s is { slot: SlotLetter; lines: NonNullable<(typeof s)["lines"]> } => !!s.lines);
+      .filter((s): s is { slot: ExtendedSlotLetter; lines: NonNullable<(typeof s)["lines"]> } => {
+        if (!s.slot || !s.lines || seen.has(s.slot)) return false;
+        seen.add(s.slot);
+        return true;
+      });
   }
+
+  // The slots the current assignments will actually write to, in row order —
+  // drives the save button's label and disabled state.
+  const chosenSlots = result ? slotsToSave(result).map((s) => s.slot) : [];
+  const chosenSlotsLabel =
+    chosenSlots.length > 0 ? `Slot${chosenSlots.length > 1 ? "s" : ""} ${chosenSlots.join(", ")}` : "";
 
   async function saveToBoard(board: BoardData, result: TextToBeatResult) {
     const toSave = slotsToSave(result);
@@ -176,8 +216,11 @@ export function TextToBeatButton({
 
             <p className="mb-3 text-xs text-white/50">
               Paste up to {MAX_TEXT_LENGTH} characters (tweet-length). Each sentence becomes one groove — word
-              rhythm comes from syllable count, commas/!/? become accents — dropped into{" "}
-              <span className="font-mono text-yellow-400">Slots A-D</span>, one sentence per slot.
+              rhythm comes from syllable count, commas/!/? become accents. After generating, pick which slot
+              (<span className="font-mono text-yellow-400">
+                {availableSlots[0]}–{availableSlots[availableSlots.length - 1]}
+              </span>
+              ) each groove saves into.
             </p>
 
             <textarea
@@ -223,25 +266,42 @@ export function TextToBeatButton({
                       </p>
                     )}
                     <ul className="flex flex-col gap-1.5">
-                      {SLOT_LETTERS.map((slot, i) => {
+                      {result.usedSentences.map((sentence, i) => {
                         const lines = result.slots[i];
-                        const sentence = result.usedSentences[i];
                         const trace = result.traces[i];
-                        const isExpanded = expandedSlot === slot;
+                        const isExpanded = expandedRow === i;
                         return (
-                          <li key={slot} className="rounded-md border border-white/10 px-3 py-1.5 text-sm">
-                            <div className="flex items-center justify-between gap-3">
+                          <li key={i} className="rounded-md border border-white/10 px-3 py-1.5 text-sm">
+                            <div className="flex items-center justify-between gap-2">
                               <span className="min-w-0 flex-1 truncate text-white/80">
-                                <span className="font-mono text-yellow-400">Slot {slot}</span>{" "}
-                                {sentence ? `— "${sentence}"` : ""}
+                                <span className="text-white/40">{i + 1}.</span>{" "}
+                                {sentence ? `"${sentence}"` : ""}
                               </span>
-                              <span className="shrink-0 text-white/50">
-                                {lines ? `${lines.length} instrument${lines.length === 1 ? "" : "s"}` : "—"}
-                              </span>
+                              {lines ? (
+                                <select
+                                  value={assignments[i] ?? ""}
+                                  onChange={(e) =>
+                                    reassign(i, e.target.value ? (e.target.value as ExtendedSlotLetter) : null)
+                                  }
+                                  title="Which slot this groove saves into"
+                                  className="shrink-0 rounded-md border border-white/15 bg-white/5 px-1.5 py-1 text-xs text-white"
+                                >
+                                  <option value="" className="bg-slate-900">
+                                    Don&apos;t save
+                                  </option>
+                                  {availableSlots.map((s) => (
+                                    <option key={s} value={s} className="bg-slate-900">
+                                      Slot {s}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="shrink-0 text-white/50">no beat</span>
+                              )}
                               {showRules && trace && (
                                 <button
                                   type="button"
-                                  onClick={() => setExpandedSlot(isExpanded ? null : slot)}
+                                  onClick={() => setExpandedRow(isExpanded ? null : i)}
                                   className="shrink-0 text-xs text-white/40 underline decoration-dotted transition hover:text-yellow-400"
                                 >
                                   {isExpanded ? "Hide rules" : "Rules used"}
@@ -257,7 +317,9 @@ export function TextToBeatButton({
                     {board ? (
                       <>
                         <p className="text-xs text-white/40">
-                          Saving overwrites whatever is currently in those slots.
+                          {chosenSlots.length > 0
+                            ? `Saving overwrites whatever is currently in ${chosenSlotsLabel}.`
+                            : "Pick a slot for at least one groove to save."}
                         </p>
                         {error && <p className="text-sm text-red-400">{error}</p>}
                         {saved ? (
@@ -275,10 +337,10 @@ export function TextToBeatButton({
                           <button
                             type="button"
                             onClick={() => saveToBoard(board, result)}
-                            disabled={saving}
-                            className="w-full rounded-full bg-yellow-400 px-4 py-1.5 text-sm font-bold text-slate-900 transition hover:bg-yellow-300 disabled:opacity-60"
+                            disabled={saving || chosenSlots.length === 0}
+                            className="w-full rounded-full bg-yellow-400 px-4 py-1.5 text-sm font-bold text-slate-900 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
                           >
-                            {saving ? "Saving…" : "Save to Slots A-D"}
+                            {saving ? "Saving…" : chosenSlots.length > 0 ? `Save to ${chosenSlotsLabel}` : "Save"}
                           </button>
                         )}
                       </>
@@ -319,10 +381,10 @@ export function TextToBeatButton({
                         <button
                           type="button"
                           onClick={() => claimAndSave(result)}
-                          disabled={saving || claimName.trim().length === 0}
+                          disabled={saving || claimName.trim().length === 0 || chosenSlots.length === 0}
                           className="w-full rounded-full bg-yellow-400 px-4 py-1.5 text-sm font-bold text-slate-900 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          {saving ? "Claiming…" : "Claim & Save"}
+                          {saving ? "Claiming…" : chosenSlotsLabel ? `Claim & Save to ${chosenSlotsLabel}` : "Claim & Save"}
                         </button>
                       </>
                     )}
