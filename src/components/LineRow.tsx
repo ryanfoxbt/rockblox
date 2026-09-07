@@ -40,10 +40,20 @@ export function LineRow({
   const def = getInstrument(instrument);
 
   const beatCount = blocks.length;
-  const blockButtons = blocks.flatMap((tile, i) => {
-    const block = (
+  // Each beat is a grid cell that shrinks to fit (down from a 4rem / 64px
+  // cap) so 8 blocks stay on one row at any width instead of scrolling. The
+  // cell after beat 4 carries the "end of bar 1" hairline once the grid runs
+  // past a single 4/4 bar.
+  const blockButtons = blocks.map((tile, i) => (
+    <div
+      key={`c${i}`}
+      className={
+        i === 3 && beatCount > 4
+          ? "min-w-0 border-r-2 border-white/25"
+          : "min-w-0"
+      }
+    >
       <Block
-        key={`b${i}`}
         id={`${lineId}:${i}`}
         tile={tile}
         active={i < measureLength}
@@ -57,22 +67,8 @@ export function LineRow({
         onCycleAccent={(hitIndex) => onCycleAccent(i, hitIndex)}
         onPickUp={() => onPickUp(i)}
       />
-    );
-    // Hairline after beat 4 once the grid runs past a single 4/4 bar, so the
-    // starter measure keeps its shape. Desktop only — the wrapping mobile
-    // grid already breaks the row there.
-    if (i === 3 && beatCount > 4 && !isMobile) {
-      return [
-        block,
-        <span
-          key="bar-div"
-          aria-hidden
-          className="mx-2.5 h-16 w-0.5 shrink-0 self-center rounded bg-white/30"
-        />,
-      ];
-    }
-    return [block];
-  });
+    </div>
+  ));
 
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-white/5 p-3 md:flex-row md:flex-wrap md:items-center">
@@ -103,10 +99,8 @@ export function LineRow({
       </div>
 
       <div
-        className={[
-          "grid gap-2 md:flex md:flex-1 md:flex-nowrap md:gap-2 md:overflow-x-auto",
-          beatCount <= 3 ? "grid-cols-3" : "grid-cols-4",
-        ].join(" ")}
+        className="grid min-w-0 flex-1 gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${beatCount}, minmax(0, 4rem))` }}
       >
         {blockButtons}
       </div>

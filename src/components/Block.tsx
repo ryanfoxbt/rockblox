@@ -68,7 +68,7 @@ export function Block({
       onClick={!tile ? onTap : undefined}
       title={title}
       className={[
-        "relative flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border-2 p-1.5 transition",
+        "relative flex h-16 w-full items-center justify-center rounded-lg border-2 p-1.5 transition",
         tile && !isMobile ? "cursor-grab active:cursor-grabbing" : "",
         !tile ? "cursor-pointer" : "",
         active
