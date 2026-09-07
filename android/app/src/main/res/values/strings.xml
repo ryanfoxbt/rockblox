@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RockBlox</string>
+    <string name="title_activity_main">RockBlox</string>
+    <string name="package_name">com.rockblox.app</string>
+    <string name="custom_url_scheme">com.rockblox.app</string>
+</resources>

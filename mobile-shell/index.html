@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>RockBlox</title>
+    <style>
+      html, body { height: 100%; margin: 0; background: #0f172a; }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #e2e8f0;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Not actually shown in normal use: capacitor.config.ts sets server.url to
+      the live rockblocks.app deployment, so the app loads that instead of
+      this file. Capacitor still requires a local webDir to exist, and this
+      is the only thing that renders if the device has no network on launch.
+    -->
+    <p>RockBlox needs an internet connection to load.</p>
+  </body>
+</html>
