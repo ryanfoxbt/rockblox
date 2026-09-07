@@ -61,6 +61,15 @@ export class StackPlayer {
     this.master.gain.value = 0.85;
     this.master.connect(this.ctx.destination);
     document.addEventListener("visibilitychange", this.handleVisibilityChange);
+    // A context can go "suspended"/"interrupted" mid-playback with no
+    // visibilitychange to hang a resync off of — most often when another app
+    // (a call in another window, a Bluetooth device taking over the audio
+    // session) briefly claims audio focus while this tab stays foregrounded.
+    // Without this, a looping stack would silently stay dead until the user
+    // hit Play again. See RockBloxPlayer for the same handler.
+    this.ctx.onstatechange = () => {
+      if (this.needsResume() && this.playing) void this.resyncAfterGap();
+    };
   }
 
   private handleVisibilityChange = () => {
