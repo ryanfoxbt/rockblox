@@ -52,3 +52,6 @@ next-env.d.ts
 .urapplearncode/
 
 .env*
+
+# python drum-transcription prototype
+/.venv
