@@ -3,7 +3,9 @@
 import { useState } from "react";
 import {
   Bassline,
+  BASS_VOICES,
   BasslineSettings,
+  BassVoiceId,
   DEFAULT_BASSLINE_SETTINGS,
   MAX_FILLS,
   MIN_FILLS,
@@ -58,17 +60,22 @@ export function BasslineButton({
 export function BasslineModal({
   bassline,
   onGenerate,
+  onVoiceChange,
   onRemove,
   onClose,
 }: {
   bassline: Bassline | null;
   onGenerate: (settings: BasslineSettings) => void;
+  // Changing the bass sound doesn't re-roll the notes — it applies straight
+  // away so you can audition tones against the same line.
+  onVoiceChange: (voice: BassVoiceId) => void;
   onRemove: () => void;
   onClose: () => void;
 }) {
-  const [settings, setSettings] = useState<BasslineSettings>(
-    () => bassline?.settings ?? DEFAULT_BASSLINE_SETTINGS
-  );
+  const [settings, setSettings] = useState<BasslineSettings>(() => ({
+    ...DEFAULT_BASSLINE_SETTINGS,
+    ...(bassline?.settings ?? {}),
+  }));
   const [justGenerated, setJustGenerated] = useState(false);
 
   const hasBassline = !!bassline && bassline.notes.length > 0;
@@ -156,6 +163,25 @@ export function BasslineModal({
                   </option>
                 ))}
               </optgroup>
+            ))}
+          </select>
+        </label>
+
+        <label className="mb-3 flex flex-col gap-1 text-sm text-white/70">
+          Sound
+          <select
+            value={settings.voice}
+            onChange={(e) => {
+              const voice = e.target.value as BassVoiceId;
+              set("voice", voice);
+              onVoiceChange(voice);
+            }}
+            className="rounded-md border border-white/15 bg-white/5 px-2 py-1.5 text-sm text-white"
+          >
+            {BASS_VOICES.map((v) => (
+              <option key={v.id} value={v.id} className="bg-slate-900">
+                {v.name}
+              </option>
             ))}
           </select>
         </label>

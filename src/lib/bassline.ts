@@ -7,6 +7,26 @@
 import type { HitAccent } from "./rhythm";
 import { isScaleId, type ScaleId } from "./scales";
 
+// The synthesized bass tone. Each id maps to an oscillator+filter+envelope
+// recipe in bassVoice.ts — no samples, so every voice works offline and in
+// the MP3 render exactly as it does live.
+export type BassVoiceId = "electric" | "upright" | "synth" | "pick" | "muted";
+
+export const BASS_VOICES: { id: BassVoiceId; name: string }[] = [
+  { id: "electric", name: "Electric bass (fingered)" },
+  { id: "pick", name: "Electric bass (pick)" },
+  { id: "upright", name: "Upright / double bass" },
+  { id: "synth", name: "Synth sub" },
+  { id: "muted", name: "Muted / dub" },
+];
+
+export const BASS_VOICE_IDS = BASS_VOICES.map((v) => v.id);
+export const DEFAULT_BASS_VOICE: BassVoiceId = "electric";
+
+export function isBassVoiceId(v: unknown): v is BassVoiceId {
+  return typeof v === "string" && (BASS_VOICE_IDS as string[]).includes(v);
+}
+
 export interface BasslineSettings {
   // Pitch class of the key's root, 0 = C … 11 = B.
   root: number;
@@ -18,6 +38,15 @@ export interface BasslineSettings {
   // with runs, chromatic approach notes and syncopation. See generateBassline.
   fills: number;
   volume: number; // 0-100, like a drum line's volume
+  // Which synthesized bass tone to play. Older saved basslines predate this
+  // field — read it through `basslineVoice()` below, never directly.
+  voice: BassVoiceId;
+}
+
+// The voice for a settings object, tolerating basslines saved before the field
+// existed (and any stray value off the wire).
+export function basslineVoice(settings: BasslineSettings | undefined | null): BassVoiceId {
+  return settings && isBassVoiceId(settings.voice) ? settings.voice : DEFAULT_BASS_VOICE;
 }
 
 export interface BassNote {
@@ -53,6 +82,7 @@ export const DEFAULT_BASSLINE_SETTINGS: BasslineSettings = {
   octave: 2,
   fills: DEFAULT_FILLS,
   volume: 90,
+  voice: DEFAULT_BASS_VOICE,
 };
 
 function isFiniteNumber(v: unknown): v is number {

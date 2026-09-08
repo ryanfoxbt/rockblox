@@ -49,7 +49,7 @@ import {
   timeSignatureLabel,
 } from "@/lib/song";
 import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine";
-import { Bassline, BasslineSettings, ExportPart, basslineHasNotes } from "@/lib/bassline";
+import { Bassline, BasslineSettings, BassVoiceId, ExportPart, basslineHasNotes } from "@/lib/bassline";
 import { generateBassline } from "@/lib/generateBassline";
 import { DownloadFormat } from "@/components/DownloadMenu";
 import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
@@ -644,6 +644,11 @@ export function Editor({
     });
   }
 
+  // Swapping the bass tone only touches settings — the notes stay put.
+  function handleBasslineVoiceChange(voice: BassVoiceId) {
+    setBassline((prev) => (prev ? { ...prev, settings: { ...prev.settings, voice } } : prev));
+  }
+
   // Slots other than the one on screen that actually have a beat in
   // them — what the Variation popover offers as "base this on." Only ever
   // recomputed from a plain event handler (the initial useState here, and
@@ -1009,6 +1014,7 @@ export function Editor({
         <BasslineModal
           bassline={bassline}
           onGenerate={handleGenerateBassline}
+          onVoiceChange={handleBasslineVoiceChange}
           onRemove={() => {
             setBassline(null);
             setBasslineModalOpen(false);

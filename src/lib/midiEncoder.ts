@@ -1,7 +1,13 @@
 import { InstrumentId } from "./instruments";
 import { LineState } from "./audioEngine";
 import { hitVelocityMultiplier, NOTE_FRACTION } from "./rhythm";
-import { type Bassline, type ExportPart, basslineHasNotes } from "./bassline";
+import {
+  type Bassline,
+  type BassVoiceId,
+  type ExportPart,
+  basslineHasNotes,
+  basslineVoice,
+} from "./bassline";
 
 // General MIDI percussion key map (channel 10).
 const GM_DRUM_NOTE: Record<InstrumentId, number> = {
@@ -23,7 +29,16 @@ const NOTE_GATE_TICKS = 20; // short one-shot gate, drum hits don't sustain
 
 const DRUM_CHANNEL = 9; // MIDI channel 10
 const BASS_CHANNEL = 0; // MIDI channel 1
-const BASS_PROGRAM = 33; // GM "Electric Bass (finger)" (0-indexed)
+
+// GM bass program (0-indexed) closest to each synthesized voice, so the
+// exported MIDI opens with a matching sound in a DAW.
+const BASS_VOICE_PROGRAM: Record<BassVoiceId, number> = {
+  electric: 33, // Electric Bass (finger)
+  pick: 34, // Electric Bass (pick)
+  upright: 32, // Acoustic Bass
+  synth: 38, // Synth Bass 1
+  muted: 39, // Synth Bass 2
+};
 
 function encodeVarLen(value: number): number[] {
   const bytes: number[] = [value & 0x7f];
@@ -174,7 +189,8 @@ function tracksFor(
   timeSigNumerator: number,
   drumEvents: NoteEvent[],
   bassEvents: NoteEvent[],
-  hasBass: boolean
+  hasBass: boolean,
+  bassProgram: number
 ): MidiTrack[] {
   const drumTrack: MidiTrack = {
     name: "Drums",
@@ -189,7 +205,7 @@ function tracksFor(
     events: bassEvents,
     includeTempo: true,
     timeSigNumerator,
-    program: BASS_PROGRAM,
+    program: bassProgram,
   };
 
   if (part === "drums" || !hasBass) return [drumTrack];
@@ -212,7 +228,8 @@ export function encodeSongToMidi(
   if (part !== "bass") pushLineNoteEvents(drumEvents, lines, measureBeats, 0);
   if (part !== "drums" && hasBass) pushBassNoteEvents(bassEvents, bassline, measureBeats, 0);
 
-  const tracks = tracksFor(part, measureBeats, drumEvents, bassEvents, hasBass);
+  const bassProgram = BASS_VOICE_PROGRAM[basslineVoice(bassline?.settings)];
+  const tracks = tracksFor(part, measureBeats, drumEvents, bassEvents, hasBass, bassProgram);
   return encodeTracksToMidi(tracks, bpm, measureBeats);
 }
 
@@ -238,6 +255,8 @@ export function encodeStackToMidi(steps: StackMidiStep[], bpm: number, part: Exp
   }
 
   const firstMeasureBeats = steps[0]?.measureLength ?? 4;
-  const tracks = tracksFor(part, firstMeasureBeats, drumEvents, bassEvents, hasBass);
+  const bassProgram =
+    BASS_VOICE_PROGRAM[basslineVoice(steps.find((s) => basslineHasNotes(s.bassline))?.bassline?.settings)];
+  const tracks = tracksFor(part, firstMeasureBeats, drumEvents, bassEvents, hasBass, bassProgram);
   return encodeTracksToMidi(tracks, bpm, beatOffset);
 }

@@ -1,10 +1,10 @@
 import { CustomSamples } from "./customSamples";
 import { type Bassline, type ExportPart, basslineHasNotes } from "./bassline";
-import { BassBufferMap, loadBassBuffers } from "./bassVoice";
 import {
   BufferMap,
   LineState,
   StackStepPlayable,
+  connectLimitedMaster,
   loadEffectiveBuffers,
   renderStackToBuffer,
   scheduleBasslineEvents,
@@ -46,9 +46,9 @@ const LOOKAHEAD_SECONDS = 0.15;
 export class StackPlayer {
   private ctx: AudioContext;
   private master: GainNode;
+  private limiter: DynamicsCompressorNode;
   private slotBuffers = new Map<string, BufferMap>();
-  private bassBuffers: BassBufferMap | null = null;
-  private sources: AudioBufferSourceNode[] = [];
+  private sources: AudioScheduledSourceNode[] = [];
   private playing = false;
   private loop = false;
   private steps: StackStepSource[] = [];
@@ -63,7 +63,7 @@ export class StackPlayer {
     this.ctx = new AC();
     this.master = this.ctx.createGain();
     this.master.gain.value = 0.85;
-    this.master.connect(this.ctx.destination);
+    this.limiter = connectLimitedMaster(this.ctx, this.master);
     document.addEventListener("visibilitychange", this.handleVisibilityChange);
     // A context can go "suspended"/"interrupted" mid-playback with no
     // visibilitychange to hang a resync off of — most often when another app
@@ -122,17 +122,14 @@ export class StackPlayer {
     this.loop = loop;
   }
 
-  /** Resolves and caches each referenced slot's buffers once, regardless of how many times that slot repeats in the song. Also loads the shared bass buffers. */
+  /** Resolves and caches each referenced slot's buffers once, regardless of how many times that slot repeats in the song. (The bass is synthesized per note — nothing to preload.) */
   async loadSlots(slots: StackSlotSource[]): Promise<void> {
-    await Promise.all([
-      loadBassBuffers(this.ctx).then((b) => {
-        this.bassBuffers = b;
-      }),
-      ...slots.map(async (s) => {
+    await Promise.all(
+      slots.map(async (s) => {
         const buffers = await loadEffectiveBuffers(this.ctx, s.kit, s.customSamples);
         this.slotBuffers.set(s.slot, buffers);
-      }),
-    ]);
+      })
+    );
   }
 
   private buildPlayableSteps(steps: StackStepSource[]): StackStepPlayable[] {
@@ -181,7 +178,7 @@ export class StackPlayer {
     this.currentPassStart = passStart;
 
     let elapsed = 0;
-    const sources: AudioBufferSourceNode[] = [];
+    const sources: AudioScheduledSourceNode[] = [];
     for (const step of playable) {
       const started = scheduleLoopEvents(
         this.ctx,
@@ -193,12 +190,11 @@ export class StackPlayer {
         passStart + elapsed
       );
       sources.push(...started);
-      if (this.bassBuffers && basslineHasNotes(step.bassline)) {
+      if (basslineHasNotes(step.bassline)) {
         sources.push(
           ...scheduleBasslineEvents(
             this.ctx,
             this.master,
-            this.bassBuffers,
             step.bassline,
             step.measureLength,
             beatSeconds,

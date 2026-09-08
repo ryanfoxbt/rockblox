@@ -1,145 +1,163 @@
-// The bass voice: a small set of anchor samples, one per ~octave, that get
-// pitch-shifted via playbackRate to reach every note the generator asks for.
-// Nearest-anchor selection keeps every shift inside ~half an octave, where
-// playbackRate resampling still sounds like a bass and not a chipmunk.
-//
-// Any anchor whose .mp3 is missing is replaced by a synthesized tone at the
-// same pitch, so the feature works with no audio assets checked in at all —
-// exactly how the "Fart" kit degrades (see fartKit.ts). Drop real files into
-// public/bass/ later and they take over with no code change.
+// The bass voice. Each note is synthesized live from oscillators + a lowpass
+// + an amp envelope — no sample files, so it sounds identical in the editor,
+// the Stack Builder, and the offline MP3 render, and there's nothing to host
+// or decode. Oscillators are band-limited, so there's no aliasing "buzz" the
+// old pitch-shifted-sample approach had, and pitch is exact.
 
 import { hitVelocityMultiplier } from "./rhythm";
-import type { BassNote } from "./bassline";
-
-// anchor MIDI note -> public/bass filename stem
-const BASS_ANCHORS: Record<number, string> = {
-  28: "bass-E1",
-  40: "bass-E2",
-  52: "bass-E3",
-};
-
-export type BassBufferMap = Map<number, AudioBuffer>;
-
-let cache: BassBufferMap | null = null;
-let loading: Promise<BassBufferMap> | null = null;
+import { type BassNote, type BassVoiceId, DEFAULT_BASS_VOICE } from "./bassline";
 
 function midiToFreq(midi: number): number {
   return 440 * 2 ** ((midi - 69) / 12);
 }
 
-// A plain, slightly buzzy synth-bass one-shot — sawtooth + sub sine through a
-// one-pole lowpass with a percussive decay. ~1.4s so a long held note has
-// something to sustain into before the gain envelope closes it.
-function synthesizeBassAnchor(ctx: BaseAudioContext, midi: number): AudioBuffer {
-  const sampleRate = ctx.sampleRate;
-  const duration = 1.4;
-  const length = Math.floor(duration * sampleRate);
-  const buffer = ctx.createBuffer(1, length, sampleRate);
-  const data = buffer.getChannelData(0);
-  const freq = midiToFreq(midi);
-
-  let phase = 0;
-  let lp = 0;
-  for (let i = 0; i < length; i++) {
-    const t = i / sampleRate;
-    phase += freq / sampleRate;
-    phase -= Math.floor(phase);
-    const saw = 2 * (phase - Math.floor(phase + 0.5));
-    const sub = Math.sin(2 * Math.PI * phase); // one octave feel via same phase
-    const raw = saw * 0.55 + sub * 0.6;
-
-    // Lowpass that opens brighter at the attack and closes over the decay.
-    const cutoff = 0.28 - 0.2 * Math.min(1, t / duration);
-    lp += (raw - lp) * cutoff;
-
-    const attack = Math.min(1, t / 0.006);
-    const decay = Math.exp(-t * 3.2);
-    data[i] = lp * attack * decay * 0.9;
-  }
-  return buffer;
+interface OscSpec {
+  type: OscillatorType;
+  // Frequency multiple of the note's fundamental (0.5 = one octave down,
+  // 2 = one octave up).
+  ratio: number;
+  detune?: number; // cents
+  gain: number; // relative mix level
 }
 
-async function fetchAnchor(ctx: BaseAudioContext, stem: string): Promise<AudioBuffer | null> {
-  try {
-    const res = await fetch(`/bass/${stem}.mp3`);
-    if (!res.ok) return null;
-    return await ctx.decodeAudioData(await res.arrayBuffer());
-  } catch {
-    return null;
-  }
+interface BassVoiceSpec {
+  oscillators: OscSpec[];
+  // Lowpass tracking the note: cutoff = freq * mult, swept from `open` down to
+  // `close` over the note's decay, with resonance `q`.
+  filter: { openMult: number; closeMult: number; q: number; minHz: number };
+  // Amp envelope, seconds / ratio. `sustain` is the level held after the
+  // initial decay until the note's own length runs out.
+  amp: { attack: number; decay: number; sustain: number; release: number };
+  // Optional pluck: start `semitones` sharp and glide to pitch over `time`.
+  pitchEnv?: { semitones: number; time: number };
+  // Overall level trim for this voice so they're roughly matched.
+  gain: number;
 }
 
-/** Anchor buffers for the bass, one per entry in BASS_ANCHORS. Cached and reused across contexts, like loadDrumBuffers. */
-export function loadBassBuffers(ctx: BaseAudioContext): Promise<BassBufferMap> {
-  if (cache) return Promise.resolve(cache);
-  if (loading) return loading;
+// Oscillator mix gains per voice are normalized to sum ~0.9, so a voice's raw
+// output can't exceed ~1 before the amp envelope even when its partials line
+// up in phase. The master bus also runs through a limiter (see audioEngine),
+// but keeping the source clean means the limiter almost never has to act.
+const VOICES: Record<BassVoiceId, BassVoiceSpec> = {
+  electric: {
+    oscillators: [
+      { type: "sawtooth", ratio: 1, gain: 0.42 },
+      { type: "sine", ratio: 0.5, gain: 0.48 },
+    ],
+    filter: { openMult: 6, closeMult: 2.5, q: 4, minHz: 90 },
+    amp: { attack: 0.008, decay: 0.14, sustain: 0.72, release: 0.09 },
+    gain: 0.95,
+  },
+  pick: {
+    oscillators: [
+      { type: "sawtooth", ratio: 1, gain: 0.4 },
+      { type: "square", ratio: 1, detune: 4, gain: 0.16 },
+      { type: "sine", ratio: 0.5, gain: 0.34 },
+    ],
+    filter: { openMult: 11, closeMult: 3.5, q: 6, minHz: 120 },
+    amp: { attack: 0.004, decay: 0.1, sustain: 0.55, release: 0.07 },
+    pitchEnv: { semitones: 0.25, time: 0.02 },
+    gain: 0.9,
+  },
+  upright: {
+    oscillators: [
+      { type: "triangle", ratio: 1, gain: 0.66 },
+      { type: "sine", ratio: 1, detune: -6, gain: 0.24 },
+    ],
+    filter: { openMult: 4.5, closeMult: 2, q: 2, minHz: 70 },
+    amp: { attack: 0.006, decay: 0.22, sustain: 0.28, release: 0.16 },
+    pitchEnv: { semitones: 0.4, time: 0.05 },
+    gain: 1,
+  },
+  synth: {
+    oscillators: [
+      { type: "sine", ratio: 1, gain: 0.56 },
+      { type: "square", ratio: 2, detune: 3, gain: 0.1 },
+      { type: "sine", ratio: 0.5, gain: 0.28 },
+    ],
+    filter: { openMult: 5, closeMult: 4, q: 1, minHz: 80 },
+    amp: { attack: 0.014, decay: 0.2, sustain: 0.85, release: 0.14 },
+    gain: 0.9,
+  },
+  muted: {
+    oscillators: [
+      { type: "sine", ratio: 1, gain: 0.62 },
+      { type: "triangle", ratio: 1, gain: 0.28 },
+    ],
+    filter: { openMult: 3.5, closeMult: 2, q: 2, minHz: 60 },
+    amp: { attack: 0.005, decay: 0.09, sustain: 0.14, release: 0.06 },
+    gain: 1,
+  },
+};
 
-  loading = Promise.all(
-    Object.entries(BASS_ANCHORS).map(async ([midiStr, stem]) => {
-      const midi = Number(midiStr);
-      const sampled = await fetchAnchor(ctx, stem);
-      return [midi, sampled ?? synthesizeBassAnchor(ctx, midi)] as const;
-    })
-  ).then((entries) => {
-    cache = new Map(entries);
-    loading = null;
-    return cache;
-  });
-
-  return loading;
+function voiceSpec(voice: BassVoiceId): BassVoiceSpec {
+  return VOICES[voice] ?? VOICES[DEFAULT_BASS_VOICE];
 }
 
-function nearestAnchor(buffers: BassBufferMap, midi: number): number {
-  let best = 40;
-  let bestDist = Infinity;
-  for (const anchor of buffers.keys()) {
-    const d = Math.abs(anchor - midi);
-    if (d < bestDist) {
-      bestDist = d;
-      best = anchor;
-    }
-  }
-  return best;
-}
-
-// Overall trim so a 100-volume bassline sits under the drums rather than on
-// top of them.
-const BASS_TRIM = 0.8;
+// Overall bass level trim. Calibrated so a default-volume (90) note sits well
+// under a kick hit rather than fighting it, leaving the mix headroom.
+const OUTPUT_TRIM = 0.42;
 
 /**
- * Schedules one bass note. `lineVolume` is the bassline's 0-100 volume; the
- * note's own accent scales it further (reusing the drum velocity curve).
- * Returns the source node so a hard-stop caller can track it.
+ * Schedules one bass note as a live synth voice. Returns the oscillator nodes
+ * so a hard-stop caller (Stack Builder) can stop them individually.
  */
 export function triggerBassNote(
   ctx: BaseAudioContext,
   dest: AudioNode,
-  buffers: BassBufferMap,
   note: BassNote,
   time: number,
   beatSeconds: number,
-  lineVolume: number
-): AudioBufferSourceNode | undefined {
-  const anchor = nearestAnchor(buffers, note.midi);
-  const buffer = buffers.get(anchor);
-  if (!buffer) return undefined;
+  lineVolume: number,
+  voice: BassVoiceId
+): OscillatorNode[] {
+  const spec = voiceSpec(voice);
+  const freq = midiToFreq(note.midi);
+  const holdSeconds = Math.max(0.06, note.duration * beatSeconds);
+  const { attack, decay, sustain, release } = spec.amp;
+  const endTime = time + holdSeconds + release;
 
-  const src = ctx.createBufferSource();
-  src.buffer = buffer;
-  src.playbackRate.value = 2 ** ((note.midi - anchor) / 12);
+  const peak =
+    (lineVolume / 100) * hitVelocityMultiplier(note.accent) * spec.gain * OUTPUT_TRIM;
 
-  const peak = Math.max(0, (lineVolume / 100) * hitVelocityMultiplier(note.accent) * BASS_TRIM);
-  const holdSeconds = Math.max(0.08, note.duration * beatSeconds);
-  const release = 0.08;
+  // Lowpass, swept from open to closed over the decay.
+  const filter = ctx.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.Q.value = spec.filter.q;
+  const openHz = Math.max(spec.filter.minHz, freq * spec.filter.openMult);
+  const closeHz = Math.max(spec.filter.minHz, freq * spec.filter.closeMult);
+  filter.frequency.setValueAtTime(openHz, time);
+  filter.frequency.exponentialRampToValueAtTime(Math.max(1, closeHz), time + decay + 0.001);
 
-  const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0, time);
-  gain.gain.linearRampToValueAtTime(peak, time + 0.008);
-  gain.gain.setValueAtTime(peak, time + holdSeconds);
-  gain.gain.linearRampToValueAtTime(0, time + holdSeconds + release);
+  // Amp envelope.
+  const amp = ctx.createGain();
+  amp.gain.setValueAtTime(0, time);
+  amp.gain.linearRampToValueAtTime(peak, time + attack);
+  amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * sustain), time + attack + decay);
+  amp.gain.setValueAtTime(Math.max(0.0001, peak * sustain), time + holdSeconds);
+  amp.gain.exponentialRampToValueAtTime(0.0001, endTime);
+  amp.gain.setValueAtTime(0, endTime + 0.005);
 
-  src.connect(gain).connect(dest);
-  src.start(time);
-  src.stop(time + holdSeconds + release + 0.02);
-  return src;
+  filter.connect(amp).connect(dest);
+
+  const oscs: OscillatorNode[] = [];
+  for (const o of spec.oscillators) {
+    const osc = ctx.createOscillator();
+    osc.type = o.type;
+    if (o.detune) osc.detune.value = o.detune;
+    const base = freq * o.ratio;
+    if (spec.pitchEnv) {
+      osc.frequency.setValueAtTime(base * 2 ** (spec.pitchEnv.semitones / 12), time);
+      osc.frequency.exponentialRampToValueAtTime(base, time + spec.pitchEnv.time);
+    } else {
+      osc.frequency.setValueAtTime(base, time);
+    }
+    const og = ctx.createGain();
+    og.gain.value = o.gain;
+    osc.connect(og).connect(filter);
+    osc.start(time);
+    osc.stop(endTime + 0.03);
+    oscs.push(osc);
+  }
+  return oscs;
 }

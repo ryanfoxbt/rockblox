@@ -1,6 +1,6 @@
 "use client";
 
-import { BassNote, BasslineSettings } from "@/lib/bassline";
+import { BassNote, BASS_VOICES, basslineVoice, BasslineSettings } from "@/lib/bassline";
 import { midiNoteName, NOTE_NAMES, SCALES } from "@/lib/scales";
 
 // Read-only companion to LineRow that shows the generated bassline underneath
@@ -28,7 +28,8 @@ export function BasslineRow({
   }
   for (const list of byBeat) list.sort((a, b) => a.offset - b.offset);
 
-  const keyLabel = `${NOTE_NAMES[settings.root]} ${SCALES[settings.scale].name}`;
+  const voiceName = BASS_VOICES.find((v) => v.id === basslineVoice(settings))?.name ?? "";
+  const keyLabel = `${NOTE_NAMES[settings.root]} ${SCALES[settings.scale].name} · ${voiceName}`;
 
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-white/5 p-3 md:flex-row md:flex-wrap md:items-center">
