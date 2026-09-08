@@ -20,6 +20,8 @@ import { DrumTeacherStep, DrumTeacherView } from "@/components/DrumTeacherView";
 import { TileVisual } from "@/components/TileVisual";
 import { FartRecorder } from "@/components/FartRecorder";
 import { RandomizeButton, VariationKind } from "@/components/RandomizeButton";
+import { BasslineButton, BasslineModal } from "@/components/BasslineButton";
+import { BasslineRow } from "@/components/BasslineRow";
 import { TextToBeatButton } from "@/components/TextToBeatButton";
 import { WallButton } from "@/components/WallButton";
 import { PresenceIndicator } from "@/components/PresenceIndicator";
@@ -47,6 +49,9 @@ import {
   timeSignatureLabel,
 } from "@/lib/song";
 import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine";
+import { Bassline, BasslineSettings, ExportPart, basslineHasNotes } from "@/lib/bassline";
+import { generateBassline } from "@/lib/generateBassline";
+import { DownloadFormat } from "@/components/DownloadMenu";
 import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
 import { useHistoryState } from "@/lib/useHistoryState";
 import { BoardData, ExtendedSlotLetter, SLOT_LETTERS, SlotMap } from "@/lib/board";
@@ -82,6 +87,7 @@ export function Editor({
   initialLines,
   initialKit,
   initialCustomSamples,
+  initialBassline,
   initialSlug,
   initialSlot,
   board,
@@ -93,6 +99,9 @@ export function Editor({
   initialLines?: StoredLine[];
   initialKit?: string;
   initialCustomSamples?: CustomSamples;
+  // A generated bassline for the initial pattern (scratchpad / pattern share);
+  // for a board, each slot carries its own in board.slots[x].bassline.
+  initialBassline?: Bassline;
   initialSlug?: string;
   // Which slot to open on, e.g. from a `?slot=` URL param set when returning
   // from Stacks — falls back to the first non-empty slot when absent.
@@ -195,6 +204,14 @@ export function Editor({
     return initialCustomSamples ?? {};
   });
   const [samplesLoading, setSamplesLoading] = useState(true);
+  // The generated bassline for the active slot (null = none). Not routed
+  // through useHistoryState — it's re-rolled from its modal, not hand-edited,
+  // so it stays outside the drum-pattern undo stack for now.
+  const [bassline, setBassline] = useState<Bassline | null>(() => {
+    if (board) return board.slots[activeSlot]?.bassline ?? null;
+    return initialBassline ?? null;
+  });
+  const [basslineModalOpen, setBasslineModalOpen] = useState(false);
 
   const isMobile = useIsMobile();
   const router = useRouter();
@@ -229,8 +246,8 @@ export function Editor({
   useEffect(() => {
     if (!playerRef.current) return;
     const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks, volume: l.volume }));
-    playerRef.current.updateSong(lineStates, bpm, measureLength);
-  }, [lines, bpm, measureLength]);
+    playerRef.current.updateSong(lineStates, bpm, measureLength, bassline);
+  }, [lines, bpm, measureLength, bassline]);
 
   // Start fetching and decoding the drum samples as soon as the page mounts,
   // so they're already in memory by the time the user hits Play.
@@ -293,6 +310,7 @@ export function Editor({
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setBpm(draft.bpm);
       setCustomSamples(draft.customSamples);
+      setBassline(draft.bassline ?? null);
       playerRef.current?.clearCustomSamples();
       if (Object.keys(draft.customSamples).length > 0) playerRef.current?.loadCustomSamples(draft.customSamples);
       if (draft.kit !== kit) applyKit(draft.kit);
@@ -334,7 +352,13 @@ export function Editor({
     // Snapshot the outgoing slot's current state into our client-side copy
     // before leaving it, so switching back later reflects this session's
     // edits rather than the stale data the server sent on page load.
-    slotsRef.current[activeSlot] = { bpm, lines: serializeLines(lines), kit, customSamples };
+    slotsRef.current[activeSlot] = {
+      bpm,
+      lines: serializeLines(lines),
+      kit,
+      customSamples,
+      bassline: bassline ?? undefined,
+    };
     setVariationSources(computeVariationSources(slotsRef.current, slotLetters, slot));
     // Keep the URL in sync with the active slot (replace, not push, so
     // switching slots doesn't pile up back-button history) — this is what
@@ -347,6 +371,7 @@ export function Editor({
     const nextBpm = data?.bpm ?? 100;
     const nextKit = data?.kit ?? DEFAULT_KIT;
     const nextCustomSamples = data?.customSamples ?? {};
+    const nextBassline = data?.bassline ?? null;
     // Loading a slot's already-persisted data isn't an edit — set the
     // baseline now so the autosave effect below doesn't immediately re-save it.
     lastSavedRef.current = JSON.stringify({
@@ -355,6 +380,7 @@ export function Editor({
       lines: serializeLines(nextLines),
       kit: nextKit,
       customSamples: nextCustomSamples,
+      bassline: nextBassline,
     });
     setActiveSlot(slot);
     const groupIdx = slotGroups.findIndex((g) => g.includes(slot));
@@ -365,6 +391,7 @@ export function Editor({
     setGridBeats(Math.min(MAX_BEATS, Math.max(DEFAULT_GRID_BEATS, computeMeasureLength(nextLines))));
     setBpm(nextBpm);
     setCustomSamples(nextCustomSamples);
+    setBassline(nextBassline);
     playerRef.current?.clearCustomSamples();
     if (Object.keys(nextCustomSamples).length > 0) playerRef.current?.loadCustomSamples(nextCustomSamples);
     if (nextKit !== kit) applyKit(nextKit);
@@ -377,7 +404,13 @@ export function Editor({
   function currentSlotsSnapshot(): SlotMap {
     return {
       ...slotsRef.current,
-      [activeSlot]: { bpm, lines: serializeLines(lines), kit, customSamples },
+      [activeSlot]: {
+        bpm,
+        lines: serializeLines(lines),
+        kit,
+        customSamples,
+        bassline: bassline ?? undefined,
+      },
     };
   }
 
@@ -388,7 +421,14 @@ export function Editor({
   const autosaveUrl = savedSong ? `/api/my-songs/${savedSong.id}` : board ? `/api/boards/${board.slug}` : null;
   useEffect(() => {
     if (!board || board.readOnly || !autosaveUrl) return;
-    const payload = JSON.stringify({ slot: activeSlot, bpm, lines: serializeLines(lines), kit, customSamples });
+    const payload = JSON.stringify({
+      slot: activeSlot,
+      bpm,
+      lines: serializeLines(lines),
+      kit,
+      customSamples,
+      bassline: bassline ?? undefined,
+    });
     if (lastSavedRef.current === null) {
       lastSavedRef.current = payload;
       return;
@@ -410,15 +450,15 @@ export function Editor({
       }
     }, 800);
     return () => clearTimeout(handle);
-  }, [lines, bpm, kit, customSamples, activeSlot, board, autosaveUrl]);
+  }, [lines, bpm, kit, customSamples, bassline, activeSlot, board, autosaveUrl]);
 
   // The homepage scratchpad's equivalent of the autosave effect above, but
   // to localStorage instead of the server — see draftStorage.ts and
   // isScratchpad. Cleared once the beat is actually claimed (ClaimUrlBox).
   useEffect(() => {
     if (!isScratchpad || !restoreAttempted) return;
-    saveDraft({ bpm, lines: serializeLines(lines), kit, customSamples });
-  }, [isScratchpad, restoreAttempted, lines, bpm, kit, customSamples]);
+    saveDraft({ bpm, lines: serializeLines(lines), kit, customSamples, bassline: bassline ?? undefined });
+  }, [isScratchpad, restoreAttempted, lines, bpm, kit, customSamples, bassline]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -436,7 +476,7 @@ export function Editor({
   async function togglePlay() {
     if (!playerRef.current) playerRef.current = new RockBloxPlayer(kit);
     const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks, volume: l.volume }));
-    playerRef.current.updateSong(lineStates, bpm, measureLength);
+    playerRef.current.updateSong(lineStates, bpm, measureLength, bassline);
 
     if (playerRef.current.isPlaying()) {
       playerRef.current.stop();
@@ -447,36 +487,33 @@ export function Editor({
     }
   }
 
-  async function handleDownloadMp3() {
-    if (measureLength < 1) return;
-    const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks, volume: l.volume }));
-    const loopSeconds = (60 / bpm) * measureLength;
-    const loops = Math.max(4, Math.ceil(12 / loopSeconds));
-
-    const buffer = await renderSongToBuffer(lineStates, bpm, measureLength, loops, kit, customSamples);
-    const { encodeAudioBufferToMp3 } = await import("@/lib/mp3Encoder");
-    const blob = encodeAudioBufferToMp3(buffer);
-
+  function triggerDownload(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "rockblocks-beat.mp3";
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   }
 
-  async function handleDownloadMidi() {
+  // One handler for both formats and all three parts (full / drums / bass) —
+  // see DownloadMenu. The bassline only renders/encodes when part isn't
+  // "drums" and one actually exists.
+  async function handleDownload(format: DownloadFormat, part: ExportPart) {
     if (measureLength < 1) return;
     const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks, volume: l.volume }));
-    const { encodeSongToMidi } = await import("@/lib/midiEncoder");
-    const blob = encodeSongToMidi(lineStates, bpm, measureLength);
+    const stem = part === "full" ? "beat" : part;
 
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "rockblocks-beat.mid";
-    a.click();
-    URL.revokeObjectURL(url);
+    if (format === "mp3") {
+      const loopSeconds = (60 / bpm) * measureLength;
+      const loops = Math.max(4, Math.ceil(12 / loopSeconds));
+      const buffer = await renderSongToBuffer(lineStates, bpm, measureLength, loops, kit, customSamples, bassline, part);
+      const { encodeAudioBufferToMp3 } = await import("@/lib/mp3Encoder");
+      triggerDownload(encodeAudioBufferToMp3(buffer), `rockblocks-${stem}.mp3`);
+    } else {
+      const { encodeSongToMidi } = await import("@/lib/midiEncoder");
+      triggerDownload(encodeSongToMidi(lineStates, bpm, measureLength, bassline, part), `rockblocks-${stem}.mid`);
+    }
   }
 
   function placeTile(tile: RhythmTile, lineId: string, index: number, source?: string) {
@@ -595,6 +632,16 @@ export function Editor({
 
   function randomizeBeat(complexity: number, beats: number) {
     setLines(generateRandomBeat({ complexity, beats }));
+  }
+
+  // (Re-)roll the bassline from the drum pattern currently on screen. Enabled
+  // by the act of generating; "Remove bassline" in the modal clears it.
+  function handleGenerateBassline(settings: BasslineSettings) {
+    setBassline({
+      enabled: true,
+      settings,
+      notes: generateBassline(lines, measureLength, settings),
+    });
   }
 
   // Slots other than the one on screen that actually have a beat in
@@ -757,7 +804,7 @@ export function Editor({
           )}
           {!board && (
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <ClaimUrlBox bpm={bpm} lines={lines} kit={kit} customSamples={customSamples} />
+              <ClaimUrlBox bpm={bpm} lines={lines} kit={kit} customSamples={customSamples} bassline={bassline} />
               <SaveToLibraryButton getSlots={currentSlotsSnapshot} />
               {lastBoardName && (
                 <Link
@@ -898,10 +945,12 @@ export function Editor({
                     onGenerateNew={randomizeBeat}
                     onGenerateVariation={randomizeVariation}
                   />
+                  <BasslineButton
+                    variant="menuItem"
+                    onOpen={() => setBasslineModalOpen(true)}
+                  />
                 </div>
               )}
-              {/* Song import is temporarily hidden from the UI — see SongImportButton.tsx; the
-                  upload/transcribe/import API routes are untouched, just not linked to from here. */}
             </div>
             <button
               type="button"
@@ -956,6 +1005,18 @@ export function Editor({
         />
       )}
 
+      {basslineModalOpen && (
+        <BasslineModal
+          bassline={bassline}
+          onGenerate={handleGenerateBassline}
+          onRemove={() => {
+            setBassline(null);
+            setBasslineModalOpen(false);
+          }}
+          onClose={() => setBasslineModalOpen(false)}
+        />
+      )}
+
       <DndContext
         id="rockblox-dnd"
         sensors={sensors}
@@ -975,8 +1036,8 @@ export function Editor({
               onTogglePlay={togglePlay}
               disabled={measureLength < 1}
               measureLength={measureLength}
-              onDownloadMp3={handleDownloadMp3}
-              onDownloadMidi={handleDownloadMidi}
+              onDownload={handleDownload}
+              hasBassline={basslineHasNotes(bassline)}
               samplesLoading={samplesLoading}
               kit={kit}
               kits={DRUM_KITS}
@@ -1022,6 +1083,16 @@ export function Editor({
                     canRemove={lines.length > 1}
                   />
                 ))}
+                {bassline?.enabled && bassline.notes.length > 0 && (
+                  <BasslineRow
+                    notes={bassline.notes}
+                    visibleBeats={visibleBeats}
+                    measureLength={measureLength}
+                    playheadBeat={isPlaying ? playheadBeat : null}
+                    settings={bassline.settings}
+                    onOpen={() => setBasslineModalOpen(true)}
+                  />
+                )}
               </div>
               {/* Beat-count nudge — deliberately faint. The 3×4 grid is the
                   whole point; that it pulls in to 3/4 or out to 8/4 is a

@@ -90,6 +90,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     lines: body.lines,
     kit: body.kit,
     customSamples: body.customSamples,
+    bassline: body.bassline,
   };
   const patch = JSON.stringify({ [body.slot]: slotData });
   await r.db

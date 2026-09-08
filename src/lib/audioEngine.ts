@@ -3,6 +3,8 @@ import { hitVelocityMultiplier, NOTE_FRACTION, RhythmTile } from "./rhythm";
 import { DEFAULT_KIT, sampleUrlsForKit } from "./drumKits";
 import { loadFartBuffers } from "./fartKit";
 import { CustomSamples, base64ToArrayBuffer } from "./customSamples";
+import { type Bassline, type ExportPart, basslineHasNotes } from "./bassline";
+import { BassBufferMap, loadBassBuffers, triggerBassNote } from "./bassVoice";
 
 export interface LineState {
   instrument: InstrumentId;
@@ -149,6 +151,40 @@ export function scheduleLoopEvents(
   return sources;
 }
 
+// Schedules one loop's worth of bass notes. Notes past the bar's end are
+// dropped and each note's sounding length is clamped to the bar, so shortening
+// the drum pattern after generating a bassline can't leave a note hanging over
+// the loop point.
+export function scheduleBasslineEvents(
+  ctx: BaseAudioContext,
+  dest: AudioNode,
+  bassBuffers: BassBufferMap,
+  bassline: Bassline,
+  measureBeats: number,
+  beatSeconds: number,
+  loopStart: number
+): AudioBufferSourceNode[] {
+  const sources: AudioBufferSourceNode[] = [];
+  for (const note of bassline.notes) {
+    const start = note.beat + note.offset;
+    if (start >= measureBeats) continue;
+    const clamped =
+      start + note.duration > measureBeats ? { ...note, duration: measureBeats - start } : note;
+    const time = loopStart + start * beatSeconds;
+    const src = triggerBassNote(
+      ctx,
+      dest,
+      bassBuffers,
+      clamped,
+      time,
+      beatSeconds,
+      bassline.settings.volume
+    );
+    if (src) sources.push(src);
+  }
+  return sources;
+}
+
 const RENDER_TAIL_SECONDS = 2;
 
 export async function renderSongToBuffer(
@@ -157,7 +193,9 @@ export async function renderSongToBuffer(
   measureBeats: number,
   loops: number,
   kit: string,
-  customSamples?: CustomSamples
+  customSamples?: CustomSamples,
+  bassline?: Bassline | null,
+  part: ExportPart = "full"
 ): Promise<AudioBuffer> {
   const sampleRate = 44100;
   const beatSeconds = 60 / bpm;
@@ -169,10 +207,17 @@ export async function renderSongToBuffer(
   master.gain.value = 0.85;
   master.connect(offlineCtx.destination);
 
-  const buffers = await loadEffectiveBuffers(offlineCtx, kit, customSamples);
+  const includeDrums = part !== "bass";
+  const includeBass = part !== "drums" && basslineHasNotes(bassline);
+  const buffers = includeDrums ? await loadEffectiveBuffers(offlineCtx, kit, customSamples) : null;
+  const bassBuffers = includeBass ? await loadBassBuffers(offlineCtx) : null;
 
   for (let loop = 0; loop < loops; loop++) {
-    scheduleLoopEvents(offlineCtx, master, buffers, lines, measureBeats, beatSeconds, loop * loopDuration);
+    const loopStart = loop * loopDuration;
+    if (buffers) scheduleLoopEvents(offlineCtx, master, buffers, lines, measureBeats, beatSeconds, loopStart);
+    if (includeBass && bassBuffers) {
+      scheduleBasslineEvents(offlineCtx, master, bassBuffers, bassline!, measureBeats, beatSeconds, loopStart);
+    }
   }
 
   return offlineCtx.startRendering();
@@ -181,14 +226,20 @@ export async function renderSongToBuffer(
 // One entry per Stack Builder step, with that step's buffers already
 // resolved (see loadEffectiveBuffers) — callers preload per-slot buffers
 // once and reuse them across both live playback and this offline render, no
-// re-decoding either way.
+// re-decoding either way. `bassline` is the step's slot's generated bass, if
+// any; the shared bass buffers aren't per-step, so the renderer loads them once.
 export interface StackStepPlayable {
   lines: LineState[];
   measureLength: number;
   buffers: BufferMap;
+  bassline?: Bassline | null;
 }
 
-export async function renderStackToBuffer(steps: StackStepPlayable[], bpm: number): Promise<AudioBuffer> {
+export async function renderStackToBuffer(
+  steps: StackStepPlayable[],
+  bpm: number,
+  part: ExportPart = "full"
+): Promise<AudioBuffer> {
   const sampleRate = 44100;
   const beatSeconds = 60 / bpm;
   const stepDurations = steps.map((s) => beatSeconds * s.measureLength);
@@ -199,9 +250,18 @@ export async function renderStackToBuffer(steps: StackStepPlayable[], bpm: numbe
   master.gain.value = 0.85;
   master.connect(offlineCtx.destination);
 
+  const includeDrums = part !== "bass";
+  const includeBass = part !== "drums" && steps.some((s) => basslineHasNotes(s.bassline));
+  const bassBuffers = includeBass ? await loadBassBuffers(offlineCtx) : null;
+
   let elapsed = 0;
   steps.forEach((step, i) => {
-    scheduleLoopEvents(offlineCtx, master, step.buffers, step.lines, step.measureLength, beatSeconds, elapsed);
+    if (includeDrums) {
+      scheduleLoopEvents(offlineCtx, master, step.buffers, step.lines, step.measureLength, beatSeconds, elapsed);
+    }
+    if (bassBuffers && basslineHasNotes(step.bassline)) {
+      scheduleBasslineEvents(offlineCtx, master, bassBuffers, step.bassline, step.measureLength, beatSeconds, elapsed);
+    }
     elapsed += stepDurations[i];
   });
 
@@ -223,7 +283,9 @@ export class RockBloxPlayer {
   private customBuffers: Map<InstrumentId, AudioBuffer> = new Map();
   private kit: string;
   private readyPromise: Promise<void>;
+  private bassBuffers: BassBufferMap | null = null;
   private lines: LineState[] = [];
+  private bassline: Bassline | null = null;
   private bpm = 100;
   private measureBeats = 0;
   private playing = false;
@@ -239,10 +301,15 @@ export class RockBloxPlayer {
     this.master.gain.value = 0.85;
     this.master.connect(this.ctx.destination);
     this.kit = initialKit;
-    this.readyPromise = loadDrumBuffers(this.ctx, initialKit).then((buffers) => {
-      this.baseBuffers = buffers;
-      this.recomputeBuffers();
-    });
+    this.readyPromise = Promise.all([
+      loadDrumBuffers(this.ctx, initialKit).then((buffers) => {
+        this.baseBuffers = buffers;
+        this.recomputeBuffers();
+      }),
+      loadBassBuffers(this.ctx).then((buffers) => {
+        this.bassBuffers = buffers;
+      }),
+    ]).then(() => {});
     document.addEventListener("visibilitychange", this.handleVisibilityChange);
     // A context can go "suspended" mid-playback for reasons outside a tab
     // visibility change too — most notably another app (or CarPlay/a
@@ -407,10 +474,11 @@ export class RockBloxPlayer {
     return this.readyPromise;
   }
 
-  updateSong(lines: LineState[], bpm: number, measureBeats: number) {
+  updateSong(lines: LineState[], bpm: number, measureBeats: number, bassline?: Bassline | null) {
     this.lines = lines;
     this.bpm = bpm;
     this.measureBeats = measureBeats;
+    this.bassline = bassline ?? null;
   }
 
   isPlaying() {
@@ -443,6 +511,17 @@ export class RockBloxPlayer {
   private scheduleEvents(loopStart: number, beatSeconds: number) {
     if (!this.buffers) return;
     scheduleLoopEvents(this.ctx, this.master, this.buffers, this.lines, this.measureBeats, beatSeconds, loopStart);
+    if (this.bassline?.enabled && this.bassline.notes.length > 0 && this.bassBuffers) {
+      scheduleBasslineEvents(
+        this.ctx,
+        this.master,
+        this.bassBuffers,
+        this.bassline,
+        this.measureBeats,
+        beatSeconds,
+        loopStart
+      );
+    }
   }
 
   private scheduleLoopAndNext = () => {

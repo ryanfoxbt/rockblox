@@ -1,10 +1,13 @@
 import { CustomSamples } from "./customSamples";
+import { type Bassline, type ExportPart, basslineHasNotes } from "./bassline";
+import { BassBufferMap, loadBassBuffers } from "./bassVoice";
 import {
   BufferMap,
   LineState,
   StackStepPlayable,
   loadEffectiveBuffers,
   renderStackToBuffer,
+  scheduleBasslineEvents,
   scheduleLoopEvents,
 } from "./audioEngine";
 
@@ -22,6 +25,8 @@ export interface StackStepSource {
   slot: string;
   lines: LineState[];
   measureLength: number;
+  // The step's slot's generated bassline, if it has one.
+  bassline?: Bassline | null;
 }
 
 const START_DELAY_SECONDS = 0.15;
@@ -42,6 +47,7 @@ export class StackPlayer {
   private ctx: AudioContext;
   private master: GainNode;
   private slotBuffers = new Map<string, BufferMap>();
+  private bassBuffers: BassBufferMap | null = null;
   private sources: AudioBufferSourceNode[] = [];
   private playing = false;
   private loop = false;
@@ -116,21 +122,31 @@ export class StackPlayer {
     this.loop = loop;
   }
 
-  /** Resolves and caches each referenced slot's buffers once, regardless of how many times that slot repeats in the song. */
+  /** Resolves and caches each referenced slot's buffers once, regardless of how many times that slot repeats in the song. Also loads the shared bass buffers. */
   async loadSlots(slots: StackSlotSource[]): Promise<void> {
-    await Promise.all(
-      slots.map(async (s) => {
+    await Promise.all([
+      loadBassBuffers(this.ctx).then((b) => {
+        this.bassBuffers = b;
+      }),
+      ...slots.map(async (s) => {
         const buffers = await loadEffectiveBuffers(this.ctx, s.kit, s.customSamples);
         this.slotBuffers.set(s.slot, buffers);
-      })
-    );
+      }),
+    ]);
   }
 
   private buildPlayableSteps(steps: StackStepSource[]): StackStepPlayable[] {
     const playable: StackStepPlayable[] = [];
     for (const step of steps) {
       const buffers = this.slotBuffers.get(step.slot);
-      if (buffers) playable.push({ lines: step.lines, measureLength: step.measureLength, buffers });
+      if (buffers) {
+        playable.push({
+          lines: step.lines,
+          measureLength: step.measureLength,
+          buffers,
+          bassline: step.bassline,
+        });
+      }
     }
     return playable;
   }
@@ -177,6 +193,19 @@ export class StackPlayer {
         passStart + elapsed
       );
       sources.push(...started);
+      if (this.bassBuffers && basslineHasNotes(step.bassline)) {
+        sources.push(
+          ...scheduleBasslineEvents(
+            this.ctx,
+            this.master,
+            this.bassBuffers,
+            step.bassline,
+            step.measureLength,
+            beatSeconds,
+            passStart + elapsed
+          )
+        );
+      }
       elapsed += beatSeconds * step.measureLength;
     }
     this.sources = sources;
@@ -217,9 +246,9 @@ export class StackPlayer {
     return { elapsed, total: this.totalDuration };
   }
 
-  /** Reuses the same preloaded buffers as live playback — no re-decoding for the MP3 export. */
-  async renderToBuffer(steps: StackStepSource[], bpm: number): Promise<AudioBuffer> {
-    return renderStackToBuffer(this.buildPlayableSteps(steps), bpm);
+  /** Reuses the same preloaded buffers as live playback — no re-decoding for the MP3 export. `part` selects drums, bass, or both. */
+  async renderToBuffer(steps: StackStepSource[], bpm: number, part: ExportPart = "full"): Promise<AudioBuffer> {
+    return renderStackToBuffer(this.buildPlayableSteps(steps), bpm, part);
   }
 
   destroy(): void {

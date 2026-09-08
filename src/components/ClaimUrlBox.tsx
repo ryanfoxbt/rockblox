@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LineData, serializeLines } from "@/lib/song";
 import { CustomSamples } from "@/lib/customSamples";
+import { Bassline } from "@/lib/bassline";
 import { clearDraft } from "@/lib/draftStorage";
 import { NO_PASSWORD_MANAGER_ATTRS } from "@/lib/formAttrs";
 
@@ -13,11 +14,13 @@ export function ClaimUrlBox({
   lines,
   kit,
   customSamples,
+  bassline,
 }: {
   bpm: number;
   lines: LineData[];
   kit: string;
   customSamples?: CustomSamples;
+  bassline?: Bassline | null;
 }) {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +43,14 @@ export function ClaimUrlBox({
       const res = await fetch("/api/boards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed, bpm, lines: serializeLines(lines), kit, customSamples }),
+        body: JSON.stringify({
+          name: trimmed,
+          bpm,
+          lines: serializeLines(lines),
+          kit,
+          customSamples,
+          bassline: bassline ?? undefined,
+        }),
       });
       const data = (await res.json()) as { error?: string; displayName?: string };
       if (!res.ok) {

@@ -8,7 +8,9 @@ import { computeMeasureLength, deserializeLines } from "@/lib/song";
 import { CustomSamples } from "@/lib/customSamples";
 import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
 import { LineState } from "@/lib/audioEngine";
+import { type Bassline, type ExportPart, basslineHasNotes } from "@/lib/bassline";
 import { StackPlayer, StackSlotSource, StackStepSource } from "@/lib/stackPlayer";
+import { DownloadFormat, DownloadMenu } from "@/components/DownloadMenu";
 import {
   MAX_STACK_SECONDS,
   StackStep,
@@ -29,6 +31,7 @@ interface SlotInfo {
   measureLength: number;
   kit: string;
   customSamples?: CustomSamples;
+  bassline?: Bassline | null;
   empty: boolean;
   summary: string;
 }
@@ -87,6 +90,7 @@ export function StackBuilder({
         measureLength,
         kit,
         customSamples: data.customSamples,
+        bassline: data.bassline ?? null,
         empty: measureLength < 1,
         summary: measureLength < 1 ? "Empty" : `${kit} · ${measureLength} beat${measureLength === 1 ? "" : "s"}`,
       };
@@ -107,7 +111,6 @@ export function StackBuilder({
   const [samplesLoading, setSamplesLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState<{ elapsed: number; total: number } | null>(null);
-  const [rendering, setRendering] = useState(false);
   const [armedSlot, setArmedSlot] = useState<ExtendedSlotLetter | null>(null);
   const [movingFrom, setMovingFrom] = useState<{ index: number; step: StackStep } | null>(null);
   // Auto-on by default so people can jam along with the beat right away.
@@ -291,8 +294,15 @@ export function StackBuilder({
   }
 
   function buildStepSources(): StackStepSource[] {
-    return steps.map((s) => ({ slot: s.slot, lines: slotInfo[s.slot].lineStates, measureLength: slotInfo[s.slot].measureLength }));
+    return steps.map((s) => ({
+      slot: s.slot,
+      lines: slotInfo[s.slot].lineStates,
+      measureLength: slotInfo[s.slot].measureLength,
+      bassline: slotInfo[s.slot].bassline,
+    }));
   }
+
+  const anyBassline = steps.some((s) => basslineHasNotes(slotInfo[s.slot].bassline));
 
   const sheetSteps = useMemo(
     () =>
@@ -336,34 +346,26 @@ export function StackBuilder({
     playerRef.current?.setLoop(next);
   }
 
-  async function handleDownloadMp3() {
-    if (!playerRef.current || steps.length === 0) return;
-    setRendering(true);
-    try {
-      const buffer = await playerRef.current.renderToBuffer(buildStepSources(), bpm);
-      const { encodeAudioBufferToMp3 } = await import("@/lib/mp3Encoder");
-      const blob = encodeAudioBufferToMp3(buffer);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${board.displayName}-stack.mp3`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } finally {
-      setRendering(false);
-    }
-  }
-
-  async function handleDownloadMidi() {
-    if (steps.length === 0) return;
-    const { encodeStackToMidi } = await import("@/lib/midiEncoder");
-    const blob = encodeStackToMidi(buildStepSources(), bpm);
+  function triggerDownload(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${board.displayName}-stack.mid`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function handleDownload(format: DownloadFormat, part: ExportPart) {
+    if (!playerRef.current || steps.length === 0) return;
+    const suffix = part === "full" ? "" : `-${part}`;
+    if (format === "mp3") {
+      const buffer = await playerRef.current.renderToBuffer(buildStepSources(), bpm, part);
+      const { encodeAudioBufferToMp3 } = await import("@/lib/mp3Encoder");
+      triggerDownload(encodeAudioBufferToMp3(buffer), `${board.displayName}-stack${suffix}.mp3`);
+    } else {
+      const { encodeStackToMidi } = await import("@/lib/midiEncoder");
+      triggerDownload(encodeStackToMidi(buildStepSources(), bpm, part), `${board.displayName}-stack${suffix}.mid`);
+    }
   }
 
   const playDisabled = samplesLoading || steps.length === 0;
@@ -504,23 +506,7 @@ export function StackBuilder({
               </svg>
             </button>
 
-            <button
-              type="button"
-              onClick={handleDownloadMp3}
-              disabled={playDisabled || rendering}
-              className="rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
-            >
-              {rendering ? "Rendering…" : "Download MP3"}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDownloadMidi}
-              disabled={playDisabled}
-              className="rounded-md border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
-            >
-              Download MIDI
-            </button>
+            <DownloadMenu hasBassline={anyBassline} disabled={playDisabled} onDownload={handleDownload} />
 
             <span className="text-sm text-white/50">
               {samplesLoading

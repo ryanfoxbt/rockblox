@@ -36,7 +36,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "Invalid slot payload" }, { status: 400 });
   }
 
-  const data = { bpm: body.bpm, lines: body.lines, kit: body.kit, customSamples: body.customSamples };
+  const data = {
+    bpm: body.bpm,
+    lines: body.lines,
+    kit: body.kit,
+    customSamples: body.customSamples,
+    bassline: body.bassline,
+  };
   const patch: { updatedAt: Date; slotA?: typeof data; slotB?: typeof data; slotC?: typeof data; slotD?: typeof data } = {
     updatedAt: new Date(),
   };

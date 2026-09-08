@@ -1,6 +1,7 @@
 import { StoredLine } from "./song";
 import { CustomSamples } from "./customSamples";
 import type { StackArrangement } from "./stack";
+import type { Bassline } from "./bassline";
 
 export type SlotLetter = "A" | "B" | "C" | "D";
 
@@ -33,6 +34,10 @@ export interface BoardSlotData {
   // User-recorded sounds (currently just for the Fart kit) that replace one
   // or more of the kit's stock samples, keyed by instrument slot.
   customSamples?: CustomSamples;
+  // A generated bass part that follows this slot's kick and snare. Optional
+  // so slots saved before the feature existed still deserialize — see
+  // lib/generateBassline.ts.
+  bassline?: Bassline;
 }
 
 export interface BoardData {

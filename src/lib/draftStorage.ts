@@ -1,5 +1,6 @@
 import { CustomSamples, isValidCustomSamples } from "./customSamples";
 import { StoredLine } from "./song";
+import { Bassline, isValidBassline } from "./bassline";
 
 // A safety net for the homepage's scratchpad — the one place in the editor
 // with no board to autosave to (see Editor.tsx's isScratchpad), so a beat
@@ -15,6 +16,7 @@ export interface Draft {
   lines: StoredLine[];
   kit: string;
   customSamples: CustomSamples;
+  bassline?: Bassline;
 }
 
 function isValidDraft(value: unknown): value is Draft {
@@ -24,6 +26,7 @@ function isValidDraft(value: unknown): value is Draft {
   if (typeof d.kit !== "string") return false;
   if (!Array.isArray(d.lines)) return false;
   if (!isValidCustomSamples(d.customSamples)) return false;
+  if (!isValidBassline(d.bassline)) return false;
   return d.lines.every(
     (l) =>
       l &&
