@@ -1,7 +1,0 @@
-# Local drum-transcription prototype (scripts/transcribe_drums.py).
-# Pure-wheel installs, no compilers needed on Windows/macOS/Linux.
-numpy>=1.24,<3
-scipy>=1.11
-librosa>=0.10.2
-soundfile>=0.12
-pretty_midi>=0.2.10

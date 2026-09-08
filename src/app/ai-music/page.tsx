@@ -97,8 +97,8 @@ export default function AiMusicPage() {
 
         <h2 className="mt-4 text-lg font-bold">Everything here is free</h2>
         <p className="text-sm leading-relaxed text-white/70 sm:text-base">
-          Building beats, the Inspiration generator, TextyBeat, MP3 import, and MP3 and MIDI export all work
-          with no account and no payment. RockBlocks is not affiliated with Suno, Udio, or Riffusion; it just
+          Building beats, the Inspiration generator, TextyBeat, and MP3 and MIDI export all work with no
+          account and no payment. RockBlocks is not affiliated with Suno, Udio, or Riffusion; it just
           makes drum parts those tools can read.
         </p>
 

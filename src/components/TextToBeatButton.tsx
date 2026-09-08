@@ -18,7 +18,7 @@ const GENERATED_BPM = 100;
 //
 // Two entry points, two save paths: from an already-claimed page
 // (`board` set), Save writes straight to Slots A-D via the existing
-// per-slot PUT, same as SongImportButton does for song imports. From the
+// per-slot PUT. From the
 // homepage (`board` undefined — nothing claimed yet), there's nowhere to
 // save to yet, so Save instead asks for a page name and creates the board
 // with all four slots already filled in one call.

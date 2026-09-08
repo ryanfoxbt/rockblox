@@ -27,7 +27,6 @@ export const FEATURE_LIST: string[] = [
   "Play through several classic drum-machine kits (TR-808, LinnDrum LM-2, Roland CR-8000, MFB-512, Casio RZ-1) plus an acoustic kit and a synthesized novelty kit",
   "Inspiration generator: create a fresh random beat, or a groove variation, fill, or human-playable drum solo based on an existing beat, with a complexity dial",
   "TextyBeat: paste a sentence and get a drum groove generated from its word rhythm, deterministically",
-  "Song import: upload an MP3 and have its drum track transcribed into an editable pattern",
   "Stacks: arrange repeats of your beats into a longer, full-song arrangement",
   "Save a beat to a personal no-login page at rockblocks.app/YourName, or share any pattern by link",
   "Export a beat as an MP3 or a MIDI file",
@@ -65,7 +64,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Is RockBlocks free?",
-    a: "Yes. Every feature — building beats, all the drum kits, TextyBeat, MP3 drum import, Stacks song arrangement, MP3 and MIDI export, saving to your own page, and the 100 Drum School lessons — is free, with no account required.",
+    a: "Yes. Every feature — building beats, all the drum kits, TextyBeat, Stacks song arrangement, MP3 and MIDI export, saving to your own page, and the 100 Drum School lessons — is free, with no account required.",
   },
   {
     q: "Do I need to download or install anything?",
@@ -90,10 +89,6 @@ export const FAQ: { q: string; a: string }[] = [
   {
     q: "Can RockBlocks turn text into a beat?",
     a: "Yes. The TextyBeat tool takes a sentence and generates a drum groove from its word and syllable rhythm. The same text always produces the same beat.",
-  },
-  {
-    q: "Can I get the drums out of a song?",
-    a: "You can upload an MP3 and RockBlocks will transcribe its drum track into an editable RockBlocks pattern that you can tweak, play, and export.",
   },
   {
     q: "Can I export or share my beat?",

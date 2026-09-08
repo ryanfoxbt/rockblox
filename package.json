@@ -8,7 +8,6 @@
     "start": "next start",
     "lint": "eslint",
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
-    "analyze-songs": "dotenv -e .env.local -- tsx scripts/analyzeSongs.mts",
     "seed-songs": "dotenv -e .env.local -- tsx scripts/seedSongs.mts",
     "seed-lessons": "dotenv -e .env.local -- tsx scripts/seedLessons.mts"
   },
@@ -21,12 +20,9 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.8.0",
     "drizzle-orm": "^0.45.2",
-    "fft.js": "^4.0.4",
-    "inngest": "^4.18.1",
     "next": "16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "replicate": "^1.4.0",
     "vexflow": "^5.0.0"
   },
   "devDependencies": {

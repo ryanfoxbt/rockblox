@@ -1,8 +1,7 @@
-import { boolean, doublePrecision, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { BoardSlotData, SlotMap } from "@/lib/board";
 import type { CustomSamples } from "@/lib/customSamples";
 import type { StackArrangement } from "@/lib/stack";
-import type { SongOnset, TranscribeDiagnostics } from "@/lib/transcribeDrums";
 
 export interface StoredLine {
   instrument: string;
@@ -168,69 +167,4 @@ export const complaints = pgTable("complaints", {
   message: text("message").notNull(),
   url: text("url").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-// "transcribing" is a same-step status ping (see analyzeSongCrop in
-// inngest/functions.ts) — not a distinct pipeline stage of its own, just a
-// way for /test's status bar to distinguish "still separating drums on
-// Replicate" (usually the long part) from "computing the pattern"
-// (seconds) instead of one opaque "processing" the whole time.
-export type SongImportStatus = "uploaded" | "processing" | "transcribing" | "done" | "error";
-
-// Tracks one "turn a song into a RockBlocks beat" job: an uploaded MP3 run
-// through the Inngest pipeline (Replicate/Demucs drum-stem separation, then
-// onset-detection transcription) down to up to four patterns the owner can
-// drop into their board's slots — as many real recurring main grooves as the
-// song has (mainBeatCount, 1-3, filling patternA/B/C... in order) plus fills
-// in whatever slots are left over. Row-per-job rather than storing the
-// result directly on
-// `boards` since a job is transient working state, not a saved beat, until
-// the owner explicitly imports it.
-export const songImports = pgTable("song_imports", {
-  id: text("id").primaryKey(),
-  // Null for a scratch import run from /test (see app/test) — nothing to
-  // save into yet, just previewing the transcription; the owner picks a page
-  // to save to afterward if they keep the result.
-  boardSlug: text("board_slug"),
-  status: text("status").$type<SongImportStatus>().notNull().default("uploaded"),
-  originalFilename: text("original_filename").notNull(),
-  blobUrl: text("blob_url").notNull(),
-  errorMessage: text("error_message"),
-  bpm: integer("bpm"),
-  measureLength: integer("measure_length"),
-  // How many of patternA/B/C/D (from A) are real recurring main grooves —
-  // the rest, through D, are fills. See transcribeDrums.ts.
-  mainBeatCount: integer("main_beat_count"),
-  patternA: jsonb("pattern_a").$type<StoredLine[]>(),
-  patternB: jsonb("pattern_b").$type<StoredLine[]>(),
-  patternC: jsonb("pattern_c").$type<StoredLine[]>(),
-  patternD: jsonb("pattern_d").$type<StoredLine[]>(),
-  // Per-pattern source timestamp (seconds into the song) and instrument list
-  // — while the transcription pipeline is still being tuned, this is what
-  // lets a human jump to the exact part of the song each pattern came from
-  // and judge accuracy by ear, without digging through logs.
-  diagnostics: jsonb("diagnostics").$type<TranscribeDiagnostics>(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-// Backs /test's manual-crop workflow: isolates the drum stem once (the slow,
-// Replicate-backed part) and classifies every drum hit in the whole song,
-// then hands the browser a beat grid (bpm/gridOrigin/beatSeconds) plus the
-// onset list — cropping and quantizing a clip into a Slot's pattern happens
-// entirely client-side from there (see lib/quantizeClip.ts), so picking 4
-// clips feels instant instead of waiting on a job per slot.
-export const songAnalyses = pgTable("song_analyses", {
-  id: text("id").primaryKey(),
-  status: text("status").$type<SongImportStatus>().notNull().default("uploaded"),
-  originalFilename: text("original_filename").notNull(),
-  blobUrl: text("blob_url").notNull(),
-  errorMessage: text("error_message"),
-  bpm: doublePrecision("bpm"),
-  beatSeconds: doublePrecision("beat_seconds"),
-  gridOrigin: doublePrecision("grid_origin"),
-  durationSeconds: doublePrecision("duration_seconds"),
-  onsets: jsonb("onsets").$type<SongOnset[]>(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

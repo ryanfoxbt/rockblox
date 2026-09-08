@@ -44,9 +44,8 @@ export default function AboutPage() {
           The same model scales up. Bars can be any length from 1 to 16 beats, so odd time signatures like
           5/4 and 7/8 are first-class, not a workaround. Tiles carry accents, ghost notes, and triplets. An
           Inspiration generator will hand you a fresh beat, a groove variation, a fill, or a human-playable
-          drum solo at a complexity you choose. You can turn a sentence into a groove, transcribe the drums
-          out of an MP3, arrange sections into a full song, and export MP3 or MIDI. It stays approachable
-          without staying shallow.
+          drum solo at a complexity you choose. You can turn a sentence into a groove, arrange sections into
+          a full song, and export MP3 or MIDI. It stays approachable without staying shallow.
         </p>
 
         <h2 className="mt-4 text-lg font-bold">What&apos;s in the web app</h2>

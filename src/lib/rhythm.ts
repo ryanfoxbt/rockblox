@@ -334,10 +334,10 @@ function decodeHits(id: string): RhythmHit[] | undefined {
   return hits.length > 0 ? hits : undefined;
 }
 
-// Exported for the song-import transcription pipeline, which builds tiles
-// directly from detected sixteenth-note hit/rest patterns rather than from a
-// user's tap/drag — same path toggleHitRest already uses internally, so a
-// transcribed pattern round-trips through save/share exactly like a hand-built one.
+// Builds a tile directly from a sixteenth-note hit/rest pattern rather than
+// from a user's tap/drag — used by the Inspiration generator and TextyBeat,
+// and the same path toggleHitRest uses internally, so a generated pattern
+// round-trips through save/share exactly like a hand-built one.
 export function tileFromHits(hits: RhythmHit[]): RhythmTile {
   // Prefer the stable catalog id when the pattern matches a known pure-note shape.
   const match = [...NOTE_TILES, ...TRIPLET_TILES].find(

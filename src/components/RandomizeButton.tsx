@@ -22,7 +22,7 @@ const VARIATION_KINDS: VariationKind[] = ["groove", "fill", "solo"];
 // random beats, so once a source beat exists this defaults to "base it on
 // that" rather than "randomize from scratch." Kept as its own component
 // (rather than inline in Editor) so this state doesn't clutter the editor's
-// already-large state list — same pattern as SongImportButton/FartRecorder.
+// already-large state list — same pattern as FartRecorder.
 export function RandomizeButton({
   variationSources,
   onGenerateNew,
