@@ -60,12 +60,17 @@ export function BasslineButton({
 export function BasslineModal({
   bassline,
   onGenerate,
+  onSettingsChange,
   onVoiceChange,
   onRemove,
   onClose,
 }: {
   bassline: Bassline | null;
   onGenerate: (settings: BasslineSettings) => void;
+  // Live edits to an existing line: key / octave / scale re-pitch the current
+  // notes in place, volume is playback-only, Fills re-rolls. No-op until a line
+  // exists (the "Generate bassline" button makes the first one).
+  onSettingsChange: (settings: BasslineSettings) => void;
   // Changing the bass sound doesn't re-roll the notes — it applies straight
   // away so you can audition tones against the same line.
   onVoiceChange: (voice: BassVoiceId) => void;
@@ -81,8 +86,19 @@ export function BasslineModal({
   const hasBassline = !!bassline && bassline.notes.length > 0;
   const previewNotes = bassline?.notes ?? [];
 
+  // Update one field. When a line already exists the change applies immediately
+  // (re-pitch / volume); otherwise it's just held for the first Generate.
   function set<K extends keyof BasslineSettings>(key: K, value: BasslineSettings[K]) {
-    setSettings((prev) => ({ ...prev, [key]: value }));
+    const next = { ...settings, [key]: value };
+    setSettings(next);
+    if (hasBassline) onSettingsChange(next);
+  }
+
+  // Fills decides which notes exist, so committing it re-rolls the line. Track
+  // the slider live for the readout, but only commit when the drag settles so
+  // sweeping the range doesn't spray a new random line per pixel.
+  function commitFills() {
+    if (hasBassline) onSettingsChange(settings);
   }
 
   function generate() {
@@ -173,7 +189,7 @@ export function BasslineModal({
             value={settings.voice}
             onChange={(e) => {
               const voice = e.target.value as BassVoiceId;
-              set("voice", voice);
+              setSettings((prev) => ({ ...prev, voice }));
               onVoiceChange(voice);
             }}
             className="rounded-md border border-white/15 bg-white/5 px-2 py-1.5 text-sm text-white"
@@ -196,13 +212,20 @@ export function BasslineModal({
           max={MAX_FILLS}
           step={1}
           value={settings.fills}
-          onChange={(e) => set("fills", Number(e.target.value))}
+          onChange={(e) => setSettings((prev) => ({ ...prev, fills: Number(e.target.value) }))}
+          onPointerUp={commitFills}
+          onKeyUp={commitFills}
           className="w-full accent-yellow-400"
         />
         <div className="mt-1 flex justify-between text-[10px] uppercase tracking-wide text-white/40">
           <span>Root-locked</span>
           <span>Busy walking</span>
         </div>
+        {hasBassline && (
+          <p className="mt-1 text-[10px] text-white/40">
+            Key, octave and scale re-pitch the current line; Fills re-rolls it.
+          </p>
+        )}
 
         <label className="mb-1 mt-4 flex items-center justify-between text-sm text-white/70">
           <span>Volume</span>

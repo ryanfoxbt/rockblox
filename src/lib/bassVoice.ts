@@ -115,10 +115,32 @@ export function triggerBassNote(
   const freq = midiToFreq(note.midi);
   const holdSeconds = Math.max(0.06, note.duration * beatSeconds);
   const { attack, decay, sustain, release } = spec.amp;
-  const endTime = time + holdSeconds + release;
 
   const peak =
     (lineVolume / 100) * hitVelocityMultiplier(note.accent) * spec.gain * OUTPUT_TRIM;
+  // Nothing to hear — volume at 0, or a ghost note trimmed to silence. Bail
+  // before scheduling: an exponential ramp to/from 0 is invalid and clicks.
+  if (!(peak > 0)) return [];
+
+  // Envelope segment boundaries, strictly increasing in time so the scheduled
+  // automation is monotonic. The previous envelope put the decay ramp's target
+  // *after* `holdSeconds` and a `setValueAtTime` *before* it; Web Audio orders
+  // automation by timestamp, so a short note held at full `peak` and then
+  // stepped abruptly down to the sustain level — an audible click on every note
+  // shorter than attack+decay, which on the low-sustain upright voice is nearly
+  // all of them.
+  const attackDur = Math.min(attack, holdSeconds * 0.5);
+  const atkEnd = time + attackDur;
+  // Finish the decay inside the note when there's room; for very short notes
+  // compress it (never below ~20 ms) so they don't all ring for the full
+  // attack+decay+release.
+  const decDur = Math.min(decay, Math.max(0.02, holdSeconds - attackDur));
+  const decEnd = atkEnd + decDur;
+  const sustainLevel = Math.max(peak * sustain, peak * 0.0002);
+  // Release begins no earlier than the decay ramp ends, so the level there is
+  // exactly `sustainLevel` and the transition into the release is continuous.
+  const relStart = Math.max(decEnd, time + holdSeconds);
+  const relEnd = relStart + release;
 
   // Lowpass, swept from open to closed over the decay.
   const filter = ctx.createBiquadFilter();
@@ -127,16 +149,16 @@ export function triggerBassNote(
   const openHz = Math.max(spec.filter.minHz, freq * spec.filter.openMult);
   const closeHz = Math.max(spec.filter.minHz, freq * spec.filter.closeMult);
   filter.frequency.setValueAtTime(openHz, time);
-  filter.frequency.exponentialRampToValueAtTime(Math.max(1, closeHz), time + decay + 0.001);
+  filter.frequency.exponentialRampToValueAtTime(Math.max(1, closeHz), decEnd + 0.001);
 
-  // Amp envelope.
+  // Amp envelope: 0 → peak (attack) → sustainLevel (decay) → hold → 0 (release).
   const amp = ctx.createGain();
   amp.gain.setValueAtTime(0, time);
-  amp.gain.linearRampToValueAtTime(peak, time + attack);
-  amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * sustain), time + attack + decay);
-  amp.gain.setValueAtTime(Math.max(0.0001, peak * sustain), time + holdSeconds);
-  amp.gain.exponentialRampToValueAtTime(0.0001, endTime);
-  amp.gain.setValueAtTime(0, endTime + 0.005);
+  amp.gain.linearRampToValueAtTime(peak, atkEnd);
+  amp.gain.exponentialRampToValueAtTime(sustainLevel, decEnd);
+  if (relStart > decEnd) amp.gain.setValueAtTime(sustainLevel, relStart);
+  amp.gain.exponentialRampToValueAtTime(peak * 0.0002, relEnd);
+  amp.gain.setValueAtTime(0, relEnd + 0.005);
 
   filter.connect(amp).connect(dest);
 
@@ -156,7 +178,7 @@ export function triggerBassNote(
     og.gain.value = o.gain;
     osc.connect(og).connect(filter);
     osc.start(time);
-    osc.stop(endTime + 0.03);
+    osc.stop(relEnd + 0.03);
     oscs.push(osc);
   }
   return oscs;

@@ -18,8 +18,8 @@ import { nearestScaleTone, scaleToneAbove, scaleToneBelow } from "./scales";
 
 // Absolute MIDI range a generated note may occupy — roughly C1 to C4, the
 // usable span of a 4-string bass plus a little headroom.
-const BASS_LOW = 24;
-const BASS_HIGH = 60;
+export const BASS_LOW = 24;
+export const BASS_HIGH = 60;
 
 interface Onset {
   beat: number;
@@ -224,4 +224,28 @@ export function generateBassline(
   }
 
   return deduped.filter((n) => n.beat < measureLength);
+}
+
+// Re-pitch an existing bassline for a new key / octave / scale WITHOUT re-rolling
+// its rhythm. Transposition by the (shortest-path) root move plus whole octaves
+// preserves the line's melodic shape; the scale re-snap keeps every note in the
+// new key. The Bassline modal uses this so key/scale/octave (and volume, which
+// is playback-only) apply instantly — only the Fills dial changes *which* notes
+// exist, so that one still calls generateBassline.
+export function repitchBassline(
+  notes: BassNote[],
+  from: BasslineSettings,
+  to: BasslineSettings
+): BassNote[] {
+  // Shortest-path pitch-class move for the root, so C→B steps down 1 rather
+  // than up 11 and the line doesn't jump an octave on a small key change.
+  let pcDelta = (((to.root - from.root) % 12) + 12) % 12;
+  if (pcDelta > 6) pcDelta -= 12;
+  const delta = pcDelta + 12 * (to.octave - from.octave);
+
+  return notes.map((n) => {
+    let midi = clamp(n.midi + delta, BASS_LOW, BASS_HIGH);
+    midi = nearestScaleTone(midi, to.root, to.scale);
+    return { ...n, midi: clamp(midi, BASS_LOW, BASS_HIGH) };
+  });
 }

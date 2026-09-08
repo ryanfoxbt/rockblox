@@ -50,7 +50,7 @@ import {
 } from "@/lib/song";
 import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine";
 import { Bassline, BasslineSettings, BassVoiceId, ExportPart, basslineHasNotes } from "@/lib/bassline";
-import { generateBassline } from "@/lib/generateBassline";
+import { generateBassline, repitchBassline } from "@/lib/generateBassline";
 import { DownloadFormat } from "@/components/DownloadMenu";
 import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
 import { useHistoryState } from "@/lib/useHistoryState";
@@ -649,6 +649,24 @@ export function Editor({
     setBassline((prev) => (prev ? { ...prev, settings: { ...prev.settings, voice } } : prev));
   }
 
+  // Live edits from the Bassline modal to an *existing* line, no full re-roll:
+  // key / octave / scale re-pitch the current notes in place (rhythm untouched),
+  // volume is playback-only. Fills is the one knob that decides which notes
+  // exist, so it re-rolls against the drum pattern on screen.
+  function handleBasslineSettingsChange(next: BasslineSettings) {
+    setBassline((prev) => {
+      if (!prev) return prev;
+      const p = prev.settings;
+      let notes = prev.notes;
+      if (next.fills !== p.fills) {
+        notes = generateBassline(lines, measureLength, next);
+      } else if (next.root !== p.root || next.octave !== p.octave || next.scale !== p.scale) {
+        notes = repitchBassline(prev.notes, p, next);
+      }
+      return { enabled: true, settings: next, notes };
+    });
+  }
+
   // Slots other than the one on screen that actually have a beat in
   // them — what the Variation popover offers as "base this on." Only ever
   // recomputed from a plain event handler (the initial useState here, and
@@ -1014,6 +1032,7 @@ export function Editor({
         <BasslineModal
           bassline={bassline}
           onGenerate={handleGenerateBassline}
+          onSettingsChange={handleBasslineSettingsChange}
           onVoiceChange={handleBasslineVoiceChange}
           onRemove={() => {
             setBassline(null);
