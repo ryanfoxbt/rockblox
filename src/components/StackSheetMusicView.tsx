@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { NotationLine, STACK_STAVE_SPACING, StackNotationLayout, VF, renderStackNotation } from "@/lib/notation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  NotationLine,
+  STACK_STAVE_SPACING,
+  StackNotationLayout,
+  StackNotationRow,
+  VF,
+  expandStackRows,
+  renderStackNotation,
+} from "@/lib/notation";
 import { ExtendedSlotLetter } from "@/lib/board";
 
 export interface StackSheetStep {
@@ -43,6 +51,11 @@ export function StackSheetMusicView({
   const [pageStart, setPageStart] = useState(0);
   const [pageSize, setPageSize] = useState(1);
   const [drawWidth, setDrawWidth] = useState(0);
+
+  // Each step's pattern broken into its 4/4 bars — an 8-beat step becomes
+  // two rows, each its own full-width stave, matching the fullscreen
+  // SheetMusicView. `pageStart` / `pageSize` index into this, not `steps`.
+  const rowSpecs = useMemo(() => expandStackRows(steps), [steps]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -109,8 +122,10 @@ export function StackSheetMusicView({
       await document.fonts.ready;
       const target = notationRef.current;
       if (cancelled || !target) return;
-      const page = steps.slice(pageStart, pageStart + pageSize);
-      layoutRef.current = renderStackNotation(vfModule, target, page, drawWidth);
+      const pageRows: StackNotationRow[] = rowSpecs
+        .slice(pageStart, pageStart + pageSize)
+        .map((r) => ({ lines: steps[r.stepIndex].lines, startBeat: r.startBeat, numBeats: r.numBeats }));
+      layoutRef.current = renderStackNotation(vfModule, target, pageRows, drawWidth);
       updateHighlight();
       setReady(true);
     }
@@ -120,9 +135,9 @@ export function StackSheetMusicView({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [steps, pageStart, pageSize, drawWidth]);
+  }, [steps, rowSpecs, pageStart, pageSize, drawWidth]);
 
-  const pageCount = Math.max(1, Math.ceil(steps.length / pageSize));
+  const pageCount = Math.max(1, Math.ceil(rowSpecs.length / pageSize));
   const pageIndex = Math.floor(pageStart / pageSize);
 
   function goToPage(index: number) {
@@ -137,7 +152,7 @@ export function StackSheetMusicView({
     const layout = layoutRef.current;
     const el = highlightRef.current;
     if (!el) return;
-    if (!isPlaying || !progress || !layout || layout.steps.length === 0) {
+    if (!isPlaying || !progress || !layout || layout.rows.length === 0) {
       el.style.opacity = "0";
       return;
     }
@@ -156,25 +171,36 @@ export function StackSheetMusicView({
       remaining -= stepDuration;
     }
 
-    const targetPageStart = Math.floor(stepIndex / pageSize) * pageSize;
+    // Which row (4/4 bar) that beat sits in, and where within the bar.
+    let rowIndex = rowSpecs.findIndex(
+      (r) => r.stepIndex === stepIndex && beat >= r.startBeat && beat < r.startBeat + r.numBeats
+    );
+    if (rowIndex < 0) rowIndex = rowSpecs.findIndex((r) => r.stepIndex === stepIndex);
+    if (rowIndex < 0) {
+      el.style.opacity = "0";
+      return;
+    }
+    const localBeat = beat - rowSpecs[rowIndex].startBeat;
+
+    const targetPageStart = Math.floor(rowIndex / pageSize) * pageSize;
     if (targetPageStart !== pageStart) {
       el.style.opacity = "0";
       setPageStart(targetPageStart);
       return;
     }
 
-    const stepLayout = layout.steps[stepIndex - pageStart];
-    if (!stepLayout) {
+    const rowLayout = layout.rows[rowIndex - pageStart];
+    if (!rowLayout) {
       el.style.opacity = "0";
       return;
     }
-    const x0 = stepLayout.beatBoundariesX[beat] ?? 0;
-    const x1 = stepLayout.beatBoundariesX[beat + 1] ?? x0 + 20;
+    const x0 = rowLayout.beatBoundariesX[localBeat] ?? 0;
+    const x1 = rowLayout.beatBoundariesX[localBeat + 1] ?? x0 + 20;
     el.style.opacity = "1";
     el.style.left = `${x0 - 4}px`;
     el.style.width = `${Math.max(x1 - x0 + 4, 8)}px`;
-    el.style.top = `${stepLayout.staveTopY}px`;
-    el.style.height = `${stepLayout.staveBottomY - stepLayout.staveTopY}px`;
+    el.style.top = `${rowLayout.staveTopY}px`;
+    el.style.height = `${rowLayout.staveBottomY - rowLayout.staveTopY}px`;
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -412,15 +412,43 @@ export function renderNotationPage(
   };
 }
 
-export interface StackNotationStep {
+// One row of the Stack sheet music: a single bar drawn on its own full-width
+// stave. A step whose pattern is 8 beats (or any multiple of 4 over 4)
+// expands to two-plus of these — the way the fullscreen SheetMusicView
+// paginates — so each bar keeps a full line to itself and stays readable on
+// a phone, instead of two 4/4 bars sharing one narrow line.
+export interface StackNotationRow {
   lines: NotationLine[];
-  measureLength: number;
+  startBeat: number;
+  numBeats: number;
+}
+
+// The row breakdown for a list of steps, without the note data — the
+// paginated view uses it to count rows and to map the playback position
+// (step + beat) onto a row before renderStackNotation is ever called.
+export interface StackRowSpec {
+  stepIndex: number;
+  startBeat: number;
+  numBeats: number;
+}
+
+export function expandStackRows(steps: { measureLength: number }[]): StackRowSpec[] {
+  const rows: StackRowSpec[] = [];
+  steps.forEach((step, stepIndex) => {
+    let startBeat = 0;
+    for (const numBeats of measureSplit(step.measureLength)) {
+      if (numBeats > 0) rows.push({ stepIndex, startBeat, numBeats });
+      startBeat += numBeats;
+    }
+  });
+  return rows;
 }
 
 export interface StackNotationLayout {
-  // One entry per step, in song order — each step's own beat boundaries
-  // (for playhead highlighting) plus the stave's Y band on the shared canvas.
-  steps: NotationLayout[];
+  // One entry per rendered row (bar), in song order — each row's own beat
+  // boundaries (for playhead highlighting) plus the stave's Y band on the
+  // shared canvas.
+  rows: NotationLayout[];
 }
 
 // Exported so callers (Stack Builder's paginated sheet-music view) can work
@@ -428,26 +456,41 @@ export interface StackNotationLayout {
 // renderStackNotation, instead of guessing and overflowing the page.
 export const STACK_STAVE_SPACING = CANVAS_HEIGHT - 60;
 
-// Draws every step's measure as its own stave, stacked vertically in song
-// order — Stack Builder plays steps sequentially rather than as one
-// combined measure, so the sheet music mirrors that instead of trying to
-// force mismatched time signatures into a single staff.
+// Draws each row as its own full-width, clef-and-time stave, stacked
+// vertically in song order — Stack Builder plays steps sequentially rather
+// than as one combined measure, so the sheet music mirrors that; splitting
+// each step into 4/4 bars (see expandStackRows) keeps every bar full-width.
 export function renderStackNotation(
   VF: VF,
   container: HTMLDivElement,
-  steps: StackNotationStep[],
+  rows: StackNotationRow[],
   width: number
 ): StackNotationLayout {
   container.innerHTML = "";
-  const totalHeight = Math.max(1, steps.length) * STACK_STAVE_SPACING + 60;
+  const totalHeight = Math.max(1, rows.length) * STACK_STAVE_SPACING + 60;
   const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
   renderer.resize(width, totalHeight);
   const context = renderer.getContext();
 
-  const layouts = steps.map((step, i) => {
+  const usableWidth = Math.max(width - STAVE_MARGIN_X * 2, 200);
+  const layouts = rows.map((row, i) => {
     const y = STAVE_Y + i * STACK_STAVE_SPACING;
-    return drawStave(VF, context, y, step.lines, step.measureLength, width);
+    const { beatStartX, noteEndX } = drawOneMeasure(VF, context, {
+      x: STAVE_MARGIN_X,
+      y,
+      width: usableWidth,
+      lines: row.lines,
+      startBeat: row.startBeat,
+      numBeats: row.numBeats,
+      showClefAndTime: true,
+      isContinuation: false,
+    });
+    return {
+      beatBoundariesX: [...beatStartX, noteEndX],
+      staveTopY: y - 60,
+      staveBottomY: y + 60,
+    };
   });
 
-  return { steps: layouts };
+  return { rows: layouts };
 }
