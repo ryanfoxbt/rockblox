@@ -32,10 +32,15 @@ export function StackSheetMusicView({
   onClose: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const notationRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<NotationLayout | null>(null);
   const [ready, setReady] = useState(false);
+  // The width the current bar was drawn at. A busy 5-7 beat bar is drawn
+  // wider than a portrait screen so its 16ths don't collide, and the paper
+  // grows to match so it scrolls cleanly instead of spilling off the edge.
+  const [renderWidth, setRenderWidth] = useState(0);
 
   // Every bar across the arrangement, in play order — one entry per page.
   const bars = useMemo(() => expandStackRows(steps), [steps]);
@@ -77,11 +82,19 @@ export function StackSheetMusicView({
     let vfModule: VF | null = null;
     let lastWidth = -1;
 
-    async function draw(width: number) {
+    async function draw(availWidth: number) {
       if (!bar) {
         setReady(true);
         return;
       }
+      // A 5-7 beat bar needs more room than a portrait phone has before its
+      // 16ths stop colliding — draw it at roughly the width it gets in
+      // landscape and let the paper (which grows to `renderWidth`) scroll.
+      // 3-4 beat bars always take the real width, so they never scroll.
+      const drawWidth =
+        bar.numBeats > 4 ? Math.max(availWidth, Math.round(64 + bar.numBeats * 95)) : availWidth;
+      setRenderWidth(drawWidth);
+
       if (!vfModule) vfModule = await import("vexflow");
       // See SheetMusicView for why this await matters: vexflow's Bravura glyph
       // font can still be mid-decode when the SVG <text> noteheads land.
@@ -94,13 +107,15 @@ export function StackSheetMusicView({
         steps[bar.stepIndex].lines,
         bar.startBeat,
         bar.numBeats,
-        width
+        drawWidth
       );
       updateHighlight();
       setReady(true);
     }
 
-    const target = notationRef.current;
+    // Measure the scroll viewport, not the notation container — the latter
+    // grows with a wide bar, which would feed back into the width math.
+    const target = scrollRef.current;
     if (!target) return;
 
     // A ResizeObserver rather than a one-off measurement: requestFullscreen
@@ -235,8 +250,11 @@ export function StackSheetMusicView({
         )}
       </div>
 
-      <div className="flex flex-1 items-center overflow-auto p-6">
-        <div className="relative min-h-[280px] w-full rounded-lg bg-white p-4 shadow-xl">
+      <div ref={scrollRef} className="flex flex-1 items-center overflow-auto p-6">
+        <div
+          className="relative min-h-[280px] w-full shrink-0 rounded-lg bg-white p-4 shadow-xl"
+          style={{ minWidth: renderWidth || undefined }}
+        >
           <div className="relative w-full" style={{ visibility: ready ? "visible" : "hidden" }}>
             <div ref={notationRef} className="w-full" />
             <div
