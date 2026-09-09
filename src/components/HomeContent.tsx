@@ -22,8 +22,9 @@ export function HomeContent() {
           <p className="text-sm leading-relaxed text-white/70 sm:text-base">
             It is a reimagined drum machine: simple enough that a young child can drop tiles into the grid and
             hear a real beat on the first try, and deep enough that a working musician can sketch a groove in
-            5/4 or 7/8, generate a unique fill or drum solo, and export it as MIDI. No account, no download —
-            open the page and start.
+            5/4 or 7/8. In a few clicks you can generate a fresh, unique beat in any meter, add a bass line
+            that follows the kick and snare, and export the whole thing as MP3 or MIDI. No account, no
+            download — open the page and start.
           </p>
           <p className="text-sm text-white/50">
             The drum machine is right above — start dropping tiles into the grid. More to explore:{" "}
@@ -81,7 +82,8 @@ export function HomeContent() {
             </li>
             <li>
               <span className="font-semibold text-white/90">Drummers and producers</span> — sketch grooves
-              fast in any meter, generate variations, fills, and playable solos, then export MIDI into a DAW.
+              fast in any meter, generate variations, fills, and playable solos, drop a generated bass line
+              underneath, then export MIDI into a DAW.
             </li>
             <li>
               <span className="font-semibold text-white/90">Songwriters</span> — turn a lyric into a starting

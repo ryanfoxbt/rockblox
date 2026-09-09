@@ -70,8 +70,10 @@ export default function AiMusicPage() {
           <Link href="/" className="text-yellow-400 transition hover:text-yellow-300">
             Inspiration generator
           </Link>{" "}
-          with a complexity dial for fills and human-playable solos. Then it exports an MP3 or a MIDI file —
-          the two formats AI music tools actually take.
+          with a complexity dial for fills and human-playable solos. You can also generate a bass line that
+          follows the kick and snare — key, scale, octave, and how busy it walks are all yours to set — and
+          fold it into the export, so the AI gets a harmonic root, not just a rhythm. Then it exports an MP3
+          or a MIDI file — the two formats AI music tools actually take.
         </p>
 
         <h2 className="mt-4 text-lg font-bold">How to use a RockBlocks beat in an AI music tool</h2>
@@ -97,9 +99,9 @@ export default function AiMusicPage() {
 
         <h2 className="mt-4 text-lg font-bold">Everything here is free</h2>
         <p className="text-sm leading-relaxed text-white/70 sm:text-base">
-          Building beats, the Inspiration generator, TextyBeat, and MP3 and MIDI export all work with no
-          account and no payment. RockBlocks is not affiliated with Suno, Udio, or Riffusion; it just
-          makes drum parts those tools can read.
+          Building beats, the Inspiration generator, generated bass lines, TextyBeat, and MP3 and MIDI export
+          all work with no account and no payment. RockBlocks is not affiliated with Suno, Udio, or
+          Riffusion; it just makes drum parts those tools can read.
         </p>
 
         <div className="mt-2 flex flex-col gap-4">

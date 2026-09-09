@@ -135,8 +135,13 @@ export function TextToBeatButton({
           })
         )
       );
-      if (responses.every((r) => r.ok)) setSaved(true);
-      else setError("Couldn't save one or more slots — try again.");
+      if (responses.every((r) => r.ok)) {
+        setSaved(true);
+        // The editor above is rendered from server data, so the freshly saved
+        // slots only show up after a reload — do it automatically rather than
+        // making the user click a button to refresh.
+        window.location.reload();
+      } else setError("Couldn't save one or more slots — try again.");
     } catch {
       setError("Couldn't save — try again.");
     } finally {
@@ -323,16 +328,7 @@ export function TextToBeatButton({
                         </p>
                         {error && <p className="text-sm text-red-400">{error}</p>}
                         {saved ? (
-                          <div className="flex flex-col gap-2">
-                            <p className="text-sm text-yellow-400">Saved.</p>
-                            <button
-                              type="button"
-                              onClick={() => window.location.reload()}
-                              className="self-start rounded-md border border-white/15 px-3 py-1.5 text-sm text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
-                            >
-                              Reload to view it
-                            </button>
-                          </div>
+                          <p className="text-sm text-yellow-400">Saved — reloading…</p>
                         ) : (
                           <button
                             type="button"

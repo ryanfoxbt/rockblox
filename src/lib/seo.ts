@@ -12,7 +12,7 @@ export const SITE_NAME = "RockBlocks";
 // no login) and the positioning (anyone can play it — kids through working
 // musicians — regular and odd time signatures).
 export const ENTITY_DESCRIPTION =
-  "RockBlocks is a free, browser-based drum machine and beat maker. You build a beat by dragging rhythmic values into a grid of beat blocks — one row per drum piece — in any time signature, regular or odd. It runs entirely in a web browser with no login, download, or install, and it is designed so anyone can use it: a young child tapping out a first rhythm, or a working musician sketching a drum part in 7/8.";
+  "RockBlocks is a free, browser-based drum machine and beat maker. You build a beat by dragging rhythmic values into a grid of beat blocks — one row per drum piece — in any time signature, regular or odd. A one-click generator also spins up fresh, original beats in regular or odd meter, and can add a matching bass line that follows the groove. It runs entirely in a web browser with no login, download, or install, and it is designed so anyone can use it: a young child tapping out a first rhythm, or a working musician sketching a drum part in 7/8.";
 
 export const SHORT_TAGLINE = "A drum machine anyone can play.";
 
@@ -25,12 +25,13 @@ export const FEATURE_LIST: string[] = [
   "Drag rhythmic values (quarter notes, eighths, sixteenths, triplets and more) into a grid of beat blocks — one row per drum piece",
   "Build beats in regular or odd time signatures (3/4, 5/4, 7/8 and beyond), up to 16 beats per bar",
   "Play through several classic drum-machine kits (TR-808, LinnDrum LM-2, Roland CR-8000, MFB-512, Casio RZ-1) plus an acoustic kit and a synthesized novelty kit",
-  "Inspiration generator: create a fresh random beat, or a groove variation, fill, or human-playable drum solo based on an existing beat, with a complexity dial",
+  "Inspiration generator: in a few clicks, spin up a fresh, unique beat in a regular or odd time signature — or a groove variation, fill, or human-playable drum solo from an existing beat, with a complexity dial",
+  "Generated bass lines: add a bass part that follows your beat's kick and snare — choose the key, scale (major, minor, modes, pentatonic, blues, jazz and more), octave, how busy the walking line is, and one of five synth bass tones (fingered, pick, upright/double bass, synth sub, muted dub); change key, scale, octave, and volume on the fly or re-roll for a new line",
   "TextyBeat: paste a sentence and get a drum groove generated from its word rhythm, deterministically",
   "Stacks: arrange repeats of your beats into a longer, full-song arrangement",
   "Save a beat to a personal no-login page at rockblocks.app/YourName, or share any pattern by link",
-  "Export a beat as an MP3 or a MIDI file",
-  "Use your beats to power AI music: export an MP3 to seed a track in Suno, Udio, or Riffusion, or export MIDI to build the drums in a DAW",
+  "Export a beat — with its generated bass line, or drums only — as an MP3 or a MIDI file",
+  "Use your beats to power AI music: export an MP3 to seed a track in Suno, Udio, or Riffusion, or export MIDI to build the drums (and bass) in a DAW",
   "Drum School: 100 free stepwise lessons that build a full groove one idea at a time",
 ];
 
@@ -52,8 +53,12 @@ export const HOW_TO_STEPS: { name: string; text: string }[] = [
     text: "Add or remove beat blocks to change the bar length — try 5 or 7 for an odd time signature — and set the BPM in the transport bar.",
   },
   {
+    name: "Generate a beat or a bass line in a few clicks (optional)",
+    text: "Use the Inspiration generator for a fresh, unique beat — in any meter — or a variation, fill, or solo from what you have. Open Bassline to generate a bass part that follows your kick and snare; pick a key and scale, and change key, scale, octave, or how busy it is without regenerating.",
+  },
+  {
     name: "Play, save, or share it",
-    text: "Press play to hear the loop. Save it to your own page, arrange several beats into a song with Stacks, or export an MP3 or MIDI file.",
+    text: "Press play to hear the loop. Save it to your own page, arrange several beats into a song with Stacks, or export an MP3 or MIDI file — with the bass line or drums only.",
   },
 ];
 
@@ -64,7 +69,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Is RockBlocks free?",
-    a: "Yes. Every feature — building beats, all the drum kits, TextyBeat, Stacks song arrangement, MP3 and MIDI export, saving to your own page, and the 100 Drum School lessons — is free, with no account required.",
+    a: "Yes. Every feature — building beats, generating beats and bass lines, all the drum kits, TextyBeat, Stacks song arrangement, MP3 and MIDI export, saving to your own page, and the 100 Drum School lessons — is free, with no account required.",
   },
   {
     q: "Do I need to download or install anything?",
@@ -76,7 +81,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Can I make beats in odd time signatures?",
-    a: "Yes. You can set any bar length from 1 to 16 beats, so 3/4, 5/4, 7/8, and less common meters all work. This is one of the main reasons musicians use RockBlocks to sketch drum parts.",
+    a: "Yes. You can set any bar length from 1 to 16 beats, so 3/4, 5/4, 7/8, and less common meters all work. This is one of the main reasons musicians use RockBlocks to sketch drum parts. The Inspiration generator and generated bass lines work in odd meters too, so you can spin up a unique 5/4 or 7/8 groove with a matching bass part in a few clicks.",
   },
   {
     q: "How do I make a drum beat?",
@@ -91,8 +96,16 @@ export const FAQ: { q: string; a: string }[] = [
     a: "Yes. The TextyBeat tool takes a sentence and generates a drum groove from its word and syllable rhythm. The same text always produces the same beat.",
   },
   {
+    q: "Can RockBlocks generate a beat for me?",
+    a: "Yes. The Inspiration generator makes a fresh, original beat in a few clicks — in a regular or an odd time signature — and can also hand you a groove variation, a fill, or a human-playable drum solo based on a beat you already have, with a 1–10 complexity dial. Every generation is new; run it again for another.",
+  },
+  {
+    q: "Can RockBlocks add a bass line to my beat?",
+    a: "Yes. RockBlocks can generate a bass line that follows your beat's kick and snare. You choose the key, the scale (major, minor, modes, pentatonic, blues, jazz, and more), the octave, and how busy the walking line is, plus one of five synthesized bass tones: fingered electric, pick, upright/double bass, synth sub, or muted dub. Key, scale, octave, and volume can be changed on the fly without regenerating, and the bass line is included in the MP3 and MIDI export (or you can export the bass on its own).",
+  },
+  {
     q: "Can I export or share my beat?",
-    a: "Yes. Export any beat as an MP3 or a MIDI file, save it to a personal page at rockblocks.app/YourName, or share a pattern with a link.",
+    a: "Yes. Export any beat — with its generated bass line, or drums only — as an MP3 or a MIDI file, save it to a personal page at rockblocks.app/YourName, or share a pattern with a link.",
   },
   {
     q: "Can I make an 808 beat?",
@@ -128,7 +141,7 @@ export const FAQ: { q: string; a: string }[] = [
 // public/llms.txt.
 
 export const AI_MUSIC_DESCRIPTION =
-  "You can use RockBlocks to make the drum track for AI music. Build or generate a beat — odd time signatures, triplets, ghost notes, accents, fills, and a complexity dial all help — then export it as an MP3 to use as the audio input for Suno, Udio, Riffusion, or another AI music generator, or export it as a MIDI file to drop into a DAW. Starting an AI song from a real, deliberate drum pattern gives it a rhythmic backbone that a text prompt alone usually can't.";
+  "You can use RockBlocks to make the drum track for AI music. Build or generate a beat — odd time signatures, triplets, ghost notes, accents, fills, and a complexity dial all help — then export it as an MP3 to use as the audio input for Suno, Udio, Riffusion, or another AI music generator, or export it as a MIDI file to drop into a DAW. You can also generate a bass line that locks to the beat and include it in the export, so the model has both the rhythm and the low end to build on. Starting an AI song from a real, deliberate drum-and-bass pattern gives it a foundation that a text prompt alone usually can't.";
 
 export const AI_MUSIC_STEPS: { name: string; text: string }[] = [
   {
@@ -136,8 +149,12 @@ export const AI_MUSIC_STEPS: { name: string; text: string }[] = [
     text: "Make the groove in RockBlocks and reach for what a text prompt can't specify: an odd time signature like 7/8, a triplet feel, ghost notes and accents, a fill into the chorus. Start from scratch, from the Inspiration generator with its complexity dial turned up, from TextyBeat, or from a famous-song pattern.",
   },
   {
-    name: "Export an MP3 of the drums",
-    text: "Use MP3 export to get an audio file of just your drum pattern, looped to the length you want.",
+    name: "Add a bass line (optional)",
+    text: "Open Bassline and generate a bass part that follows the kick and snare. Set the key and scale, dial the walking line busier or simpler, and pick a tone — upright, fingered electric, synth sub. It gives the AI a harmonic root alongside the rhythm.",
+  },
+  {
+    name: "Export an MP3 of the pattern",
+    text: "Use MP3 export to get an audio file of just your pattern — drums alone, or drums plus the generated bass line — looped to the length you want.",
   },
   {
     name: "Upload it as the audio input",
@@ -165,6 +182,10 @@ export const AI_MUSIC_FAQ: { q: string; a: string }[] = [
   {
     q: "What AI music tools work with RockBlocks exports?",
     a: "Any tool that accepts an uploaded audio clip or a MIDI file. That includes Suno, Udio, and Riffusion for audio seeds, and any DAW-based AI plugin for MIDI. Use the MP3 export as an audio seed, or the MIDI export as a drum part in a DAW.",
+  },
+  {
+    q: "Can I include a bass line in the track I seed an AI song with?",
+    a: "Yes. RockBlocks can generate a bass line that follows your beat, and both the MP3 and the MIDI export can include it. Handing the model a locked rhythm-and-bass foundation constrains the groove and the harmony together, not just the drums — the generated song has a root to move against.",
   },
   {
     q: "Should I upload an MP3 or a MIDI file to an AI music generator?",
