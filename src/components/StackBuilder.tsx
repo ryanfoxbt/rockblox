@@ -21,6 +21,7 @@ import {
 } from "@/lib/stack";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { SaveCopyButton } from "@/components/SaveCopyButton";
+import { SharePublicButton } from "@/components/SharePublicButton";
 import { DrumTeacherStep, DrumTeacherView } from "@/components/DrumTeacherView";
 import { StackPaletteBlock } from "./StackPaletteBlock";
 import { StackStepChip } from "./StackStepChip";
@@ -395,9 +396,19 @@ export function StackBuilder({
             getStack={() => ({ bpm, steps, kitOverride })}
           />
         ) : (
-          <span className="w-16 shrink-0 text-right text-xs text-white/40">
-            {saveStatus === "saving" ? "Saving…" : saveStatus === "error" ? "Error" : saveStatus === "saved" ? "Saved" : ""}
-          </span>
+          <div className="flex shrink-0 items-center gap-3">
+            {savedSongId && board.publicShare && (
+              <SharePublicButton
+                songId={savedSongId}
+                initialPublic={board.publicShare.isPublic}
+                initialSlug={board.publicShare.slug}
+                target="stack"
+              />
+            )}
+            <span className="w-16 text-right text-xs text-white/40">
+              {saveStatus === "saving" ? "Saving…" : saveStatus === "error" ? "Error" : saveStatus === "saved" ? "Saved" : ""}
+            </span>
+          </div>
         )}
       </header>
 

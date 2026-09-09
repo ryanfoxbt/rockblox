@@ -67,6 +67,14 @@ export const userSongs = pgTable(
     slots: jsonb("slots").$type<SlotMap>().notNull().default({}),
     // Stack Builder arrangement over this song's slots, if the owner built one.
     stack: jsonb("stack").$type<StackArrangement>(),
+    // Public sharing. When the owner turns this on, the song becomes readable,
+    // playable, and "save a copy"-able with no login at /s/<publicSlug> —
+    // exactly like a curated /songs page: a visitor's edits never write back.
+    // `publicSlug` is assigned once, the first time sharing is enabled, and
+    // kept stable across later rename / unshare / re-share so a link already
+    // posted somewhere keeps resolving.
+    isPublic: boolean("is_public").notNull().default(false),
+    publicSlug: text("public_slug").unique(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

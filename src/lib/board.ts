@@ -64,6 +64,12 @@ export interface BoardData {
   // Shown instead of the normal "Your page: /X" + save-status row when
   // readOnly, e.g. "Blitzkrieg Bop — The Ramones".
   subtitle?: string;
+  // Only set when the OWNER of a private saved song opens it (never on a
+  // public board, a curated song, or the read-only /s/<slug> view): the
+  // song's current public-sharing state, so the header can show a Share
+  // control and, once shared, the /s/<slug> link. `slug` is null until
+  // sharing has been enabled at least once.
+  publicShare?: { isPublic: boolean; slug: string | null };
 }
 
 const NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]{1,23}$/;

@@ -6,6 +6,7 @@ import { EXTENDED_SLOT_LETTERS, ExtendedSlotLetter } from "@/lib/board";
 import { measureLengthFromStoredLines } from "@/lib/song";
 import { isValidSingleSlotBody } from "@/lib/slotPayload";
 import { isValidStackArrangement, MAX_STACK_SECONDS, totalStackSeconds } from "@/lib/stack";
+import { slugifyTitle, slugSuffix } from "@/lib/publicSong";
 import { getCurrentUser } from "@/lib/auth/session";
 
 // Loads a song only if it belongs to the caller. Returns a discriminated
@@ -31,6 +32,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     title: r.song.title,
     slots: r.song.slots,
     stack: r.song.stack ?? null,
+    isPublic: r.song.isPublic,
+    publicSlug: r.song.publicSlug,
   });
 }
 
@@ -49,6 +52,39 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const title = body.title.trim().slice(0, 80) || "Untitled";
     await r.db.update(userSongs).set({ title, updatedAt: new Date() }).where(eq(userSongs.id, id));
     return NextResponse.json({ ok: true });
+  }
+
+  // Toggle public sharing. The first time it's enabled we mint a stable
+  // `publicSlug` from the current title; later renames / unshare / re-share
+  // never change it, so a link already posted somewhere keeps working. The
+  // retry loop covers the (astronomically rare) suffix collision the unique
+  // constraint would otherwise reject.
+  if ("public" in body) {
+    if (typeof body.public !== "boolean") {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+    let publicSlug = r.song.publicSlug;
+    if (body.public && !publicSlug) {
+      for (let attempt = 0; ; attempt++) {
+        const candidate = `${slugifyTitle(r.song.title)}-${slugSuffix()}`;
+        try {
+          await r.db
+            .update(userSongs)
+            .set({ isPublic: true, publicSlug: candidate, updatedAt: new Date() })
+            .where(eq(userSongs.id, id));
+          publicSlug = candidate;
+          break;
+        } catch (err) {
+          if (attempt >= 4) throw err;
+        }
+      }
+    } else {
+      await r.db
+        .update(userSongs)
+        .set({ isPublic: body.public, updatedAt: new Date() })
+        .where(eq(userSongs.id, id));
+    }
+    return NextResponse.json({ ok: true, isPublic: body.public, publicSlug });
   }
 
   // Stack Builder arrangement over this song's A-H slots.

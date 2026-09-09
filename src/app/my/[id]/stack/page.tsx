@@ -37,6 +37,7 @@ export default async function SavedSongStackPage({
         slots: song.slots,
         stack: song.stack ?? null,
         basePath: `/my/${song.id}`,
+        publicShare: { isPublic: song.isPublic, slug: song.publicSlug },
       }}
       returnSlot={returnSlot}
     />

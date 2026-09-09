@@ -59,6 +59,7 @@ import { CustomSamples, arrayBufferToBase64 } from "@/lib/customSamples";
 import { loadDraft, saveDraft } from "@/lib/draftStorage";
 import { ClaimUrlBox } from "@/components/ClaimUrlBox";
 import { SaveCopyButton } from "@/components/SaveCopyButton";
+import { SharePublicButton } from "@/components/SharePublicButton";
 import { SaveToLibraryButton } from "@/components/SaveToLibraryButton";
 import { SuperPowersMenu } from "@/components/SuperPowersMenu";
 
@@ -769,14 +770,24 @@ export function Editor({
                   <span className="text-yellow-400">mess around all you want, nothing here saves</span>
                 </span>
               ) : savedSong ? (
-                <Link href="/my" className="text-white/40 transition hover:text-yellow-400">
-                  ⚡ <span className="text-yellow-400">{savedSong.title}</span> · in My Songs
-                  {saveStatus !== "idle" && (
-                    <span className="ml-2">
-                      {saveStatus === "saving" ? "· Saving…" : saveStatus === "error" ? "· Error" : "· Saved"}
-                    </span>
+                <span className="flex flex-wrap items-center gap-2">
+                  <Link href="/my" className="text-white/40 transition hover:text-yellow-400">
+                    ⚡ <span className="text-yellow-400">{savedSong.title}</span> · in My Songs
+                    {saveStatus !== "idle" && (
+                      <span className="ml-2">
+                        {saveStatus === "saving" ? "· Saving…" : saveStatus === "error" ? "· Error" : "· Saved"}
+                      </span>
+                    )}
+                  </Link>
+                  {board.publicShare && (
+                    <SharePublicButton
+                      songId={savedSong.id}
+                      initialPublic={board.publicShare.isPublic}
+                      initialSlug={board.publicShare.slug}
+                      target="editor"
+                    />
                   )}
-                </Link>
+                </span>
               ) : (
                 <>
                   <button

@@ -36,6 +36,7 @@ export default async function SavedSongPage({
         displayName: song.title,
         slots: song.slots,
         basePath: `/my/${song.id}`,
+        publicShare: { isPublic: song.isPublic, slug: song.publicSlug },
       }}
       initialSlot={initialSlot}
     />
