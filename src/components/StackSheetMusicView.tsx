@@ -250,7 +250,11 @@ export function StackSheetMusicView({
         )}
       </div>
 
-      <div ref={scrollRef} className="flex flex-1 items-center overflow-auto p-6">
+      {/* min-w-0 is load-bearing: without it this flex item won't shrink below
+          the width of its (deliberately over-wide) paper child, so instead of
+          scrolling, the whole scroll box grows past the screen and the right
+          side of a busy 7/4 bar is unreachable on a phone. */}
+      <div ref={scrollRef} className="flex min-w-0 flex-1 items-center overflow-auto p-6">
         <div
           className="relative min-h-[280px] w-full shrink-0 rounded-lg bg-white p-4 shadow-xl"
           style={{ minWidth: renderWidth || undefined }}
