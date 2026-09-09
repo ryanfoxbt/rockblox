@@ -1,15 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  NotationLine,
-  STACK_STAVE_SPACING,
-  StackNotationLayout,
-  StackNotationRow,
-  VF,
-  expandStackRows,
-  renderStackNotation,
-} from "@/lib/notation";
+import { NotationLayout, NotationLine, VF, expandStackRows, renderNotationPage } from "@/lib/notation";
 import { ExtendedSlotLetter } from "@/lib/board";
 
 export interface StackSheetStep {
@@ -18,6 +10,12 @@ export interface StackSheetStep {
   measureLength: number;
 }
 
+// The whole arrangement written out one measure per screen, exactly like the
+// editor's Sheet Music view: an 8-beat step becomes two 4/4 pages, a 3-7
+// beat step stays a single bar in its own time signature. Playback turns the
+// page; ◀/▶ do it by hand while stopped. (The earlier version stacked several
+// staves per page and tried to shrink wide bars to fit — that read badly on a
+// portrait phone; this mirrors the single-measure model that already works.)
 export function StackSheetMusicView({
   steps,
   bpm,
@@ -34,28 +32,20 @@ export function StackSheetMusicView({
   onClose: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const paperRef = useRef<HTMLDivElement>(null);
   const notationRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
-  const layoutRef = useRef<StackNotationLayout | null>(null);
+  const layoutRef = useRef<NotationLayout | null>(null);
   const [ready, setReady] = useState(false);
-  // A long stack doesn't fit one screen's worth of staves at any readable
-  // size, and scrolling to follow playback (the previous approach) left the
-  // white "paper" background unable to keep up with how tall the fully
-  // rendered notation actually was — the notation would render past the
-  // paper's own box straight onto the page's dark background. Paginating
-  // instead — showing only as many staves as actually fit, and swapping the
-  // page as playback crosses into the next one — sidesteps both problems
-  // and works the same way on mobile, where scrolling a fullscreen view is
-  // even less pleasant.
-  const [pageStart, setPageStart] = useState(0);
-  const [pageSize, setPageSize] = useState(1);
-  const [drawWidth, setDrawWidth] = useState(0);
 
-  // Each step's pattern broken into its 4/4 bars — an 8-beat step becomes
-  // two rows, each its own full-width stave, matching the fullscreen
-  // SheetMusicView. `pageStart` / `pageSize` index into this, not `steps`.
-  const rowSpecs = useMemo(() => expandStackRows(steps), [steps]);
+  // Every bar across the arrangement, in play order — one entry per page.
+  const bars = useMemo(() => expandStackRows(steps), [steps]);
+  const pageCount = Math.max(1, bars.length);
+  const [page, setPage] = useState(0);
+  const safePage = Math.min(page, pageCount - 1);
+  const bar = bars[safePage];
+  function goToPage(n: number) {
+    setPage(Math.min(Math.max(0, n), pageCount - 1));
+  }
 
   useEffect(() => {
     const el = containerRef.current;
@@ -82,77 +72,63 @@ export function StackSheetMusicView({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
-  // Measures the paper box itself (not the notation canvas, which is sized
-  // *from* this measurement) so page size reacts to the actual available
-  // area — window resizes, orientation changes, fullscreen settling, etc.
-  useEffect(() => {
-    const target = paperRef.current;
-    if (!target) return;
-    const observer = new ResizeObserver((entries) => {
-      // contentRect is already the box *inside* this element's own padding
-      // (Tailwind's p-4), i.e. exactly the space notation can draw into —
-      // no separate padding subtraction needed.
-      const rect = entries[0]?.contentRect;
-      const width = Math.max(200, rect?.width || target.clientWidth);
-      const height = Math.max(1, rect?.height || target.clientHeight);
-      const nextPageSize = Math.max(1, Math.floor(height / STACK_STAVE_SPACING));
-      setDrawWidth((prev) => (Math.abs(prev - width) < 1 ? prev : width));
-      setPageSize((prev) => {
-        if (prev === nextPageSize) return prev;
-        // Keep whichever step was currently playing (or the first step of
-        // the old page, if idle) visible on the page it lands on now.
-        setPageStart((prevStart) => Math.floor(prevStart / nextPageSize) * nextPageSize);
-        return nextPageSize;
-      });
-    });
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
     let vfModule: VF | null = null;
+    let lastWidth = -1;
 
-    async function draw() {
-      if (drawWidth <= 0) return;
+    async function draw(width: number) {
+      if (!bar) {
+        setReady(true);
+        return;
+      }
       if (!vfModule) vfModule = await import("vexflow");
-      // See SheetMusicView for why this await matters: without it, vexflow's
-      // Bravura glyph font can still be mid-decode when the SVG <text> nodes
-      // for noteheads land, rendering as garbled/missing glyphs.
+      // See SheetMusicView for why this await matters: vexflow's Bravura glyph
+      // font can still be mid-decode when the SVG <text> noteheads land.
       await document.fonts.ready;
       const target = notationRef.current;
       if (cancelled || !target) return;
-      const pageRows: StackNotationRow[] = rowSpecs
-        .slice(pageStart, pageStart + pageSize)
-        .map((r) => ({ lines: steps[r.stepIndex].lines, startBeat: r.startBeat, numBeats: r.numBeats }));
-      layoutRef.current = renderStackNotation(vfModule, target, pageRows, drawWidth);
+      layoutRef.current = renderNotationPage(
+        vfModule,
+        target,
+        steps[bar.stepIndex].lines,
+        bar.startBeat,
+        bar.numBeats,
+        width
+      );
       updateHighlight();
       setReady(true);
     }
 
-    draw();
+    const target = notationRef.current;
+    if (!target) return;
+
+    // A ResizeObserver rather than a one-off measurement: requestFullscreen
+    // resizes the viewport asynchronously, and there's no single event that
+    // reliably fires once the geometry has actually settled. See SheetMusicView.
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width || target.clientWidth || 800;
+      if (Math.abs(width - lastWidth) < 1) return;
+      lastWidth = width;
+      draw(width);
+    });
+    observer.observe(target);
+
     return () => {
       cancelled = true;
+      observer.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [steps, rowSpecs, pageStart, pageSize, drawWidth]);
+  }, [steps, bars, safePage]);
 
-  const pageCount = Math.max(1, Math.ceil(rowSpecs.length / pageSize));
-  const pageIndex = Math.floor(pageStart / pageSize);
-
-  function goToPage(index: number) {
-    setPageStart(Math.min(Math.max(0, index), pageCount - 1) * pageSize);
-  }
-
-  // Maps overall playback progress (seconds elapsed into the whole song) to
-  // a step index + beat within that step, same order StackPlayer schedules
-  // in — then turns the page if that step isn't on the currently-shown one,
-  // and highlights that step's beat span within its (now-current) stave.
+  // Maps overall playback progress (seconds into the whole song) to a step +
+  // beat, the same order StackPlayer schedules in, then turns to the page
+  // (bar) that beat lands on and highlights its span within that stave.
   function updateHighlight() {
     const layout = layoutRef.current;
     const el = highlightRef.current;
     if (!el) return;
-    if (!isPlaying || !progress || !layout || layout.rows.length === 0) {
+    if (!isPlaying || !progress || !layout || !bar) {
       el.style.opacity = "0";
       return;
     }
@@ -171,40 +147,33 @@ export function StackSheetMusicView({
       remaining -= stepDuration;
     }
 
-    // Which row (4/4 bar) that beat sits in, and where within the bar.
-    let rowIndex = rowSpecs.findIndex(
-      (r) => r.stepIndex === stepIndex && beat >= r.startBeat && beat < r.startBeat + r.numBeats
+    let barIndex = bars.findIndex(
+      (b) => b.stepIndex === stepIndex && beat >= b.startBeat && beat < b.startBeat + b.numBeats
     );
-    if (rowIndex < 0) rowIndex = rowSpecs.findIndex((r) => r.stepIndex === stepIndex);
-    if (rowIndex < 0) {
+    if (barIndex < 0) barIndex = bars.findIndex((b) => b.stepIndex === stepIndex);
+    if (barIndex < 0) {
       el.style.opacity = "0";
-      return;
-    }
-    const localBeat = beat - rowSpecs[rowIndex].startBeat;
-
-    const targetPageStart = Math.floor(rowIndex / pageSize) * pageSize;
-    if (targetPageStart !== pageStart) {
-      el.style.opacity = "0";
-      setPageStart(targetPageStart);
       return;
     }
 
-    const rowLayout = layout.rows[rowIndex - pageStart];
-    if (!rowLayout) {
+    if (barIndex !== safePage) {
       el.style.opacity = "0";
+      goToPage(barIndex);
       return;
     }
-    const x0 = rowLayout.beatBoundariesX[localBeat] ?? 0;
-    const x1 = rowLayout.beatBoundariesX[localBeat + 1] ?? x0 + 20;
+
+    const localBeat = beat - bars[barIndex].startBeat;
+    const x0 = layout.beatBoundariesX[localBeat] ?? 0;
+    const x1 = layout.beatBoundariesX[localBeat + 1] ?? x0 + 20;
     el.style.opacity = "1";
     el.style.left = `${x0 - 4}px`;
     el.style.width = `${Math.max(x1 - x0 + 4, 8)}px`;
-    el.style.top = `${rowLayout.staveTopY}px`;
-    el.style.height = `${rowLayout.staveBottomY - rowLayout.staveTopY}px`;
+    el.style.top = `${layout.staveTopY}px`;
+    el.style.height = `${layout.staveBottomY - layout.staveTopY}px`;
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(updateHighlight, [isPlaying, progress]);
+  useEffect(updateHighlight, [isPlaying, progress, safePage]);
 
   return (
     <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white">
@@ -222,7 +191,7 @@ export function StackSheetMusicView({
         </button>
       </header>
 
-      <div className="flex items-center gap-4 border-b border-white/10 px-6 py-3">
+      <div className="flex flex-wrap items-center gap-4 border-b border-white/10 px-6 py-3">
         <button
           type="button"
           onClick={onTogglePlay}
@@ -230,27 +199,34 @@ export function StackSheetMusicView({
         >
           {isPlaying ? "■ Stop" : "▶ Play"}
         </button>
-        <span className="text-sm text-white/50">{bpm} BPM · {steps.length} step{steps.length === 1 ? "" : "s"}</span>
+        <span className="text-sm text-white/50">
+          {bpm} BPM · {steps.length} step{steps.length === 1 ? "" : "s"}
+        </span>
+        {bar && (
+          <span className="text-sm text-white/50">
+            Slot {steps[bar.stepIndex].slot} · {bar.numBeats}/4
+          </span>
+        )}
 
         {pageCount > 1 && (
           <div className="ml-auto flex items-center gap-2">
             <button
               type="button"
-              onClick={() => goToPage(pageIndex - 1)}
-              disabled={isPlaying || pageIndex <= 0}
-              title="Previous page"
+              onClick={() => goToPage(safePage - 1)}
+              disabled={isPlaying || safePage <= 0}
+              title="Previous measure"
               className="rounded-md border border-white/15 px-2.5 py-1 text-sm text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
             >
               ◀
             </button>
             <span className="text-sm text-white/50">
-              Page {pageIndex + 1} / {pageCount}
+              Measure {safePage + 1} / {pageCount}
             </span>
             <button
               type="button"
-              onClick={() => goToPage(pageIndex + 1)}
-              disabled={isPlaying || pageIndex >= pageCount - 1}
-              title="Next page"
+              onClick={() => goToPage(safePage + 1)}
+              disabled={isPlaying || safePage >= pageCount - 1}
+              title="Next measure"
               className="rounded-md border border-white/15 px-2.5 py-1 text-sm text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
             >
               ▶
@@ -259,11 +235,8 @@ export function StackSheetMusicView({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col overflow-hidden p-6">
-        <div
-          ref={paperRef}
-          className="relative h-full w-full overflow-hidden rounded-lg bg-white p-4 shadow-xl"
-        >
+      <div className="flex flex-1 items-center overflow-auto p-6">
+        <div className="relative min-h-[280px] w-full rounded-lg bg-white p-4 shadow-xl">
           <div className="relative w-full" style={{ visibility: ready ? "visible" : "hidden" }}>
             <div ref={notationRef} className="w-full" />
             <div
