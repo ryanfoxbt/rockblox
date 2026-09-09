@@ -51,11 +51,6 @@ export function StackSheetMusicView({
   const [pageStart, setPageStart] = useState(0);
   const [pageSize, setPageSize] = useState(1);
   const [drawWidth, setDrawWidth] = useState(0);
-  // The coordinate width the current page was actually drawn at. Bars wider
-  // than 4/4 are rendered roomier than the paper and then CSS-scaled down to
-  // fit (see draw()), so on a portrait phone a 7/4 bar shrinks instead of
-  // running off the right edge.
-  const [canvasWidth, setCanvasWidth] = useState(0);
 
   // Each step's pattern broken into its 4/4 bars — an 8-beat step becomes
   // two rows, each its own full-width stave, matching the fullscreen
@@ -127,25 +122,10 @@ export function StackSheetMusicView({
       await document.fonts.ready;
       const target = notationRef.current;
       if (cancelled || !target) return;
-      const pageSpecs = rowSpecs.slice(pageStart, pageStart + pageSize);
-      const pageRows: StackNotationRow[] = pageSpecs.map((r) => ({
-        lines: steps[r.stepIndex].lines,
-        startBeat: r.startBeat,
-        numBeats: r.numBeats,
-      }));
-
-      // 3/4 and 4/4 draw at the real width. A wider bar (5-7 beats) is drawn
-      // roomier than the paper so VexFlow doesn't cram 16ths together, then the
-      // whole page is CSS-scaled down to fit (see the render markup) — that's
-      // the "shrink to fit" a 7/4 bar needs on a portrait phone. ~92px/beat
-      // plus clef/time headroom leaves space for the densest realistic bar.
-      const maxBeats = pageSpecs.reduce((m, r) => Math.max(m, r.numBeats), 0);
-      const roomyWidth = maxBeats > 4 ? Math.round(64 + maxBeats * 92) : 0;
-      const renderWidth = Math.max(drawWidth, roomyWidth);
-
-      layoutRef.current = renderStackNotation(vfModule, target, pageRows, renderWidth);
-      setCanvasWidth(renderWidth);
-
+      const pageRows: StackNotationRow[] = rowSpecs
+        .slice(pageStart, pageStart + pageSize)
+        .map((r) => ({ lines: steps[r.stepIndex].lines, startBeat: r.startBeat, numBeats: r.numBeats }));
+      layoutRef.current = renderStackNotation(vfModule, target, pageRows, drawWidth);
       updateHighlight();
       setReady(true);
     }
@@ -284,19 +264,7 @@ export function StackSheetMusicView({
           ref={paperRef}
           className="relative h-full w-full overflow-hidden rounded-lg bg-white p-4 shadow-xl"
         >
-          {/* Scaled as one unit so the playhead highlight (positioned in the
-              same coordinate space the notation was drawn in) stays aligned. */}
-          <div
-            className="relative origin-top-left"
-            style={{
-              visibility: ready ? "visible" : "hidden",
-              width: canvasWidth || "100%",
-              transform:
-                canvasWidth > drawWidth && drawWidth > 0
-                  ? `scale(${drawWidth / canvasWidth})`
-                  : undefined,
-            }}
-          >
+          <div className="relative w-full" style={{ visibility: ready ? "visible" : "hidden" }}>
             <div ref={notationRef} className="w-full" />
             <div
               ref={highlightRef}
