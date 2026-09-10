@@ -95,6 +95,8 @@ export function Editor({
   slotLetters = SLOT_LETTERS,
   savedSong,
   lessonNav,
+  onSnapshotChange,
+  initialGridBeats,
 }: {
   initialBpm?: number;
   initialLines?: StoredLine[];
@@ -119,6 +121,19 @@ export function Editor({
   // for either end means there's nothing to link to (Lesson 1's "Previous",
   // the last lesson's "Next").
   lessonNav?: { prevHref: string | null; nextHref: string | null };
+  // Fired with the full live slot snapshot (every slot as currently on
+  // screen — same shape currentSlotsSnapshot below builds for Save a Copy)
+  // and which slot is currently active, whenever the pattern, active slot,
+  // tempo, kit, samples, or bassline change. Lets a parent page (e.g. a
+  // RockBlocks Math lesson) grade whatever the student has actually built
+  // without this component needing to know anything about grading itself.
+  // Optional and inert for every other caller.
+  onSnapshotChange?: (slots: SlotMap, activeSlot: ExtendedSlotLetter) => void;
+  // Overrides the grid's starting beat-block floor (see DEFAULT_GRID_BEATS
+  // in src/lib/song.ts) — e.g. RockBlocks Math opens wider than the normal
+  // 4-beat home layout so a bigger answer fits without an extra nudge.
+  // Optional; every other caller keeps the normal default.
+  initialGridBeats?: number;
 }) {
   // The homepage with nothing claimed yet: the only editor mode with no
   // board and no server-persisted pattern behind it, so it's the one case
@@ -161,7 +176,7 @@ export function Editor({
   // Only the edge nudge changes this; the actual column count on screen
   // (`visibleBeats` below) also grows to cover any beat that gets filled.
   const [gridBeats, setGridBeats] = useState(() =>
-    Math.min(MAX_BEATS, Math.max(DEFAULT_GRID_BEATS, computeMeasureLength(lines)))
+    Math.min(MAX_BEATS, Math.max(initialGridBeats ?? DEFAULT_GRID_BEATS, computeMeasureLength(lines)))
   );
   const [isPlaying, setIsPlaying] = useState(false);
   const [playheadBeat, setPlayheadBeat] = useState<number | null>(null);
@@ -389,7 +404,7 @@ export function Editor({
     setArmedTile(null);
     setMovingFrom(null);
     resetLines(nextLines);
-    setGridBeats(Math.min(MAX_BEATS, Math.max(DEFAULT_GRID_BEATS, computeMeasureLength(nextLines))));
+    setGridBeats(Math.min(MAX_BEATS, Math.max(initialGridBeats ?? DEFAULT_GRID_BEATS, computeMeasureLength(nextLines))));
     setBpm(nextBpm);
     setCustomSamples(nextCustomSamples);
     setBassline(nextBassline);
@@ -414,6 +429,11 @@ export function Editor({
       },
     };
   }
+
+  useEffect(() => {
+    onSnapshotChange?.(currentSlotsSnapshot(), activeSlot);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lines, activeSlot, bpm, kit, customSamples, bassline]);
 
   // Autosave the active slot whenever the pattern changes, so the page always
   // reflects what's on screen without an explicit save action. For a private

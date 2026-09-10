@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { boards, lessons, songs } from "@/db/schema";
+import { boards, lessons, mathLessons, songs } from "@/db/schema";
 
 const SITE_URL = "https://rockblocks.app";
 
@@ -13,17 +13,21 @@ const MAX_BOARD_URLS = 500;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const db = getDb();
 
-  const [boardRows, lessonRows, songRows] = await Promise.all([
+  const [boardRows, lessonRows, mathLessonRows, songRows] = await Promise.all([
     db
       .select({ displayName: boards.displayName, updatedAt: boards.updatedAt })
       .from(boards)
       .orderBy(desc(boards.updatedAt))
       .limit(MAX_BOARD_URLS),
     db.select({ slug: lessons.slug, createdAt: lessons.createdAt }).from(lessons),
+    db
+      .select({ slug: mathLessons.slug, createdAt: mathLessons.createdAt })
+      .from(mathLessons)
+      .where(eq(mathLessons.isPublished, true)),
     db.select({ slug: songs.slug, createdAt: songs.createdAt }).from(songs),
   ]);
 
-  // Owned, evergreen pages — the homepage, the about page, and the two
+  // Owned, evergreen pages — the homepage, the about page, and the
   // curated libraries plus every item in them. These are the SEO/GEO
   // surface; the claimed user boards below are lower-priority long tail.
   const staticPages: MetadataRoute.Sitemap = [
@@ -31,11 +35,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/about`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/ai-music`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/school`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_URL}/math`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/songs`, changeFrequency: "monthly", priority: 0.7 },
   ];
 
   const lessonPages: MetadataRoute.Sitemap = lessonRows.map((row) => ({
     url: `${SITE_URL}/school/${row.slug}`,
+    lastModified: row.createdAt,
+    changeFrequency: "yearly",
+    priority: 0.6,
+  }));
+
+  const mathLessonPages: MetadataRoute.Sitemap = mathLessonRows.map((row) => ({
+    url: `${SITE_URL}/math/${row.slug}`,
     lastModified: row.createdAt,
     changeFrequency: "yearly",
     priority: 0.6,
@@ -51,6 +63,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...staticPages,
     ...lessonPages,
+    ...mathLessonPages,
     ...songPages,
     ...boardRows.map((row) => ({
       url: `${SITE_URL}/${row.displayName}`,

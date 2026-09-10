@@ -22,6 +22,9 @@ export function SiteFooter() {
           <Link href="/school" className="transition hover:text-yellow-400">
             Drum School
           </Link>
+          <Link href="/math" className="transition hover:text-yellow-400">
+            RockBlocks Math
+          </Link>
           <Link href="/songs" className="transition hover:text-yellow-400">
             Song beats
           </Link>

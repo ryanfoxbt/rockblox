@@ -33,6 +33,7 @@ export const FEATURE_LIST: string[] = [
   "Export a beat — with its generated bass line, or drums only — as an MP3 or a MIDI file",
   "Use your beats to power AI music: export an MP3 to seed a track in Suno, Udio, or Riffusion, or export MIDI to build the drums (and bass) in a DAW",
   "Drum School: 100 free stepwise lessons that build a full groove one idea at a time",
+  "RockBlocks Math: a free, grade-aligned math curriculum where each lesson pairs a math concept with a drum pattern built to correlate with it",
 ];
 
 export const HOW_TO_STEPS: { name: string; text: string }[] = [
@@ -407,6 +408,75 @@ export function lessonJsonLd(lesson: {
       "@type": "Course",
       name: "RockBlocks Drum School",
       url: `${SITE_URL}/school`,
+    },
+    provider: { "@id": `${SITE_URL}/#organization` },
+  };
+}
+
+// /math grade index — a free course, one per grade level.
+export function mathCourseJsonLd(grade: number, lessonCount: number): Json {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: `RockBlocks Math — Grade ${grade}`,
+    url: `${SITE_URL}/math`,
+    description: `A free Grade ${grade} math curriculum taught through drumming — ${lessonCount} lessons that each pair a math concept with a drum pattern built to correlate with it.`,
+    provider: { "@id": `${SITE_URL}/#organization` },
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    educationalLevel: `Grade ${grade}`,
+    hasCourseInstance: {
+      "@type": "CourseInstance",
+      courseMode: "online",
+      courseWorkload: `PT${Math.max(1, Math.round(lessonCount / 4))}H`,
+    },
+  };
+}
+
+// The whole RockBlocks Math curriculum (all grades) as an ordered list.
+export function mathLessonListJsonLd(
+  lessons: { slug: string; grade: number; lessonNumber: number; title: string }[]
+): Json {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "RockBlocks Math lessons",
+    url: `${SITE_URL}/math`,
+    numberOfItems: lessons.length,
+    itemListOrder: "https://schema.org/ItemListOrderAscending",
+    itemListElement: lessons.map((l, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${SITE_URL}/math/${l.slug}`,
+      name: `Grade ${l.grade} Lesson ${l.lessonNumber}: ${l.title}`,
+    })),
+  };
+}
+
+// A single RockBlocks Math lesson.
+export function mathLessonJsonLd(lesson: {
+  slug: string;
+  grade: number;
+  lessonNumber: number;
+  title: string;
+  mathSkill: string;
+  teaches: string;
+}): Json {
+  return {
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: `Grade ${lesson.grade} Lesson ${lesson.lessonNumber}: ${lesson.title}`,
+    url: `${SITE_URL}/math/${lesson.slug}`,
+    description: lesson.teaches,
+    learningResourceType: "Interactive math-and-drumming lesson",
+    educationalLevel: `Grade ${lesson.grade}`,
+    teaches: lesson.mathSkill,
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    isPartOf: {
+      "@type": "Course",
+      name: `RockBlocks Math — Grade ${lesson.grade}`,
+      url: `${SITE_URL}/math`,
     },
     provider: { "@id": `${SITE_URL}/#organization` },
   };

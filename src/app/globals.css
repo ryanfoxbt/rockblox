@@ -24,3 +24,28 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* RockBlocks Math's correct-answer confetti burst (see Confetti.tsx) — each
+   piece's fall distance/rotation/drift is randomized per-instance via the
+   --confetti-drift/--confetti-rotation custom properties set inline. */
+.confetti-piece {
+  position: absolute;
+  top: -5%;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation-name: confetti-fall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--confetti-drift), 110vh) rotate(var(--confetti-rotation));
+    opacity: 0;
+  }
+}

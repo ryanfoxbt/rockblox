@@ -91,6 +91,7 @@ const RESERVED_NAMES = new Set([
   "signin",
   "songs",
   "school",
+  "math",
   "test",
   "about",
   "help",

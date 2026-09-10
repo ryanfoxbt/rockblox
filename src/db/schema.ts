@@ -1,6 +1,7 @@
 import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import type { BoardSlotData, SlotMap } from "@/lib/board";
+import type { BoardSlotData, SlotLetter, SlotMap } from "@/lib/board";
 import type { CustomSamples } from "@/lib/customSamples";
+import type { MathChallenge } from "@/lib/mathSchool";
 import type { StackArrangement } from "@/lib/stack";
 
 export interface StoredLine {
@@ -123,6 +124,67 @@ export const lessons = pgTable("lessons", {
   stack: jsonb("stack").$type<StackArrangement>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// A curated, staff-written RockBlocks Math lesson — shaped just like `lessons`
+// (slots A-D plus a Stack Builder arrangement, same read-only Editor/
+// StackBuilder UI) but served from /math/[slug] instead of /school/[slug],
+// and scoped to a US grade level rather than one flat curriculum. Each
+// lesson pairs a grade-aligned math concept (`mathSkill`) with a drum
+// pattern built to actually correlate with it (e.g. skip-counting by 2s is
+// a hi-hat hit on every other beat block) — see scripts/seedMathLessons.mts
+// and src/lib/mathSchool.ts.
+export const mathLessons = pgTable("math_lessons", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  slug: text("slug").notNull().unique(),
+  grade: integer("grade").notNull(),
+  lessonNumber: integer("lesson_number").notNull(),
+  title: text("title").notNull(),
+  mathSkill: text("math_skill").notNull(),
+  teaches: text("teaches").notNull(),
+  // One real, checkable question per slot (A-D) — see MathChallenge in
+  // src/lib/mathSchool.ts for the shape and
+  // src/components/MathLessonWorkspace.tsx for the interactive UI that
+  // grades it client-side: the student builds their answer directly in that
+  // slot's own beat blocks, in the real Editor, using every normal
+  // RockBlocks feature (kit, tempo, sheet music, drummer view, save a copy)
+  // — the question and "check my answer" live in a small popover, not a
+  // rebuilt editor.
+  challenges: jsonb("challenges").$type<Record<SlotLetter, MathChallenge>>().notNull(),
+  slotA: jsonb("slot_a").$type<BoardSlotData>(),
+  slotB: jsonb("slot_b").$type<BoardSlotData>(),
+  slotC: jsonb("slot_c").$type<BoardSlotData>(),
+  slotD: jsonb("slot_d").$type<BoardSlotData>(),
+  stack: jsonb("stack").$type<StackArrangement>(),
+  // Hidden from /math's public list and lesson pages while false — lets the
+  // admin panel (src/app/math/admin) stage a lesson before it's ready
+  // without deleting it. Defaults true so every existing seeded lesson stays
+  // visible.
+  isPublished: boolean("is_published").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// One solved question in RockBlocks Math (a lesson slug + slot letter),
+// permanently recorded for a signed-in user — the "saved for good" half of
+// progress tracking. An anonymous visitor's progress lives only in
+// localStorage (see src/lib/useMathProgress.ts); signing in merges that
+// local progress into this table and it's durable from then on, the same
+// way an anonymous board becomes permanent once claimed. Badges themselves
+// aren't stored — they're derived client-side from which rows exist, so
+// adding or renaming a badge never needs a migration.
+export const mathProgress = pgTable(
+  "math_progress",
+  {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    ownerId: text("owner_id").notNull(),
+    lessonSlug: text("lesson_slug").notNull(),
+    slot: text("slot").notNull(),
+    solvedAt: timestamp("solved_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("math_progress_owner_slug_slot_idx").on(table.ownerId, table.lessonSlug, table.slot),
+    index("math_progress_owner_idx").on(table.ownerId),
+  ]
+);
 
 // A live "who's here right now" heartbeat for one board — upserted roughly
 // every 20s by each open tab (see PresenceIndicator.tsx), keyed by a random
