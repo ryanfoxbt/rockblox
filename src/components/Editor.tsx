@@ -17,6 +17,7 @@ import { LineRow } from "@/components/LineRow";
 import { Transport } from "@/components/Transport";
 import { SheetMusicView } from "@/components/SheetMusicView";
 import { DrumTeacherStep, DrumTeacherView } from "@/components/DrumTeacherView";
+import { FractalArtView } from "@/components/FractalArtView";
 import { TileVisual } from "@/components/TileVisual";
 import { FartRecorder } from "@/components/FartRecorder";
 import { RandomizeButton, VariationKind } from "@/components/RandomizeButton";
@@ -195,6 +196,7 @@ export function Editor({
   );
   const [showSheet, setShowSheet] = useState(false);
   const [showDrumTeacher, setShowDrumTeacher] = useState(false);
+  const [showFractalArt, setShowFractalArt] = useState(false);
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
   const toolsMenuRef = useRef<HTMLDivElement>(null);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -1034,9 +1036,31 @@ export function Editor({
                 <path d="M17 8 6 19" strokeLinecap="round" />
               </svg>
             </button>
+            <button
+              type="button"
+              onClick={() => setShowFractalArt(true)}
+              disabled={measureLength < 1}
+              title="See this beat as fractal art"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <circle cx="9" cy="9" r="6" />
+                <circle cx="15" cy="9" r="6" />
+                <circle cx="12" cy="15" r="6" />
+              </svg>
+            </button>
           </div>
         </div>
       </header>
+
+      {showFractalArt && (
+        <FractalArtView
+          lines={lines}
+          bpm={bpm}
+          measureLength={measureLength}
+          onClose={() => setShowFractalArt(false)}
+        />
+      )}
 
       {showSheet && (
         <SheetMusicView

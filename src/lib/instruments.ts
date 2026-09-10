@@ -14,19 +14,24 @@ export interface InstrumentDef {
   id: InstrumentId;
   name: string;
   color: string; // tailwind bg class
+  // The same swatch as `color`, as a raw hex value — for contexts that
+  // can't use a Tailwind class (canvas fills, inline SVG, etc.), e.g.
+  // fractalArt.ts. Kept in lockstep with `color` by hand since Tailwind
+  // doesn't expose its palette as importable JS values.
+  hex: string;
 }
 
 export const INSTRUMENTS: InstrumentDef[] = [
-  { id: "kick", name: "Bass Drum", color: "bg-red-600" },
-  { id: "snare", name: "Snare Drum", color: "bg-amber-500" },
-  { id: "hihatClosed", name: "Hi-Hat (Closed)", color: "bg-emerald-500" },
-  { id: "hihatOpen", name: "Hi-Hat (Open)", color: "bg-emerald-700" },
-  { id: "crash", name: "Crash Cymbal", color: "bg-sky-500" },
-  { id: "ride", name: "Ride Cymbal", color: "bg-indigo-500" },
-  { id: "lowTom", name: "Low Tom", color: "bg-fuchsia-600" },
-  { id: "midTom", name: "Mid Tom", color: "bg-purple-600" },
-  { id: "highTom", name: "High Tom", color: "bg-pink-600" },
-  { id: "rimshot", name: "Rimshot", color: "bg-orange-500" },
+  { id: "kick", name: "Bass Drum", color: "bg-red-600", hex: "#dc2626" },
+  { id: "snare", name: "Snare Drum", color: "bg-amber-500", hex: "#f59e0b" },
+  { id: "hihatClosed", name: "Hi-Hat (Closed)", color: "bg-emerald-500", hex: "#10b981" },
+  { id: "hihatOpen", name: "Hi-Hat (Open)", color: "bg-emerald-700", hex: "#047857" },
+  { id: "crash", name: "Crash Cymbal", color: "bg-sky-500", hex: "#0ea5e9" },
+  { id: "ride", name: "Ride Cymbal", color: "bg-indigo-500", hex: "#6366f1" },
+  { id: "lowTom", name: "Low Tom", color: "bg-fuchsia-600", hex: "#c026d3" },
+  { id: "midTom", name: "Mid Tom", color: "bg-purple-600", hex: "#9333ea" },
+  { id: "highTom", name: "High Tom", color: "bg-pink-600", hex: "#db2777" },
+  { id: "rimshot", name: "Rimshot", color: "bg-orange-500", hex: "#f97316" },
 ];
 
 export function getInstrument(id: InstrumentId): InstrumentDef {
