@@ -14,6 +14,7 @@ import {
 } from "@dnd-kit/core";
 import { TilePalette } from "@/components/TilePalette";
 import { LineRow } from "@/components/LineRow";
+import { ClassicLineRow } from "@/components/ClassicLineRow";
 import { Transport } from "@/components/Transport";
 import { SheetMusicView } from "@/components/SheetMusicView";
 import { DrumTeacherStep, DrumTeacherView } from "@/components/DrumTeacherView";
@@ -27,6 +28,7 @@ import { TextToBeatButton } from "@/components/TextToBeatButton";
 import { WallButton } from "@/components/WallButton";
 import { PresenceIndicator } from "@/components/PresenceIndicator";
 import { cycleHitAccent, RhythmTile, toggleHitRest } from "@/lib/rhythm";
+import { STEPS_PER_BEAT, cycleStepAccent, stepsToTile, tileToSteps } from "@/lib/stepGrid";
 import {
   generateFillVariation,
   generateGrooveVariation,
@@ -181,6 +183,15 @@ export function Editor({
   );
   const [isPlaying, setIsPlaying] = useState(false);
   const [playheadBeat, setPlayheadBeat] = useState<number | null>(null);
+  // How far into the current beat the playhead is (0-1) — only tracked so
+  // Classic view can highlight the current sixteenth-note step rather than
+  // just the current beat block; RockBlocks view ignores it.
+  const [playheadFraction, setPlayheadFraction] = useState(0);
+  // Which beat-block editor is on screen. Both operate on the exact same
+  // `lines` state — Classic just renders each beat's tile as up to 4
+  // sixteenth-note on/off steps (see stepGrid.ts) instead of a draggable
+  // shape, so an edit in either view shows up immediately in the other.
+  const [viewMode, setViewMode] = useState<"blocks" | "classic">("blocks");
   const [activeTile, setActiveTile] = useState<RhythmTile | null>(null);
   // The slot switcher shows at most four letters at once. `slotGroups` chunks
   // the available slots (A-D, or A-H for a saved song) into pages of four;
@@ -237,6 +248,13 @@ export function Editor({
   const rafRef = useRef<number | null>(null);
 
   const measureLength = computeMeasureLength(lines);
+
+  // The current sixteenth-note step, for Classic view's playhead highlight —
+  // RockBlocks view only ever highlights a whole beat block (playheadBeat).
+  const playheadStep =
+    isPlaying && playheadBeat !== null
+      ? playheadBeat * STEPS_PER_BEAT + Math.min(STEPS_PER_BEAT - 1, Math.floor(playheadFraction * STEPS_PER_BEAT))
+      : null;
 
   // Columns actually rendered: the user's chosen floor, but never fewer than
   // the beats that have tiles in them (so an import or a generated beat is
@@ -488,6 +506,7 @@ export function Editor({
     const tick = () => {
       const info = playerRef.current?.getPlayheadInfo();
       setPlayheadBeat(info ? info.beat : null);
+      setPlayheadFraction(info ? info.fraction : 0);
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -641,6 +660,38 @@ export function Editor({
     );
   }
 
+  // Classic view's step toggling — reads/writes the exact same `lines` state
+  // as the RockBlocks handlers above, converting a beat's tile to/from its 4
+  // sixteenth-note steps on the way in and out (see stepGrid.ts). A no-op on
+  // a triplet beat, which the grid can't represent (ClassicLineRow locks it).
+  function handleToggleStep(lineId: string, beatIndex: number, stepIndex: number) {
+    setLines((prev) =>
+      prev.map((line) => {
+        if (line.id !== lineId) return line;
+        const steps = tileToSteps(line.blocks[beatIndex]);
+        if (!steps) return line;
+        const nextSteps = steps.map((s, i) => (i === stepIndex ? { on: !s.on } : s));
+        const nextTile = stepsToTile(nextSteps);
+        return { ...line, blocks: line.blocks.map((b, i) => (i === beatIndex ? nextTile : b)) };
+      })
+    );
+  }
+
+  function handleCycleStepAccent(lineId: string, beatIndex: number, stepIndex: number) {
+    setLines((prev) =>
+      prev.map((line) => {
+        if (line.id !== lineId) return line;
+        const steps = tileToSteps(line.blocks[beatIndex]);
+        if (!steps || !steps[stepIndex].on) return line;
+        const nextSteps = steps.map((s, i) =>
+          i === stepIndex ? { ...s, accent: cycleStepAccent(s.accent) } : s
+        );
+        const nextTile = stepsToTile(nextSteps);
+        return { ...line, blocks: line.blocks.map((b, i) => (i === beatIndex ? nextTile : b)) };
+      })
+    );
+  }
+
   function addLine() {
     setLines((prev) => [...prev, createLine(prev.length)]);
   }
@@ -780,8 +831,9 @@ export function Editor({
           </div>
           {!isMobile && (
             <p className="text-sm text-white/50">
-              Drag rhythmic values into up to {visibleBeats} beat blocks per line to build a drum
-              groove, or click a tile then click a block to place it — handy on a trackpad.
+              {viewMode === "blocks"
+                ? `Drag rhythmic values into up to ${visibleBeats} beat blocks per line to build a drum groove, or click a tile then click a block to place it — handy on a trackpad.`
+                : "Click a step to add a hit, click again to clear — right-click (or Ctrl/Option-click) to cycle accent/ghost."}
             </p>
           )}
           {board ? (
@@ -935,6 +987,31 @@ export function Editor({
             {undoRedoButtons}
           </div>
           <div className="flex shrink-0 flex-nowrap items-center gap-1.5">
+            <div
+              className="flex overflow-hidden rounded-md border border-white/15 text-xs font-semibold"
+              title="Switch between the RockBlocks shape editor and a classic step-sequencer grid — same beat, either view"
+            >
+              <button
+                type="button"
+                onClick={() => setViewMode("blocks")}
+                className={[
+                  "px-2.5 py-1.5 transition",
+                  viewMode === "blocks" ? "bg-yellow-400 text-slate-900" : "bg-white/5 text-white/60 hover:bg-white/10",
+                ].join(" ")}
+              >
+                Blocks
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("classic")}
+                className={[
+                  "px-2.5 py-1.5 transition",
+                  viewMode === "classic" ? "bg-yellow-400 text-slate-900" : "bg-white/5 text-white/60 hover:bg-white/10",
+                ].join(" ")}
+              >
+                Classic
+              </button>
+            </div>
             <div className="relative" ref={toolsMenuRef}>
               <button
                 type="button"
@@ -1094,9 +1171,11 @@ export function Editor({
         onDragEnd={handleDragEnd}
       >
         <main className="flex flex-1 flex-col gap-4 p-4 pb-24 md:flex-row md:gap-6 md:p-6">
-          <aside className="max-h-[45vh] w-full shrink-0 overflow-hidden rounded-xl bg-white/5 p-4 md:h-[calc(100vh-8rem)] md:max-h-none md:w-72">
-            <TilePalette isMobile={isMobile} armedTile={armedTile} onArmTile={handleArmTile} />
-          </aside>
+          {viewMode === "blocks" && (
+            <aside className="max-h-[45vh] w-full shrink-0 overflow-hidden rounded-xl bg-white/5 p-4 md:h-[calc(100vh-8rem)] md:max-h-none md:w-72">
+              <TilePalette isMobile={isMobile} armedTile={armedTile} onArmTile={handleArmTile} />
+            </aside>
+          )}
 
           <section className="flex flex-1 flex-col gap-4">
             <Transport
@@ -1130,29 +1209,45 @@ export function Editor({
 
             <div className="flex items-stretch gap-1.5">
               <div className="flex min-w-0 flex-1 flex-col gap-3">
-                {lines.map((line) => (
-                  <LineRow
-                    key={line.id}
-                    lineId={line.id}
-                    instrument={line.instrument}
-                    blocks={line.blocks.slice(0, visibleBeats)}
-                    measureLength={measureLength}
-                    playheadBeat={isPlaying ? playheadBeat : null}
-                    isMobile={isMobile}
-                    movingBlock={movingFrom}
-                    onInstrumentChange={(inst) => changeInstrument(line.id, inst)}
-                    onClearBlock={(i) => clearBlock(line.id, i)}
-                    onBlockTap={(i) => handleBlockTap(line.id, i)}
-                    onToggleHit={(i, hitIndex) => handleToggleHit(line.id, i, hitIndex)}
-                    onCycleAccent={(i, hitIndex) => handleCycleAccent(line.id, i, hitIndex)}
-                    onRemoveLine={() => removeLine(line.id)}
-                    onPickUp={(i) => {
-                      const t = line.blocks[i];
-                      if (t) handlePickUp(line.id, i, t);
-                    }}
-                    canRemove={lines.length > 1}
-                  />
-                ))}
+                {lines.map((line) =>
+                  viewMode === "blocks" ? (
+                    <LineRow
+                      key={line.id}
+                      lineId={line.id}
+                      instrument={line.instrument}
+                      blocks={line.blocks.slice(0, visibleBeats)}
+                      measureLength={measureLength}
+                      playheadBeat={isPlaying ? playheadBeat : null}
+                      isMobile={isMobile}
+                      movingBlock={movingFrom}
+                      onInstrumentChange={(inst) => changeInstrument(line.id, inst)}
+                      onClearBlock={(i) => clearBlock(line.id, i)}
+                      onBlockTap={(i) => handleBlockTap(line.id, i)}
+                      onToggleHit={(i, hitIndex) => handleToggleHit(line.id, i, hitIndex)}
+                      onCycleAccent={(i, hitIndex) => handleCycleAccent(line.id, i, hitIndex)}
+                      onRemoveLine={() => removeLine(line.id)}
+                      onPickUp={(i) => {
+                        const t = line.blocks[i];
+                        if (t) handlePickUp(line.id, i, t);
+                      }}
+                      canRemove={lines.length > 1}
+                    />
+                  ) : (
+                    <ClassicLineRow
+                      key={line.id}
+                      instrument={line.instrument}
+                      blocks={line.blocks.slice(0, visibleBeats)}
+                      measureLength={measureLength}
+                      playheadStep={isPlaying ? playheadStep : null}
+                      isMobile={isMobile}
+                      onInstrumentChange={(inst) => changeInstrument(line.id, inst)}
+                      onToggleStep={(beatIndex, stepIndex) => handleToggleStep(line.id, beatIndex, stepIndex)}
+                      onCycleStepAccent={(beatIndex, stepIndex) => handleCycleStepAccent(line.id, beatIndex, stepIndex)}
+                      onRemoveLine={() => removeLine(line.id)}
+                      canRemove={lines.length > 1}
+                    />
+                  )
+                )}
                 {bassline?.enabled && bassline.notes.length > 0 && (
                   <BasslineRow
                     notes={bassline.notes}
