@@ -840,14 +840,22 @@ export function FractalVideoExportView({
       setPhase("recording");
       setProgress(0);
 
-      // A timeslice (rather than the argument-less recorder.start(), which
-      // only ever flushes once — at stop()) is what makes this reliable:
-      // without one, a session that stops (or errors) before that single
-      // flush has actually fired hands back zero data and looks, from the
-      // UI's perspective, exactly like a normal completed recording. With
-      // one, most of the clip is already safely captured in earlier chunks
-      // by the time stop() is called.
-      recorder.start(250);
+      // No timeslice: recorder.start() with no argument flushes exactly
+      // once, at stop() — normal stop() (see tick() calling
+      // recorderRef.current?.stop() once elapsed reaches totalSeconds)
+      // reliably flushes the whole clip regardless, so this doesn't risk
+      // losing data on a clean take. A timeslice used to be passed here to
+      // guard against a take that stops/errors before its first flush, but
+      // periodic mid-recording flushes turned out to be the actual cause of
+      // "fast and glitchy" audio once a platform re-transcodes the upload
+      // (TikTok, notably): each flushed chunk restarts the AAC encoder,
+      // and the resulting per-chunk encoder priming/duration slop
+      // accumulates into audio whose declared duration runs short of its
+      // real sample count — exactly what makes a strict re-encoder play it
+      // back sped up and glitchy, even though a lenient local player never
+      // shows it. The "recording came out empty" failure mode this used to
+      // guard against is still caught below by the minBytes check.
+      recorder.start();
       source.start(audioCtx.currentTime);
     } catch (err) {
       recordingRef.current = false;
