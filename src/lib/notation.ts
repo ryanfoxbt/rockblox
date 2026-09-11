@@ -484,11 +484,16 @@ function drawSystem(
 
   // Shrink the finished drawing down to fit, if it needed more than it was
   // offered. Scale is never above 1 — a system that already fit at natural
-  // size (the common case) is left exactly as drawn.
-  const scale = Math.min(1, availWidth / naturalWidth);
+  // size (the common case) is left exactly as drawn. Only SVGContext has a
+  // viewBox to lean on for this — a canvas target (the fractal-art video
+  // exporter's sheet-music rasterizer, see renderNotationMeasureToCanvas)
+  // is left at natural size instead and relies on its own caller to scale
+  // the finished canvas down via drawImage, which it always does anyway.
+  const svgContext = "setViewBox" in context ? (context as InstanceType<VF["SVGContext"]>) : null;
+  const scale = svgContext ? Math.min(1, availWidth / naturalWidth) : 1;
   const width = Math.round(naturalWidth * scale);
   const height = Math.round(CANVAS_HEIGHT * scale);
-  if (scale < 1) {
+  if (svgContext && scale < 1) {
     // renderer.resize shrinks the SVG's own width/height attributes, which
     // on its own would crop the natural-sized drawing rather than shrink
     // it — VexFlow's resize resets the viewBox to match 1:1. Stretching the
@@ -496,7 +501,7 @@ function drawSystem(
     // that crop into a scale-down: the browser fits the full (unclipped)
     // drawing into the smaller box.
     renderer.resize(width, height);
-    (context as InstanceType<VF["SVGContext"]>).setViewBox(0, 0, naturalWidth, CANVAS_HEIGHT);
+    svgContext.setViewBox(0, 0, naturalWidth, CANVAS_HEIGHT);
   }
 
   const stave = prepared[0].stave;
@@ -555,6 +560,39 @@ export function renderNotationPage(
   availWidth: number
 ): NotationLayout {
   const { renderer, context } = newRenderer(VF, container);
+  return drawSystem(
+    VF,
+    context,
+    renderer,
+    [{ y: STAVE_Y, lines, startBeat, numBeats, showClefAndTime: true, isContinuation: false }],
+    availWidth
+  );
+}
+
+// Same as renderNotationPage — one clef-and-time-signature measure — but
+// drawn onto an HTMLCanvasElement via VexFlow's Canvas backend rather than
+// into an SVG-holding container. Exists for exactly one caller: the
+// fractal-art video exporter, which composites the result onto another
+// canvas via drawImage. That's not just a style difference — an SVG
+// rasterized through an <img> (the obvious way to get notation onto a
+// canvas) gets its own isolated rendering context that can't see
+// VexFlow's Bravura music-glyph font, which is registered on `document`
+// via the FontFace API rather than embedded in the SVG markup itself, so
+// every notehead/clef/time-signature glyph falls back to a generic font —
+// they're all in the same Private-Use-Area code block, so this renders as
+// a wall of garbled boxes. A canvas target has no such isolation: its 2D
+// text calls resolve fonts through the same `document.fonts` as anything
+// else on the page, attached to the DOM or not.
+export function renderNotationMeasureToCanvas(
+  VF: VF,
+  canvas: HTMLCanvasElement,
+  lines: NotationLine[],
+  startBeat: number,
+  numBeats: number,
+  availWidth: number
+): NotationLayout {
+  const renderer = new VF.Renderer(canvas, VF.Renderer.Backends.CANVAS);
+  const context = renderer.getContext();
   return drawSystem(
     VF,
     context,

@@ -3,35 +3,24 @@
 // they're easy to reason about (and re-derive by hand) independent of the
 // recording machinery itself.
 
-// A shareable clip should feel intentional, not arbitrarily cut off: land
-// in the 7-10s sweet spot when the beat allows it, never exceed 15s, and
-// never stop a loop mid-bar to hit that cap.
-export const TARGET_MIN_SECONDS = 7;
-export const HARD_CAP_SECONDS = 15;
+// The clip is genuinely time-lapse now: the fractal draws continuously
+// across the *entire* clip, finishing right as it ends, rather than
+// finishing early and holding. That makes the clip's length a real creative
+// choice (a slower build reads differently than a quick one) — the user
+// picks anywhere in this range rather than the app always picking the
+// shortest length that clears some minimum.
+export const MIN_CLIP_SECONDS = 7;
+export const MAX_CLIP_SECONDS = 15;
+export const DEFAULT_CLIP_SECONDS = 10;
 
-// How many whole repeats of a `loopSeconds`-long beat to bake into one clip.
-// Whole repeats only — the audio and the fractal's reveal-then-hold cycle
-// both restart together at each repeat, so a partial one would cut the
-// drawing off mid-reveal and the audio off mid-bar, undoing the "loops
-// cleanly" point of the feature.
-export function pickLoopCount(loopSeconds: number): number {
+// How many whole repeats of a `loopSeconds`-long beat to render enough audio
+// for, given the clip is `targetSeconds` long — always at least enough to
+// cover the whole clip; the last repeat is simply cut wherever the clip's
+// fixed length lands, the same way any music-under-a-social-clip normally
+// works, rather than the clip's own length bending to match a bar boundary.
+export function loopsForDuration(loopSeconds: number, targetSeconds: number): number {
   if (loopSeconds <= 0) return 1;
-  const loopsToReachMin = Math.ceil(TARGET_MIN_SECONDS / loopSeconds);
-  if (loopsToReachMin * loopSeconds <= HARD_CAP_SECONDS) return Math.max(1, loopsToReachMin);
-  // Reaching 7s would already blow past 15s (a long pattern at a slow
-  // tempo) — use as many whole repeats as fit under the cap, or just one
-  // if even a single repeat alone is already longer than that: a beat
-  // that long has to play out in full to not sound cut off, cap or no cap.
-  return Math.max(1, Math.floor(HARD_CAP_SECONDS / loopSeconds));
-}
-
-// How long (from the start of each repeat) the fractal spends "coming
-// alive" before holding at its finished state for the rest of that repeat.
-// Scales with the repeat's own length so a short loop doesn't feel rushed
-// and a long one doesn't spend the whole clip mid-reveal with no time to
-// actually look at the finished piece.
-export function pickRevealSeconds(loopSeconds: number): number {
-  return Math.min(Math.max(1, loopSeconds - 0.5), 6);
+  return Math.max(1, Math.ceil(targetSeconds / loopSeconds));
 }
 
 // Ease-in-out: the reveal starts and ends gently rather than at a constant

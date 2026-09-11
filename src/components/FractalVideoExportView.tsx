@@ -7,15 +7,17 @@ import { InstrumentId } from "@/lib/instruments";
 import { LineState, renderSongToBuffer } from "@/lib/audioEngine";
 import { computeFractalBeat } from "@/lib/fractalArt";
 import { drawLayer, fillBackground, type FractalBackground } from "@/lib/fractalRender";
-import { NotationLayout, VF, renderNotationPage } from "@/lib/notation";
+import { NotationLayout, VF, renderNotationMeasureToCanvas } from "@/lib/notation";
 import type { LineData } from "@/lib/song";
 import { measureSplit } from "@/lib/song";
 import {
   aspectSize,
   easeInOut,
-  pickLoopCount,
+  loopsForDuration,
   pickRecordingFormat,
-  pickRevealSeconds,
+  MAX_CLIP_SECONDS,
+  MIN_CLIP_SECONDS,
+  DEFAULT_CLIP_SECONDS,
   type VideoAspect,
 } from "@/lib/videoExport";
 
@@ -23,6 +25,10 @@ import {
 // product's own step-sequencer UI reduced to its simplest form — drawn
 // directly on canvas rather than loaded as an image, so the recording never
 // has to wait on an asset fetch or worry about it not being decoded yet.
+// Colors are tuned for sitting on the sheet-music paper's own white
+// background (see FrameLayout) rather than the frame's dark chrome — the
+// squares that read as "off"/paper-colored against dark need to become
+// something with actual contrast against white instead.
 function drawLogo(ctx: CanvasRenderingContext2D, x: number, y: number, unit: number) {
   const gap = unit * 0.22;
   const r = unit * 0.18;
@@ -32,23 +38,23 @@ function drawLogo(ctx: CanvasRenderingContext2D, x: number, y: number, unit: num
     ctx.roundRect(bx, by, unit, unit, r);
     ctx.fill();
   }
-  block(x, y, "#facc15");
-  block(x + unit + gap, y, "#e2e8f0");
-  block(x, y + unit + gap, "#e2e8f0");
-  block(x + unit + gap, y + unit + gap, "#facc15");
+  block(x, y, "#eab308");
+  block(x + unit + gap, y, "#1e293b");
+  block(x, y + unit + gap, "#1e293b");
+  block(x + unit + gap, y + unit + gap, "#eab308");
 }
 
 function drawWordmark(ctx: CanvasRenderingContext2D, x: number, y: number, fontPx: number) {
   ctx.textBaseline = "middle";
   ctx.font = `700 ${fontPx}px system-ui, -apple-system, sans-serif`;
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = "#0f172a";
   ctx.fillText("Rock", x, y);
   const rockWidth = ctx.measureText("Rock").width;
-  ctx.fillStyle = "#facc15";
+  ctx.fillStyle = "#b45309";
   ctx.fillText("Blocks", x + rockWidth, y);
   const blocksWidth = ctx.measureText("Blocks").width;
   ctx.font = `600 ${fontPx * 0.62}px system-ui, -apple-system, sans-serif`;
-  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.fillStyle = "rgba(15,23,42,0.45)";
   ctx.fillText(".app", x + rockWidth + blocksWidth, y);
 }
 
@@ -61,7 +67,14 @@ interface LayoutRect {
 
 interface FrameLayout {
   fractal: LayoutRect; // square
-  sheet: LayoutRect; // the band the sheet music is centered within
+  // The paper-white sheet-music card. The logo lives inside its own bottom-
+  // left corner (see logoX/logoY below) rather than in a separate row below
+  // it — that used to leave a tall stretch of empty dark background between
+  // the card and the logo for no reason.
+  sheet: LayoutRect;
+  // Where the notation itself may be drawn within `sheet` — top-anchored,
+  // leaving reserved room below for the logo corner.
+  notationArea: LayoutRect;
   logoX: number;
   logoY: number;
   logoUnit: number;
@@ -70,48 +83,65 @@ interface FrameLayout {
 }
 
 // Proportions are relative to the canvas width so both aspects share one
-// visual language (thick fractal square up top, a paper-white sheet-music
-// band, a small logo lockup) at sizes tuned by eye per shape rather than a
-// single formula stretched two different ways.
+// visual language (a big fractal square, a paper-white sheet-music card
+// with a small logo tucked in its own corner) at sizes tuned by eye per
+// shape rather than a single formula stretched two different ways.
 function computeLayout(aspect: VideoAspect, width: number, height: number): FrameLayout {
-  const margin = Math.round(width * 0.07);
-  const logoUnit = Math.round(width * 0.028);
+  const logoUnit = Math.round(width * 0.02);
   const logoRowH = logoUnit * 2 + logoUnit * 0.22;
+  const logoPad = Math.round(width * 0.035);
+  const notationPadX = Math.round(width * 0.045);
+  const notationPadTop = Math.round(width * 0.05);
+  const notationLogoGap = Math.round(width * 0.02);
 
-  if (aspect === "vertical") {
-    const fractalSize = width - margin * 2;
-    const fractalY = margin;
-    const sheetH = Math.round(width * 0.34);
-    const sheetY = fractalY + fractalSize + Math.round(width * 0.08);
-    const logoY = height - margin - logoRowH;
+  function withSheet(sheet: LayoutRect, fractal: LayoutRect): FrameLayout {
+    const logoY = sheet.y + sheet.h - logoPad - logoRowH;
     return {
-      fractal: { x: margin, y: fractalY, w: fractalSize, h: fractalSize },
-      sheet: { x: margin, y: sheetY, w: fractalSize, h: sheetH },
-      logoX: margin,
+      fractal,
+      sheet,
+      notationArea: {
+        x: sheet.x + notationPadX,
+        y: sheet.y + notationPadTop,
+        w: sheet.w - notationPadX * 2,
+        h: logoY - notationLogoGap - (sheet.y + notationPadTop),
+      },
+      logoX: sheet.x + logoPad,
       logoY,
       logoUnit,
-      wordmarkX: margin + logoUnit * 2 + logoUnit * 0.22 + width * 0.03,
-      wordmarkFontPx: Math.round(width * 0.034),
+      wordmarkX: sheet.x + logoPad + logoUnit * 2 + logoUnit * 0.22 + width * 0.025,
+      wordmarkFontPx: Math.round(width * 0.026),
     };
   }
 
-  // Square: less vertical room to work with, so the sheet band and logo
-  // row are proportionally shorter and everything sits closer together.
-  const sheetH = Math.round(width * 0.24);
+  const margin = Math.round(width * 0.065);
+  if (aspect === "vertical") {
+    const fractalSize = width - margin * 2;
+    const fractalY = margin;
+    const gap = Math.round(width * 0.06);
+    const sheetY = fractalY + fractalSize + gap;
+    // The card now owns the logo row, reclaiming the dead space a separate
+    // bottom row used to leave — it can afford to be noticeably taller than
+    // it strictly needs for one bar of notation, since a little extra
+    // breathing room (and platform caption/button safe-zone room, for 9:16
+    // specifically) reads as intentional rather than empty.
+    const sheetH = Math.round(width * 0.42);
+    return withSheet(
+      { x: margin, y: sheetY, w: fractalSize, h: sheetH },
+      { x: margin, y: fractalY, w: fractalSize, h: fractalSize }
+    );
+  }
+
+  // Square: less vertical room to work with — the fractal gets whatever's
+  // left after a modest sheet card, rather than the reverse.
   const gap = Math.round(width * 0.045);
-  const fractalSize = Math.round(height - margin * 2 - sheetH - gap - logoRowH - gap);
+  const sheetH = Math.round(width * 0.28);
+  const fractalSize = Math.round(height - margin * 2 - sheetH - gap);
   const fractalY = margin;
   const sheetY = fractalY + fractalSize + gap;
-  const logoY = sheetY + sheetH + gap;
-  return {
-    fractal: { x: margin, y: fractalY, w: fractalSize, h: fractalSize },
-    sheet: { x: margin, y: sheetY, w: fractalSize, h: sheetH },
-    logoX: margin,
-    logoY,
-    logoUnit,
-    wordmarkX: margin + logoUnit * 2 + logoUnit * 0.22 + width * 0.03,
-    wordmarkFontPx: Math.round(width * 0.032),
-  };
+  return withSheet(
+    { x: margin, y: sheetY, w: fractalSize, h: sheetH },
+    { x: margin, y: fractalY, w: fractalSize, h: fractalSize }
+  );
 }
 
 // Which bar (page) of the pattern is "now", by the same beat-splitting rule
@@ -128,13 +158,21 @@ function pageForBeat(bars: number[], beat: number): { page: number; startBeat: n
   return { page: 0, startBeat: 0, numBeats: bars[0] ?? 0, localBeat: 0 };
 }
 
-// A rasterized (SVG→Image) snapshot of one page's sheet music, reused across
-// frames until the playhead turns to a different page — re-rendering
-// VexFlow every animation frame would be needless work for something that
-// only actually changes once or twice per loop.
+// A rendered snapshot of one page's sheet music, reused across frames until
+// the playhead turns to a different page — re-rendering VexFlow every
+// animation frame would be needless work for something that only actually
+// changes once or twice per clip. Drawn via VexFlow's Canvas backend rather
+// than SVG specifically so it can be composited straight onto the main
+// canvas with drawImage: an SVG rasterized through an <img> gets its own
+// isolated rendering context that can't see VexFlow's Bravura music-glyph
+// font (registered on `document` via the FontFace API, not embedded in the
+// SVG markup), so every notehead/clef/time-signature glyph fell back to a
+// generic font — all those glyphs live in the same Private-Use-Area
+// Unicode block, so the result reads as a wall of garbled boxes. A canvas
+// target has no such isolation — see renderNotationMeasureToCanvas.
 interface SheetRaster {
   page: number;
-  img: HTMLImageElement;
+  canvas: HTMLCanvasElement;
   layout: NotationLayout;
 }
 
@@ -152,19 +190,19 @@ interface DrawParams {
   layout: FrameLayout;
   loopSeconds: number;
   measureLength: number;
-  revealSeconds: number;
   totalSeconds: number;
   lines: LineData[];
 }
 
-// Records a short (~7-10s, capped at 15s), vertically- or square-cropped
-// video of this beat's fractal art coming alive in sync with its own audio
-// looping a few times, with a small logo and the beat's own sheet music
-// (playhead and all) baked into the frame — built for dropping straight
-// into an Instagram Reel or TikTok. Rendering happens by literally playing
-// the clip in real time into a MediaRecorder (canvas.captureStream + an
-// AudioContext's MediaStreamAudioDestinationNode) rather than compositing it
-// offline, so recording a clip takes exactly as long as the clip itself.
+// Records a clip (7-15s, user's choice) of this beat's fractal art coming
+// alive as a continuous time-lapse — the reveal spans the *entire* clip and
+// finishes exactly as it ends — with its own audio looping underneath, a
+// small RockBlocks.app logo, and the beat's own sheet music (playhead and
+// all) baked into the frame. Built for dropping straight into an Instagram
+// Reel or TikTok. Rendering happens by literally playing the clip in real
+// time into a MediaRecorder (canvas.captureStream + an AudioContext's
+// MediaStreamAudioDestinationNode) rather than compositing it offline, so
+// recording a clip takes exactly as long as the clip itself.
 export function FractalVideoExportView({
   lines,
   bpm,
@@ -191,6 +229,7 @@ export function FractalVideoExportView({
 
   const [aspect, setAspect] = useState<VideoAspect>("vertical");
   const [background, setBackground] = useState<FractalBackground>(initialBackground);
+  const [clipSeconds, setClipSeconds] = useState(DEFAULT_CLIP_SECONDS);
   const [phase, setPhase] = useState<"idle" | "recording" | "done" | "unsupported" | "error">(
     format ? "idle" : "unsupported"
   );
@@ -202,9 +241,13 @@ export function FractalVideoExportView({
   const bars = useMemo(() => measureSplit(measureLength), [measureLength]);
 
   const loopSeconds = (60 / bpm) * measureLength;
-  const loops = pickLoopCount(loopSeconds);
-  const totalSeconds = loops * loopSeconds;
-  const revealSeconds = pickRevealSeconds(loopSeconds);
+  // The clip's length is the user's own choice, not derived — audio is
+  // rendered with enough whole loops to cover it (the last one simply cut
+  // wherever the fixed clip length lands, same as under any social clip),
+  // and the fractal's reveal is timed to that same exact length so it
+  // finishes right as the clip ends.
+  const totalSeconds = clipSeconds;
+  const loops = loopsForDuration(loopSeconds, totalSeconds);
 
   const size = aspectSize(aspect);
   const layout = useMemo(() => computeLayout(aspect, size.width, size.height), [aspect, size.width, size.height]);
@@ -218,9 +261,8 @@ export function FractalVideoExportView({
   // straight from useRef is exempt.
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const revealCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const sheetHiddenRef = useRef<HTMLDivElement>(null);
   const vfModuleRef = useRef<VF | null>(null);
-  const loopIndexRef = useRef(-1);
+  const revealCycleRef = useRef(-1);
   const drawnCountRef = useRef<Map<InstrumentId, number>>(new Map());
   const sheetRasterRef = useRef<SheetRaster | null>(null);
   const rasterizingPageRef = useRef<number | null>(null);
@@ -238,7 +280,6 @@ export function FractalVideoExportView({
     layout,
     loopSeconds,
     measureLength,
-    revealSeconds,
     totalSeconds,
     lines,
   });
@@ -255,7 +296,6 @@ export function FractalVideoExportView({
       layout,
       loopSeconds,
       measureLength,
-      revealSeconds,
       totalSeconds,
       lines,
     };
@@ -271,32 +311,28 @@ export function FractalVideoExportView({
     drawnCountRef.current.clear();
   }
 
-  // Re-renders one page of sheet music to an offscreen SVG, serializes it,
-  // and loads it as an Image — async, so tick() keeps showing whatever it
-  // already has until this resolves rather than blocking a frame on it.
-  // Guarded by rasterizingPageRef so a page that's already mid-render isn't
-  // kicked off again on every intervening frame.
-  async function rasterizePage(page: number, startBeat: number, numBeats: number, destW: number) {
-    const hidden = sheetHiddenRef.current;
-    if (!hidden || rasterizingPageRef.current === page) return;
+  // Re-renders one page of sheet music onto an offscreen canvas — async, so
+  // tick() keeps showing whatever it already has until this resolves rather
+  // than blocking a frame on it. Guarded by rasterizingPageRef so a page
+  // that's already mid-render isn't kicked off again on every intervening
+  // frame.
+  async function rasterizePage(page: number, startBeat: number, numBeats: number) {
+    if (rasterizingPageRef.current === page) return;
     rasterizingPageRef.current = page;
     try {
       if (!vfModuleRef.current) vfModuleRef.current = await import("vexflow");
       await document.fonts.ready;
-      const notationLayout = renderNotationPage(vfModuleRef.current, hidden, paramsRef.current.lines, startBeat, numBeats, destW);
-      const svg = hidden.querySelector("svg");
-      if (!svg) return;
-      const serialized = new XMLSerializer().serializeToString(svg);
-      const blob = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const img = new Image();
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error("sheet music image failed to decode"));
-        img.src = url;
-      });
-      URL.revokeObjectURL(url);
-      sheetRasterRef.current = { page, img, layout: notationLayout };
+      const area = paramsRef.current.layout.notationArea;
+      const canvas = document.createElement("canvas");
+      const notationLayout = renderNotationMeasureToCanvas(
+        vfModuleRef.current,
+        canvas,
+        paramsRef.current.lines,
+        startBeat,
+        numBeats,
+        Math.round(area.w)
+      );
+      sheetRasterRef.current = { page, canvas, layout: notationLayout };
     } catch {
       // Leaves sheetRasterRef showing the previous page (or nothing, on the
       // very first frame) rather than breaking the whole recording over a
@@ -307,10 +343,10 @@ export function FractalVideoExportView({
     }
   }
 
-  // One animation frame: advances the fractal's incremental reveal,
-  // composites the outer frame (dark chrome + fractal square + sheet-music
-  // paper with its playhead + logo), then schedules its own next call. This
-  // one loop runs continuously from mount to unmount — see the mount effect
+  // One animation frame: advances the fractal's time-lapse reveal, composites
+  // the outer frame (dark chrome + fractal square + sheet-music card with
+  // its playhead + corner logo), then schedules its own next call. This one
+  // loop runs continuously from mount to unmount — see the mount effect
   // below — silently on the wall clock while idle, switched by
   // startRecording onto the recording AudioContext's own clock (and back,
   // once MediaRecorder's onstop fires) rather than ever being torn down and
@@ -327,15 +363,21 @@ export function FractalVideoExportView({
     if (!cctx || !revealCtx) return;
 
     const elapsed = nowSeconds - startTimeRef.current;
-    const withinLoop = ((elapsed % p.loopSeconds) + p.loopSeconds) % p.loopSeconds;
-    const loopIndex = Math.floor(elapsed / p.loopSeconds);
 
-    if (loopIndex !== loopIndexRef.current) {
-      loopIndexRef.current = loopIndex;
+    // The fractal's reveal is a single continuous build spanning the whole
+    // clip length, restarting fresh every `totalSeconds` — while idle this
+    // just loops forever as a preview of what a take will look like; an
+    // actual recording never lives to see a second cycle, since it stops
+    // at exactly that same length (see below), landing right as the reveal
+    // completes.
+    const revealCycle = Math.floor(elapsed / p.totalSeconds);
+    const revealElapsed = ((elapsed % p.totalSeconds) + p.totalSeconds) % p.totalSeconds;
+    if (revealCycle !== revealCycleRef.current) {
+      revealCycleRef.current = revealCycle;
       resetReveal(p.background);
     }
 
-    const revealT = easeInOut(withinLoop / p.revealSeconds);
+    const revealT = easeInOut(revealElapsed / p.totalSeconds);
     for (const layer of p.layers) {
       const target = Math.floor(layer.pointCount * revealT);
       const already = drawnCountRef.current.get(layer.instrument) ?? 0;
@@ -364,11 +406,14 @@ export function FractalVideoExportView({
     cctx.lineWidth = Math.max(1, canvas.width * 0.0018);
     cctx.stroke();
 
-    // Sheet music: which bar is "now" within this loop, rasterize it if
-    // it's not already cached, and draw the cached snapshot plus a live
-    // playhead highlight over it.
+    // Sheet music: which bar is "now" — tracked off the *music's* own bar
+    // length, completely independent of the (much longer) fractal reveal
+    // cycle above; same elapsed clock, different modulus. Rasterize the
+    // current page if it's not already cached, then draw the cached
+    // snapshot plus a live playhead highlight over it.
     const beatSeconds = 60 / p.bpm;
-    const currentBeat = Math.min(p.measureLength - 1, Math.max(0, Math.floor(withinLoop / beatSeconds)));
+    const audioWithinLoop = ((elapsed % p.loopSeconds) + p.loopSeconds) % p.loopSeconds;
+    const currentBeat = Math.min(p.measureLength - 1, Math.max(0, Math.floor(audioWithinLoop / beatSeconds)));
     const { page, startBeat, numBeats, localBeat } = pageForBeat(p.bars, currentBeat);
 
     const s = p.layout.sheet;
@@ -379,19 +424,16 @@ export function FractalVideoExportView({
 
     const raster = sheetRasterRef.current;
     if (!raster || raster.page !== page) {
-      void rasterizePage(page, startBeat, numBeats, Math.round(s.w * 0.92));
+      void rasterizePage(page, startBeat, numBeats);
     }
     if (raster) {
-      const padX = s.w * 0.04;
-      const padY = s.h * 0.08;
-      const availW = s.w - padX * 2;
-      const availH = s.h - padY * 2;
-      const drawScale = Math.min(availW / raster.layout.width, availH / raster.layout.height, 1);
+      const area = p.layout.notationArea;
+      const drawScale = Math.min(area.w / raster.layout.width, area.h / raster.layout.height, 1);
       const drawW = raster.layout.width * drawScale;
       const drawH = raster.layout.height * drawScale;
-      const drawX = s.x + (s.w - drawW) / 2;
-      const drawY = s.y + (s.h - drawH) / 2;
-      cctx.drawImage(raster.img, drawX, drawY, drawW, drawH);
+      const drawX = area.x + (area.w - drawW) / 2;
+      const drawY = area.y;
+      cctx.drawImage(raster.canvas, drawX, drawY, drawW, drawH);
 
       if (raster.page === page) {
         const span = raster.layout.beatSpans[localBeat];
@@ -438,11 +480,12 @@ export function FractalVideoExportView({
   }, [onClose]);
 
   // (Re)sizes the two canvases and starts a fresh reveal cycle whenever the
-  // aspect ratio or background changes — both need a clean buffer at the
-  // new size/fill rather than whatever the previous look left behind. Other
-  // reactive values (beat, bpm, measureLength) don't affect canvas
-  // dimensions, so they flow into the already-running loop purely through
-  // paramsRef instead of resetting anything here.
+  // aspect ratio, background, or clip length changes — a new clip length
+  // changes the reveal cycle's own length, so it needs the same clean
+  // restart a new look does. Other reactive values (beat, bpm, measureLength)
+  // don't affect canvas dimensions or reveal timing, so they flow into the
+  // already-running loop purely through paramsRef instead of resetting
+  // anything here.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -452,11 +495,11 @@ export function FractalVideoExportView({
     revealCanvasRef.current.width = layout.fractal.w;
     revealCanvasRef.current.height = layout.fractal.h;
     resetReveal(background);
-    loopIndexRef.current = -1;
+    revealCycleRef.current = -1;
     sheetRasterRef.current = null;
     startTimeRef.current = performance.now() / 1000;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aspect, background]);
+  }, [aspect, background, clipSeconds]);
 
   // Starts the one continuous animation loop on mount and tears it down on
   // unmount — see tick() above for why it never needs restarting in between.
@@ -519,7 +562,7 @@ export function FractalVideoExportView({
         // than whatever the recording's last frame happened to look like.
         recordingRef.current = false;
         stoppingRef.current = false;
-        loopIndexRef.current = -1;
+        revealCycleRef.current = -1;
         sheetRasterRef.current = null;
         resetReveal(paramsRef.current.background);
         startTimeRef.current = performance.now() / 1000;
@@ -535,7 +578,7 @@ export function FractalVideoExportView({
       // always opens on an empty canvas at reveal 0, in lockstep with the
       // audio's own first sample. tick() is already running (see the mount
       // effect) and picks all of this up on its very next scheduled frame.
-      loopIndexRef.current = -1;
+      revealCycleRef.current = -1;
       sheetRasterRef.current = null;
       resetReveal(background);
       startTimeRef.current = audioCtx.currentTime;
@@ -644,6 +687,24 @@ export function FractalVideoExportView({
               </button>
             </div>
 
+            <div className="flex items-center gap-2">
+              <label htmlFor="clip-length" className="text-xs text-white/60">
+                Clip length
+              </label>
+              <input
+                id="clip-length"
+                type="range"
+                min={MIN_CLIP_SECONDS}
+                max={MAX_CLIP_SECONDS}
+                step={1}
+                value={clipSeconds}
+                disabled={phase === "recording"}
+                onChange={(e) => setClipSeconds(Number(e.target.value))}
+                className="w-32 accent-yellow-400 disabled:opacity-40"
+              />
+              <span className="w-8 text-xs text-white/80">{clipSeconds}s</span>
+            </div>
+
             <div
               // shrink-0 is load-bearing: without it, once the "done" result
               // panel below (video preview + buttons) makes this scrollable
@@ -659,7 +720,7 @@ export function FractalVideoExportView({
             </div>
 
             <p className="text-center text-xs text-white/40">
-              {loops} loop{loops === 1 ? "" : "s"} · {totalSeconds.toFixed(1)}s clip · {format?.extension.toUpperCase()}
+              Time-lapse over {clipSeconds}s · ~{loops} audio loop{loops === 1 ? "" : "s"} · {format?.extension.toUpperCase()}
             </p>
 
             {phase === "recording" ? (
@@ -681,7 +742,7 @@ export function FractalVideoExportView({
                 onClick={startRecording}
                 className="rounded-full bg-yellow-400 px-6 py-2 font-bold text-slate-900 transition hover:bg-yellow-300 disabled:opacity-30"
               >
-                ● Record {totalSeconds.toFixed(0)}s clip
+                ● Record {clipSeconds}s clip
               </button>
             )}
 
@@ -714,12 +775,6 @@ export function FractalVideoExportView({
           </>
         )}
       </div>
-
-      {/* Off-screen VexFlow target — connected to the document (VexFlow's
-          SVG text-measurement needs that) but positioned well outside the
-          viewport rather than display:none, which some layout-dependent
-          measurement calls treat as zero-size. */}
-      <div ref={sheetHiddenRef} style={{ position: "fixed", left: -99999, top: 0, width: 900 }} />
     </div>
   );
 }
