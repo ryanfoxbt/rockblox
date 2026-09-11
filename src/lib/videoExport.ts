@@ -23,6 +23,19 @@ export function loopsForDuration(loopSeconds: number, targetSeconds: number): nu
   return Math.max(1, Math.ceil(targetSeconds / loopSeconds));
 }
 
+// How long the clip opens on the fully-formed piece before clearing and
+// rebuilding it from scratch — a "sforzando": sudden and complete, not a
+// fade-in, the same way that dynamic marking means a note struck at full
+// force rather than swelling into it. Frame 0 of the recording lands inside
+// this window, which is also what a platform's own auto-picked thumbnail
+// usually is — so the preview a feed shows before anyone taps play is the
+// finished artwork, not a near-empty canvas. Long enough to safely cover
+// whichever early frame a platform samples, short enough to still read as
+// an accent rather than a second clip glued to the front.
+export function introSecondsFor(totalSeconds: number): number {
+  return Math.min(0.8, totalSeconds * 0.15);
+}
+
 // Ease-in-out: the reveal starts and ends gently rather than at a constant
 // rate, which reads more like something "coming alive" than a progress bar.
 export function easeInOut(t: number): number {

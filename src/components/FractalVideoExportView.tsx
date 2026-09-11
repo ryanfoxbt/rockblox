@@ -13,6 +13,7 @@ import { measureSplit } from "@/lib/song";
 import {
   aspectSize,
   easeInOut,
+  introSecondsFor,
   loopsForDuration,
   pickRecordingFormat,
   MAX_CLIP_SECONDS,
@@ -20,6 +21,12 @@ import {
   DEFAULT_CLIP_SECONDS,
   type VideoAspect,
 } from "@/lib/videoExport";
+
+// A handful of named looks for the fractal square, on top of the existing
+// dark/light background choice — picked for being cheap to composite (no
+// per-point cost, just one or two extra drawImage/gradient calls per frame)
+// so they don't threaten the real-time capture budget.
+export type FractalStyle = "classic" | "bloom" | "vignette";
 
 // Same 2x2 beat-block mark as the favicon (icon.tsx/apple-icon.tsx) — the
 // product's own step-sequencer UI reduced to its simplest form — drawn
@@ -184,6 +191,7 @@ const HIGHLIGHT_FILL = "rgba(250,204,21,0.45)";
 // restarting just because e.g. the background toggle changed.
 interface DrawParams {
   background: FractalBackground;
+  style: FractalStyle;
   bars: number[];
   layers: ReturnType<typeof computeFractalBeat>["layers"];
   bpm: number;
@@ -191,18 +199,21 @@ interface DrawParams {
   loopSeconds: number;
   measureLength: number;
   totalSeconds: number;
+  introSeconds: number;
   lines: LineData[];
 }
 
 // Records a clip (7-15s, user's choice) of this beat's fractal art coming
-// alive as a continuous time-lapse — the reveal spans the *entire* clip and
-// finishes exactly as it ends — with its own audio looping underneath, a
-// small RockBlocks.app logo, and the beat's own sheet music (playhead and
-// all) baked into the frame. Built for dropping straight into an Instagram
-// Reel or TikTok. Rendering happens by literally playing the clip in real
-// time into a MediaRecorder (canvas.captureStream + an AudioContext's
-// MediaStreamAudioDestinationNode) rather than compositing it offline, so
-// recording a clip takes exactly as long as the clip itself.
+// alive as a continuous time-lapse — opening on a brief "sforzando" of the
+// fully-formed piece (see introSecondsFor), then clearing and rebuilding it
+// from nothing across the rest of the clip, finishing exactly as it ends —
+// with its own audio looping underneath, a small RockBlocks.app logo, and
+// the beat's own sheet music (playhead and all) baked into the frame. Built
+// for dropping straight into an Instagram Reel or TikTok. Rendering happens
+// by literally playing the clip in real time into a MediaRecorder
+// (canvas.captureStream + an AudioContext's MediaStreamAudioDestinationNode)
+// rather than compositing it offline, so recording a clip takes exactly as
+// long as the clip itself.
 export function FractalVideoExportView({
   lines,
   bpm,
@@ -229,6 +240,7 @@ export function FractalVideoExportView({
 
   const [aspect, setAspect] = useState<VideoAspect>("vertical");
   const [background, setBackground] = useState<FractalBackground>(initialBackground);
+  const [style, setStyle] = useState<FractalStyle>("classic");
   const [clipSeconds, setClipSeconds] = useState(DEFAULT_CLIP_SECONDS);
   const [phase, setPhase] = useState<"idle" | "recording" | "done" | "unsupported" | "error">(
     format ? "idle" : "unsupported"
@@ -248,6 +260,7 @@ export function FractalVideoExportView({
   // finishes right as the clip ends.
   const totalSeconds = clipSeconds;
   const loops = loopsForDuration(loopSeconds, totalSeconds);
+  const introSeconds = introSecondsFor(totalSeconds);
 
   const size = aspectSize(aspect);
   const layout = useMemo(() => computeLayout(aspect, size.width, size.height), [aspect, size.width, size.height]);
@@ -262,7 +275,7 @@ export function FractalVideoExportView({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const revealCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const vfModuleRef = useRef<VF | null>(null);
-  const revealCycleRef = useRef(-1);
+  const revealSegmentRef = useRef(-1);
   const drawnCountRef = useRef<Map<InstrumentId, number>>(new Map());
   const sheetRasterRef = useRef<SheetRaster | null>(null);
   const rasterizingPageRef = useRef<number | null>(null);
@@ -274,6 +287,7 @@ export function FractalVideoExportView({
   const recorderRef = useRef<MediaRecorder | null>(null);
   const paramsRef = useRef<DrawParams>({
     background,
+    style,
     bars,
     layers: beat.layers,
     bpm,
@@ -281,6 +295,7 @@ export function FractalVideoExportView({
     loopSeconds,
     measureLength,
     totalSeconds,
+    introSeconds,
     lines,
   });
 
@@ -290,6 +305,7 @@ export function FractalVideoExportView({
   useEffect(() => {
     paramsRef.current = {
       background,
+      style,
       bars,
       layers: beat.layers,
       bpm,
@@ -297,6 +313,7 @@ export function FractalVideoExportView({
       loopSeconds,
       measureLength,
       totalSeconds,
+      introSeconds,
       lines,
     };
   });
@@ -370,20 +387,42 @@ export function FractalVideoExportView({
     // actual recording never lives to see a second cycle, since it stops
     // at exactly that same length (see below), landing right as the reveal
     // completes.
-    const revealCycle = Math.floor(elapsed / p.totalSeconds);
-    const revealElapsed = ((elapsed % p.totalSeconds) + p.totalSeconds) % p.totalSeconds;
-    if (revealCycle !== revealCycleRef.current) {
-      revealCycleRef.current = revealCycle;
+    //
+    // Each cycle opens with a brief "sforzando": the piece already fully
+    // formed, held for `introSeconds`, before clearing and building back up
+    // from nothing over the rest of the cycle. Frame 0 of an actual
+    // recording lands inside that opening window — see introSecondsFor —
+    // so whichever early frame a platform picks as its thumbnail shows the
+    // finished artwork rather than a blank canvas. Two segments per cycle
+    // (intro, build), each entered exactly once, is what `segment` tracks;
+    // `revealSegmentRef` remembers the last one actually drawn so a segment
+    // already in progress isn't reset again on every intervening frame.
+    const cycleIndex = Math.floor(elapsed / p.totalSeconds);
+    const cycleElapsed = ((elapsed % p.totalSeconds) + p.totalSeconds) % p.totalSeconds;
+    const inIntro = cycleElapsed < p.introSeconds;
+    const segment = cycleIndex * 2 + (inIntro ? 0 : 1);
+    if (segment !== revealSegmentRef.current) {
+      revealSegmentRef.current = segment;
       resetReveal(p.background);
+      if (inIntro) {
+        for (const layer of p.layers) {
+          drawLayer(revealCtx, revealCanvas.width, 1, layer, 0, layer.pointCount);
+          drawnCountRef.current.set(layer.instrument, layer.pointCount);
+        }
+      }
     }
 
-    const revealT = easeInOut(revealElapsed / p.totalSeconds);
-    for (const layer of p.layers) {
-      const target = Math.floor(layer.pointCount * revealT);
-      const already = drawnCountRef.current.get(layer.instrument) ?? 0;
-      if (target > already) {
-        drawLayer(revealCtx, revealCanvas.width, 1, layer, already, target);
-        drawnCountRef.current.set(layer.instrument, target);
+    if (!inIntro) {
+      const buildDuration = p.totalSeconds - p.introSeconds;
+      const buildElapsed = cycleElapsed - p.introSeconds;
+      const revealT = easeInOut(buildDuration > 0 ? buildElapsed / buildDuration : 1);
+      for (const layer of p.layers) {
+        const target = Math.floor(layer.pointCount * revealT);
+        const already = drawnCountRef.current.get(layer.instrument) ?? 0;
+        if (target > already) {
+          drawLayer(revealCtx, revealCanvas.width, 1, layer, already, target);
+          drawnCountRef.current.set(layer.instrument, target);
+        }
       }
     }
 
@@ -400,7 +439,44 @@ export function FractalVideoExportView({
     cctx.beginPath();
     cctx.roundRect(f.x, f.y, f.w, f.h, f.w * 0.03);
     cctx.clip();
+    // The sharp copy always goes down first, exactly as "classic" draws it —
+    // revealCanvas is fully opaque (resetReveal fills it solid), so drawing
+    // it a second time with plain source-over would completely overwrite
+    // anything drawn before it, erasing rather than adding a halo. Bloom's
+    // blurred copy goes on *after*, with a composite mode that only adds to
+    // (dark: "lighter") or gently darkens (light: "multiply", reading as
+    // ink softly bleeding outward rather than glowing, which flat ink never
+    // does) what's already correctly there, instead of a mode that could
+    // paint over it.
     cctx.drawImage(revealCanvas, f.x, f.y, f.w, f.h);
+    if (p.style === "bloom") {
+      cctx.save();
+      cctx.filter = `blur(${Math.max(2, Math.round(f.w * 0.014))}px)`;
+      if (p.background === "dark") {
+        cctx.globalAlpha = 0.65;
+        cctx.globalCompositeOperation = "lighter";
+      } else {
+        cctx.globalAlpha = 0.4;
+        cctx.globalCompositeOperation = "multiply";
+      }
+      cctx.drawImage(revealCanvas, f.x, f.y, f.w, f.h);
+      cctx.restore();
+    }
+    if (p.style === "vignette") {
+      // A soft radial darkening toward the edges reads as more "poster,"
+      // less "raw plot" — subtle on light (ink already provides its own
+      // contrast) and a bit stronger on dark (glow) where the frame's edges
+      // otherwise fade into the outer chrome with nothing to separate them.
+      const cx = f.x + f.w / 2;
+      const cy = f.y + f.h / 2;
+      const outer = f.w * 0.72;
+      const vg = cctx.createRadialGradient(cx, cy, f.w * 0.32, cx, cy, outer);
+      const edgeAlpha = p.background === "dark" ? 0.55 : 0.2;
+      vg.addColorStop(0, "rgba(0,0,0,0)");
+      vg.addColorStop(1, `rgba(0,0,0,${edgeAlpha})`);
+      cctx.fillStyle = vg;
+      cctx.fillRect(f.x, f.y, f.w, f.h);
+    }
     cctx.restore();
     cctx.strokeStyle = "rgba(255,255,255,0.12)";
     cctx.lineWidth = Math.max(1, canvas.width * 0.0018);
@@ -495,7 +571,7 @@ export function FractalVideoExportView({
     revealCanvasRef.current.width = layout.fractal.w;
     revealCanvasRef.current.height = layout.fractal.h;
     resetReveal(background);
-    revealCycleRef.current = -1;
+    revealSegmentRef.current = -1;
     sheetRasterRef.current = null;
     startTimeRef.current = performance.now() / 1000;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -554,20 +630,82 @@ export function FractalVideoExportView({
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunks.push(e.data);
       };
+      recorder.onerror = (e) => {
+        // MediaRecorder failing mid-take otherwise fails silently — this
+        // was previously the most likely cause of "the video doesn't seem
+        // to be rendering correctly": no error surfaced, so a broken take
+        // still landed in the normal "done" state with whatever partial
+        // data had been collected instead of a clear failure.
+        recordingRef.current = false;
+        stoppingRef.current = false;
+        videoStream.getVideoTracks().forEach((t) => t.stop());
+        // Calling stop() on a source that's already ended (naturally,
+        // or from a prior stop()) shouldn't throw per spec, but if some
+        // implementation disagrees, an uncaught throw here would abort
+        // the rest of this handler — including the setPhase call below
+        // that gets the UI out of "recording" — leaving it stuck with
+        // no visible error rather than just skipping a no-op cleanup step.
+        try {
+          source.stop();
+        } catch {
+          // Already stopped — nothing left to do.
+        }
+        audioCtxRef.current?.close().catch(() => {});
+        audioCtxRef.current = null;
+        setPhase("error");
+        // The runtime delivers a MediaRecorderErrorEvent (.error is a
+        // DOMException) here, but TS's DOM lib still types this handler's
+        // event as a plain ErrorEvent — and DOMException isn't an Error
+        // subclass, so check for `.message` directly rather than
+        // `instanceof Error`, which would silently never match.
+        const message = typeof e.error?.message === "string" ? e.error.message : undefined;
+        setErrorMessage(message ? `Recording failed: ${message}` : "Recording failed partway through.");
+      };
       recorder.onstop = () => {
-        source.stop();
+        videoStream.getVideoTracks().forEach((t) => t.stop());
+        // Calling stop() on a source that's already ended (naturally,
+        // or from a prior stop()) shouldn't throw per spec, but if some
+        // implementation disagrees, an uncaught throw here would abort
+        // the rest of this handler — including the setPhase call below
+        // that gets the UI out of "recording" — leaving it stuck with
+        // no visible error rather than just skipping a no-op cleanup step.
+        try {
+          source.stop();
+        } catch {
+          // Already stopped — nothing left to do.
+        }
         audioCtxRef.current?.close().catch(() => {});
         audioCtxRef.current = null;
         // Hand the loop back to idle preview, from a fresh cycle rather
         // than whatever the recording's last frame happened to look like.
         recordingRef.current = false;
         stoppingRef.current = false;
-        revealCycleRef.current = -1;
+        revealSegmentRef.current = -1;
         sheetRasterRef.current = null;
         resetReveal(paramsRef.current.background);
         startTimeRef.current = performance.now() / 1000;
 
         const blob = new Blob(chunks, { type: format.mimeType });
+        // A properly-encoded clip at these bitrates should land well north
+        // of ~40KB per second of clip length even in the least favorable
+        // case (a mostly-static frame, minimal audio) — a file far under
+        // that is the signature of a MediaRecorder session that produced
+        // almost no real frame data (seen in testing when a tab loses
+        // foreground focus mid-recording, which throttles/suppresses
+        // canvas.captureStream — captureStream's frames tie into actual
+        // browser compositing, not just script execution, so this can
+        // happen even while tick() itself keeps running normally). Catching
+        // it here means the user gets a clear "try again" instead of a
+        // silently-broken "done" state with an unplayable download.
+        const minBytes = 40_000 * paramsRef.current.totalSeconds;
+        if (blob.size < minBytes) {
+          setPhase("error");
+          setErrorMessage(
+            "The recording came out empty or too short — this usually happens if the browser tab lost focus " +
+              "while recording. Keep this tab visible and in the foreground for the whole clip, then try again."
+          );
+          return;
+        }
         const url = URL.createObjectURL(blob);
         setResult({ url, extension: format.extension, sizeBytes: blob.size });
         setPhase("done");
@@ -578,7 +716,7 @@ export function FractalVideoExportView({
       // always opens on an empty canvas at reveal 0, in lockstep with the
       // audio's own first sample. tick() is already running (see the mount
       // effect) and picks all of this up on its very next scheduled frame.
-      revealCycleRef.current = -1;
+      revealSegmentRef.current = -1;
       sheetRasterRef.current = null;
       resetReveal(background);
       startTimeRef.current = audioCtx.currentTime;
@@ -587,7 +725,14 @@ export function FractalVideoExportView({
       setPhase("recording");
       setProgress(0);
 
-      recorder.start();
+      // A timeslice (rather than the argument-less recorder.start(), which
+      // only ever flushes once — at stop()) is what makes this reliable:
+      // without one, a session that stops (or errors) before that single
+      // flush has actually fired hands back zero data and looks, from the
+      // UI's perspective, exactly like a normal completed recording. With
+      // one, most of the clip is already safely captured in earlier chunks
+      // by the time stop() is called.
+      recorder.start(250);
       source.start(audioCtx.currentTime);
     } catch (err) {
       recordingRef.current = false;
@@ -684,6 +829,50 @@ export function FractalVideoExportView({
                 ].join(" ")}
               >
                 Light (ink)
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={phase === "recording"}
+                onClick={() => setStyle("classic")}
+                className={[
+                  "rounded-full border px-3 py-1 text-xs font-medium transition disabled:opacity-40",
+                  style === "classic"
+                    ? "border-yellow-400 bg-yellow-400/20 text-yellow-300"
+                    : "border-white/15 bg-white/5 text-white/70 hover:border-yellow-400 hover:text-yellow-400",
+                ].join(" ")}
+              >
+                Classic
+              </button>
+              <button
+                type="button"
+                disabled={phase === "recording"}
+                onClick={() => setStyle("bloom")}
+                title="A soft blurred halo behind the artwork"
+                className={[
+                  "rounded-full border px-3 py-1 text-xs font-medium transition disabled:opacity-40",
+                  style === "bloom"
+                    ? "border-yellow-400 bg-yellow-400/20 text-yellow-300"
+                    : "border-white/15 bg-white/5 text-white/70 hover:border-yellow-400 hover:text-yellow-400",
+                ].join(" ")}
+              >
+                Bloom
+              </button>
+              <button
+                type="button"
+                disabled={phase === "recording"}
+                onClick={() => setStyle("vignette")}
+                title="Darkened edges for a more poster-like look"
+                className={[
+                  "rounded-full border px-3 py-1 text-xs font-medium transition disabled:opacity-40",
+                  style === "vignette"
+                    ? "border-yellow-400 bg-yellow-400/20 text-yellow-300"
+                    : "border-white/15 bg-white/5 text-white/70 hover:border-yellow-400 hover:text-yellow-400",
+                ].join(" ")}
+              >
+                Vignette
               </button>
             </div>
 
