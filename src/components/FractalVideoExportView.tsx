@@ -252,11 +252,16 @@ export function FractalVideoExportView({
   const [background, setBackground] = useState<FractalBackground>(initialBackground);
   const [style, setStyle] = useState<FractalStyle>("classic");
   const [clipSeconds, setClipSeconds] = useState(DEFAULT_CLIP_SECONDS);
-  const [phase, setPhase] = useState<"idle" | "recording" | "done" | "unsupported" | "error">(
+  const [phase, setPhase] = useState<"idle" | "recording" | "processing" | "done" | "unsupported" | "error">(
     format ? "idle" : "unsupported"
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0); // 0-1 during recording
+  const [progress, setProgress] = useState(0); // 0-1 during recording, and again during "processing"
+  // Recording and the post-recording MP4 remux (see remuxVideo.ts) both
+  // need every setting locked — swapping aspect/style/clip-length mid-take
+  // would tear the in-flight recording, and there's nothing to re-remux
+  // mid-fix either.
+  const busy = phase === "recording" || phase === "processing";
   const [result, setResult] = useState<{ url: string; extension: string; sizeBytes: number } | null>(null);
 
   const beat = useMemo(() => computeFractalBeat(lines, measureLength, bpm), [lines, measureLength, bpm]);
@@ -708,7 +713,7 @@ export function FractalVideoExportView({
   }, [result]);
 
   async function startRecording() {
-    if (!format || phase === "recording") return;
+    if (!format || busy) return;
     setErrorMessage(null);
     setResult(null);
 
@@ -776,7 +781,7 @@ export function FractalVideoExportView({
         const message = typeof e.error?.message === "string" ? e.error.message : undefined;
         setErrorMessage(message ? `Recording failed: ${message}` : "Recording failed partway through.");
       };
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         videoStream.getVideoTracks().forEach((t) => t.stop());
         // Calling stop() on a source that's already ended (naturally,
         // or from a prior stop()) shouldn't throw per spec, but if some
@@ -821,8 +826,25 @@ export function FractalVideoExportView({
           );
           return;
         }
-        const url = URL.createObjectURL(blob);
-        setResult({ url, extension: format.extension, sizeBytes: blob.size });
+
+        // MP4 out of MediaRecorder is always a fragmented MP4 whose leading
+        // moov carries no duration (true in every Chromium/WebKit build,
+        // independent of the timeslice above) — harmless to a lenient local
+        // player, but it's what makes TikTok's own re-encode truncate the
+        // audio to a couple of seconds or play it back sped up. Fix the
+        // container (stream copy, not a re-encode — the actual audio/video
+        // bitstream is untouched) before this ever reaches the user. See
+        // remuxVideo.ts. Skipped for webm, which doesn't have this problem.
+        let finalBlob = blob;
+        if (format.extension === "mp4") {
+          setPhase("processing");
+          setProgress(0);
+          const { fixMp4Duration } = await import("@/lib/remuxVideo");
+          finalBlob = await fixMp4Duration(blob, (fraction) => setProgress(fraction));
+        }
+
+        const url = URL.createObjectURL(finalBlob);
+        setResult({ url, extension: format.extension, sizeBytes: finalBlob.size });
         setPhase("done");
       };
       recorderRef.current = recorder;
@@ -840,22 +862,17 @@ export function FractalVideoExportView({
       setPhase("recording");
       setProgress(0);
 
-      // No timeslice: recorder.start() with no argument flushes exactly
-      // once, at stop() — normal stop() (see tick() calling
-      // recorderRef.current?.stop() once elapsed reaches totalSeconds)
-      // reliably flushes the whole clip regardless, so this doesn't risk
-      // losing data on a clean take. A timeslice used to be passed here to
-      // guard against a take that stops/errors before its first flush, but
-      // periodic mid-recording flushes turned out to be the actual cause of
-      // "fast and glitchy" audio once a platform re-transcodes the upload
-      // (TikTok, notably): each flushed chunk restarts the AAC encoder,
-      // and the resulting per-chunk encoder priming/duration slop
-      // accumulates into audio whose declared duration runs short of its
-      // real sample count — exactly what makes a strict re-encoder play it
-      // back sped up and glitchy, even though a lenient local player never
-      // shows it. The "recording came out empty" failure mode this used to
-      // guard against is still caught below by the minBytes check.
-      recorder.start();
+      // A timeslice (rather than the argument-less recorder.start(), which
+      // only ever flushes once — at stop()) is what makes this reliable:
+      // without one, a session that stops (or errors) before that single
+      // flush has actually fired hands back zero data and looks, from the
+      // UI's perspective, exactly like a normal completed recording. With
+      // one, most of the clip is already safely captured in earlier chunks
+      // by the time stop() is called. (This was briefly suspected of
+      // causing the fast/glitchy TikTok audio itself — it isn't: Chromium
+      // produces a fragmented MP4 with no duration in its leading moov
+      // either way, timeslice or not. See remuxVideo.ts for the real fix.)
+      recorder.start(250);
       source.start(audioCtx.currentTime);
     } catch (err) {
       recordingRef.current = false;
@@ -900,7 +917,7 @@ export function FractalVideoExportView({
             <div className="flex gap-2">
               <button
                 type="button"
-                disabled={phase === "recording"}
+                disabled={busy}
                 onClick={() => setAspect("vertical")}
                 className={[
                   "rounded-full border px-4 py-1.5 text-sm font-medium transition disabled:opacity-40",
@@ -913,7 +930,7 @@ export function FractalVideoExportView({
               </button>
               <button
                 type="button"
-                disabled={phase === "recording"}
+                disabled={busy}
                 onClick={() => setAspect("square")}
                 className={[
                   "rounded-full border px-4 py-1.5 text-sm font-medium transition disabled:opacity-40",
@@ -929,7 +946,7 @@ export function FractalVideoExportView({
             <div className="flex gap-2">
               <button
                 type="button"
-                disabled={phase === "recording"}
+                disabled={busy}
                 onClick={() => setBackground("dark")}
                 className={[
                   "rounded-full border px-3 py-1 text-xs font-medium transition disabled:opacity-40",
@@ -942,7 +959,7 @@ export function FractalVideoExportView({
               </button>
               <button
                 type="button"
-                disabled={phase === "recording"}
+                disabled={busy}
                 onClick={() => setBackground("light")}
                 className={[
                   "rounded-full border px-3 py-1 text-xs font-medium transition disabled:opacity-40",
@@ -958,7 +975,7 @@ export function FractalVideoExportView({
             <div className="flex flex-wrap justify-center gap-2">
               <button
                 type="button"
-                disabled={phase === "recording"}
+                disabled={busy}
                 onClick={() => setStyle("classic")}
                 className={[
                   "rounded-full border px-3 py-1 text-xs font-medium transition disabled:opacity-40",
@@ -971,7 +988,7 @@ export function FractalVideoExportView({
               </button>
               <button
                 type="button"
-                disabled={phase === "recording"}
+                disabled={busy}
                 onClick={() => setStyle("bloom")}
                 title="A soft blurred halo behind the artwork"
                 className={[
@@ -985,7 +1002,7 @@ export function FractalVideoExportView({
               </button>
               <button
                 type="button"
-                disabled={phase === "recording"}
+                disabled={busy}
                 onClick={() => setStyle("vignette")}
                 title="Darkened edges for a more poster-like look"
                 className={[
@@ -999,7 +1016,7 @@ export function FractalVideoExportView({
               </button>
               <button
                 type="button"
-                disabled={phase === "recording"}
+                disabled={busy}
                 onClick={() => setStyle("vivid")}
                 title="Bigger, glowing, more saturated — a vibrant, neon-leaning look"
                 className={[
@@ -1013,7 +1030,7 @@ export function FractalVideoExportView({
               </button>
               <button
                 type="button"
-                disabled={phase === "recording"}
+                disabled={busy}
                 onClick={() => setStyle("prism")}
                 title="Rainbow-fringed, trippy chromatic-shift copies"
                 className={[
@@ -1038,7 +1055,7 @@ export function FractalVideoExportView({
                 max={MAX_CLIP_SECONDS}
                 step={1}
                 value={clipSeconds}
-                disabled={phase === "recording"}
+                disabled={busy}
                 onChange={(e) => setClipSeconds(Number(e.target.value))}
                 className="w-32 accent-yellow-400 disabled:opacity-40"
               />
@@ -1074,6 +1091,16 @@ export function FractalVideoExportView({
                 <p className="text-sm text-white/60">
                   Recording… {(progress * totalSeconds).toFixed(1)}s / {totalSeconds.toFixed(1)}s
                 </p>
+              </div>
+            ) : phase === "processing" ? (
+              <div className="flex w-full flex-col items-center gap-2">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full bg-yellow-400 transition-[width]"
+                    style={{ width: `${Math.round(progress * 100)}%` }}
+                  />
+                </div>
+                <p className="text-sm text-white/60">Preparing for TikTok/Reels upload…</p>
               </div>
             ) : (
               <button
