@@ -926,17 +926,18 @@ export function Editor({
           )}
         </div>
 
-        {/* Controls row: kept as one flex line (not wrapped from the header
-            above) so the right-hand group stays pinned to the right even on
-            narrow screens — a wrapped flex line with a single item collapses
-            justify-between to the start, which used to strand this group on
-            the left underneath the title instead. No overflow-x here: an
-            overflow-x other than visible forces the paired overflow-y to
-            auto too (a CSS quirk), which would clip the tools menu's
-            dropdown since it's an absolutely-positioned descendant of this
-            row — the row's few small icon buttons fit without scrolling
-            anyway. */}
-        <div className="flex flex-nowrap items-center justify-between gap-1.5">
+        {/* Controls row: wraps to a second line rather than overflowing when
+            both groups don't fit (a claimed board's A-D/A-H slot switcher
+            plus the Blocks/Classic toggle is too wide for a phone screen) —
+            the right-hand group uses ml-auto instead of the row's own
+            justify-between so it stays pinned to the line's own end whether
+            it's sharing the first line or has wrapped onto its own second
+            one (plain justify-between would collapse a lone wrapped item to
+            the start instead). No overflow-x here: an overflow-x other than
+            visible forces the paired overflow-y to auto too (a CSS quirk),
+            which would clip the tools menu's dropdown since it's an
+            absolutely-positioned descendant of this row. */}
+        <div className="flex flex-wrap items-center gap-1.5">
           <div className="flex shrink-0 flex-nowrap items-center gap-1.5">
             {board && (
               <div className="flex items-center gap-1">
@@ -986,7 +987,7 @@ export function Editor({
             )}
             {undoRedoButtons}
           </div>
-          <div className="flex shrink-0 flex-nowrap items-center gap-1.5">
+          <div className="ml-auto flex shrink-0 flex-nowrap items-center gap-1.5">
             <div
               className="flex overflow-hidden rounded-md border border-white/15 text-xs font-semibold"
               title="Switch between the RockBlocks shape editor and a classic step-sequencer grid — same beat, either view"
