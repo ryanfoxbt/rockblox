@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Bassline } from "@/lib/bassline";
 import type { CustomSamples } from "@/lib/customSamples";
 import { InstrumentId } from "@/lib/instruments";
-import { LineState, renderSongToBuffer } from "@/lib/audioEngine";
+import { LineState, RENDER_SAMPLE_RATE, renderSongToBuffer } from "@/lib/audioEngine";
 import { computeFractalBeat } from "@/lib/fractalArt";
 import { drawLayer, fillBackground, renderFrame, type FractalBackground } from "@/lib/fractalRender";
 import { NotationLayout, VF, renderNotationMeasureToCanvas } from "@/lib/notation";
@@ -717,7 +717,14 @@ export function FractalVideoExportView({
       const buffer = await renderSongToBuffer(lineStates, bpm, measureLength, loops, kit, customSamples, bassline, "full");
 
       const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      const audioCtx = new AC();
+      // Pinned to the exact rate `buffer` was rendered at (see
+      // RENDER_SAMPLE_RATE) rather than left to default to the device's own
+      // output rate (often 48000Hz) — a mismatch here still plays back fine
+      // live, but piping it through MediaStreamAudioDestinationNode into
+      // MediaRecorder's AAC encoder at a mismatched rate is what produces
+      // audio that decodes fast and glitchy once a platform re-transcodes
+      // the upload (TikTok, notably).
+      const audioCtx = new AC({ sampleRate: RENDER_SAMPLE_RATE });
       audioCtxRef.current = audioCtx;
       const streamDest = audioCtx.createMediaStreamDestination();
       const source = audioCtx.createBufferSource();

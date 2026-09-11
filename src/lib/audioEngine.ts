@@ -180,6 +180,17 @@ export function scheduleBasslineEvents(
 
 const RENDER_TAIL_SECONDS = 2;
 
+// The fixed rate every offline render (renderSongToBuffer, renderStackToBuffer)
+// produces its AudioBuffer at. Exported so anything that later plays that
+// exact buffer through a *live* AudioContext (see FractalVideoExportView's
+// recording capture) can pin that context to the same rate — mismatched
+// rates between the two still play back correctly on their own (Web Audio
+// resamples transparently), but piping the result through
+// MediaStreamAudioDestinationNode into MediaRecorder's AAC encoder at a
+// mismatched rate has been observed to produce audio that decodes fast and
+// glitchy once a platform (e.g. TikTok) re-transcodes the upload.
+export const RENDER_SAMPLE_RATE = 44100;
+
 // A brickwall-ish safety limiter for the master bus. Catches peaks where a
 // bass note lands on top of a kick/snare (or several drum voices stack) before
 // they clip the [-1, 1] range — the offline MP3 encoder hard-clamps, which is
@@ -207,7 +218,7 @@ export async function renderSongToBuffer(
   bassline?: Bassline | null,
   part: ExportPart = "full"
 ): Promise<AudioBuffer> {
-  const sampleRate = 44100;
+  const sampleRate = RENDER_SAMPLE_RATE;
   const beatSeconds = 60 / bpm;
   const loopDuration = beatSeconds * measureBeats;
   const totalSeconds = loopDuration * loops + RENDER_TAIL_SECONDS;
@@ -249,7 +260,7 @@ export async function renderStackToBuffer(
   bpm: number,
   part: ExportPart = "full"
 ): Promise<AudioBuffer> {
-  const sampleRate = 44100;
+  const sampleRate = RENDER_SAMPLE_RATE;
   const beatSeconds = 60 / bpm;
   const stepDurations = steps.map((s) => beatSeconds * s.measureLength);
   const totalSeconds = stepDurations.reduce((a, b) => a + b, 0) + RENDER_TAIL_SECONDS;
