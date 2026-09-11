@@ -149,15 +149,21 @@ function computeLayout(aspect: VideoAspect, width: number, height: number): Fram
   }
 
   // Square: less vertical room to work with — the fractal gets whatever's
-  // left after a modest sheet card, rather than the reverse.
+  // left after a modest sheet card, rather than the reverse. That makes
+  // fractalSize driven by the vertical budget, not the canvas width, so
+  // it (and the sheet card, which shares its width) is narrower than the
+  // canvas — x has to be its own centered offset rather than just the
+  // outer margin, or both end up flush against the left edge with the
+  // rest of the canvas's width sitting empty on the right.
   const gap = Math.round(width * 0.045);
   const sheetH = Math.round(width * 0.28);
   const fractalSize = Math.round(height - margin * 2 - sheetH - gap);
+  const x = Math.round((width - fractalSize) / 2);
   const fractalY = margin;
   const sheetY = fractalY + fractalSize + gap;
   return withSheet(
-    { x: margin, y: sheetY, w: fractalSize, h: sheetH },
-    { x: margin, y: fractalY, w: fractalSize, h: fractalSize }
+    { x, y: sheetY, w: fractalSize, h: sheetH },
+    { x, y: fractalY, w: fractalSize, h: fractalSize }
   );
 }
 
@@ -211,6 +217,7 @@ interface DrawParams {
   totalSeconds: number;
   introSeconds: number;
   lines: LineData[];
+  showLogo: boolean;
 }
 
 // Records a clip (7-15s, user's choice) of this beat's fractal art coming
@@ -252,6 +259,9 @@ export function FractalVideoExportView({
   const [background, setBackground] = useState<FractalBackground>(initialBackground);
   const [style, setStyle] = useState<FractalStyle>("classic");
   const [clipSeconds, setClipSeconds] = useState(DEFAULT_CLIP_SECONDS);
+  // Shown by default (matches the app's own branding) — an opt-OUT, not an
+  // opt-in, for anyone who'd rather post without it.
+  const [showLogo, setShowLogo] = useState(true);
   const [phase, setPhase] = useState<"idle" | "recording" | "processing" | "done" | "unsupported" | "error">(
     format ? "idle" : "unsupported"
   );
@@ -328,6 +338,7 @@ export function FractalVideoExportView({
     totalSeconds,
     introSeconds,
     lines,
+    showLogo,
   });
 
   // Keeps paramsRef in sync with the latest render's reactive values. Runs
@@ -346,6 +357,7 @@ export function FractalVideoExportView({
       totalSeconds,
       introSeconds,
       lines,
+      showLogo,
     };
   });
 
@@ -638,7 +650,7 @@ export function FractalVideoExportView({
       }
     }
 
-    if (logoCanvasRef.current) cctx.drawImage(logoCanvasRef.current, 0, 0);
+    if (p.showLogo && logoCanvasRef.current) cctx.drawImage(logoCanvasRef.current, 0, 0);
 
     if (recordingRef.current) {
       if (elapsed >= p.totalSeconds && !stoppingRef.current) {
@@ -1061,6 +1073,17 @@ export function FractalVideoExportView({
               />
               <span className="w-8 text-xs text-white/80">{clipSeconds}s</span>
             </div>
+
+            <label className="flex items-center gap-2 text-xs text-white/60">
+              <input
+                type="checkbox"
+                checked={showLogo}
+                disabled={busy}
+                onChange={(e) => setShowLogo(e.target.checked)}
+                className="accent-yellow-400 disabled:opacity-40"
+              />
+              Show RockBlocks logo
+            </label>
 
             <div
               // shrink-0 is load-bearing: without it, once the "done" result
