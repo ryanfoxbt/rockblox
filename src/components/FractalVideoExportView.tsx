@@ -272,7 +272,9 @@ export function FractalVideoExportView({
   // would tear the in-flight recording, and there's nothing to re-remux
   // mid-fix either.
   const busy = phase === "recording" || phase === "processing";
-  const [result, setResult] = useState<{ url: string; extension: string; sizeBytes: number } | null>(null);
+  const [result, setResult] = useState<{ url: string; extension: string; sizeBytes: number; fixed: boolean } | null>(
+    null
+  );
 
   const beat = useMemo(() => computeFractalBeat(lines, measureLength, bpm), [lines, measureLength, bpm]);
   const bars = useMemo(() => measureSplit(measureLength), [measureLength]);
@@ -839,24 +841,30 @@ export function FractalVideoExportView({
           return;
         }
 
-        // MP4 out of MediaRecorder is always a fragmented MP4 whose leading
-        // moov carries no duration (true in every Chromium/WebKit build,
-        // independent of the timeslice above) — harmless to a lenient local
-        // player, but it's what makes TikTok's own re-encode truncate the
-        // audio to a couple of seconds or play it back sped up. Fix the
-        // container (stream copy, not a re-encode — the actual audio/video
-        // bitstream is untouched) before this ever reaches the user. See
-        // remuxVideo.ts. Skipped for webm, which doesn't have this problem.
+        // MP4 out of MediaRecorder is a fragmented MP4 with no duration in
+        // its leading moov, and its frame timing is genuinely variable (a
+        // new frame lands whenever the canvas happens to repaint, not on an
+        // even tick) even though it's nominally 30fps — TikTok's own upload
+        // guidance calls out variable frame rate specifically as a cause of
+        // sync/stutter issues after their re-encode, and it's what kept
+        // producing glitchy, disjointed audio there even once the file
+        // played fine elsewhere. Re-encode (not just remux) to a real
+        // constant frame rate with settings that look like ordinary camera
+        // footage before this ever reaches the user. See remuxVideo.ts.
+        // Skipped for webm, which neither problem applies to the same way.
         let finalBlob = blob;
+        let fixed = false;
         if (format.extension === "mp4") {
           setPhase("processing");
           setProgress(0);
-          const { fixMp4Duration } = await import("@/lib/remuxVideo");
-          finalBlob = await fixMp4Duration(blob, (fraction) => setProgress(fraction));
+          const { prepareVideoForUpload } = await import("@/lib/remuxVideo");
+          const prepared = await prepareVideoForUpload(blob, (fraction) => setProgress(fraction));
+          finalBlob = prepared.blob;
+          fixed = prepared.fixed;
         }
 
         const url = URL.createObjectURL(finalBlob);
-        setResult({ url, extension: format.extension, sizeBytes: finalBlob.size });
+        setResult({ url, extension: format.extension, sizeBytes: finalBlob.size, fixed });
         setPhase("done");
       };
       recorderRef.current = recorder;
@@ -1123,7 +1131,7 @@ export function FractalVideoExportView({
                     style={{ width: `${Math.round(progress * 100)}%` }}
                   />
                 </div>
-                <p className="text-sm text-white/60">Preparing for TikTok/Reels upload…</p>
+                <p className="text-sm text-white/60">Encoding for TikTok/Reels… this can take a little while</p>
               </div>
             ) : (
               <button
@@ -1144,6 +1152,12 @@ export function FractalVideoExportView({
               <div className="flex w-full flex-col items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-4">
                 <video src={result.url} controls loop className="max-h-64 w-auto rounded-md" />
                 <p className="text-xs text-white/40">{(result.sizeBytes / 1024 / 1024).toFixed(1)} MB</p>
+                {!result.fixed && result.extension === "mp4" && (
+                  <p className="max-w-xs text-center text-xs text-amber-300">
+                    Couldn&rsquo;t optimize this clip for TikTok/Reels compatibility — this download is the raw
+                    recording, which may still glitch on upload. Try again, or use a different browser.
+                  </p>
+                )}
                 <div className="flex gap-2">
                   <button
                     type="button"
