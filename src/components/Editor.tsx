@@ -1045,6 +1045,9 @@ export function Editor({
           lines={lines}
           bpm={bpm}
           measureLength={measureLength}
+          kit={kit}
+          customSamples={customSamples}
+          bassline={bassline}
           onClose={() => setShowFractalArt(false)}
         />
       )}

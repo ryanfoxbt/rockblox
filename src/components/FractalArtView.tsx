@@ -1,54 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { computeFractalBeat, type FractalLayer } from "@/lib/fractalArt";
+import { computeFractalBeat } from "@/lib/fractalArt";
+import { type FractalBackground, renderFrame } from "@/lib/fractalRender";
 import { getInstrument } from "@/lib/instruments";
+import type { Bassline } from "@/lib/bassline";
+import type { CustomSamples } from "@/lib/customSamples";
 import type { LineData } from "@/lib/song";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { FractalVideoExportView } from "@/components/FractalVideoExportView";
 
-function hexToRgb(hex: string): [number, number, number] {
-  const v = parseInt(hex.replace("#", ""), 16);
-  return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
-}
-
-type Background = "dark" | "light";
-
-function drawLayer(ctx: CanvasRenderingContext2D, size: number, dpr: number, layer: FractalLayer) {
-  const pad = size * 0.1;
-  const w = layer.bounds.maxX - layer.bounds.minX || 1e-6;
-  const h = layer.bounds.maxY - layer.bounds.minY || 1e-6;
-  const scale = Math.min((size - 2 * pad) / w, (size - 2 * pad) / h);
-  const offX = size / 2 - ((layer.bounds.minX + layer.bounds.maxX) / 2) * scale;
-  const offY = size / 2 - ((layer.bounds.minY + layer.bounds.maxY) / 2) * scale;
-
-  const [r, g, b] = hexToRgb(layer.hex);
-  ctx.fillStyle = `rgba(${r},${g},${b},1)`;
-  ctx.globalAlpha = layer.alpha;
-  const dot = 1.15 * dpr;
-  for (let i = 0; i < layer.pointCount; i++) {
-    const px = layer.points[i * 2] * scale + offX;
-    const py = layer.points[i * 2 + 1] * scale + offY;
-    ctx.fillRect(px * dpr, py * dpr, dot, dot);
-  }
-  ctx.globalAlpha = 1;
-}
-
-// Draws one full frame (background fill + every layer) for a given
-// presentation. "lighter" (additive) only shows up against black — every
-// added point pushes toward white, so on a white canvas it's already maxed
-// out and invisible. Light needs the opposite: "multiply", which starts a
-// point at its own true color on blank white and darkens further wherever
-// points overlap — ink layering instead of a glow.
-function renderFrame(canvas: HTMLCanvasElement, size: number, dpr: number, background: Background, layers: FractalLayer[]) {
-  canvas.width = size * dpr;
-  canvas.height = size * dpr;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.fillStyle = background === "dark" ? "#000" : "#fff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.globalCompositeOperation = background === "dark" ? "lighter" : "multiply";
-  for (const layer of layers) drawLayer(ctx, size, dpr, layer);
-}
+type Background = FractalBackground;
 
 function downloadCanvas(canvas: HTMLCanvasElement, format: "png" | "jpeg") {
   const url = format === "png" ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.92);
@@ -67,15 +29,25 @@ export function FractalArtView({
   lines,
   bpm,
   measureLength,
+  kit,
+  customSamples,
+  bassline,
   onClose,
 }: {
   lines: LineData[];
   bpm: number;
   measureLength: number;
+  // Only needed to hand off to the video exporter below, which renders the
+  // actual audio the beat plays with — this view's own art never depends on
+  // any of these (see the info panel: "kit and volume don't affect it").
+  kit: string;
+  customSamples: CustomSamples;
+  bassline: Bassline | null;
   onClose: () => void;
 }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [videoExportOpen, setVideoExportOpen] = useState(false);
   const [background, setBackground] = useState<Background>("dark");
   const isMobile = useIsMobile();
   const frameRef = useRef<HTMLDivElement>(null);
@@ -86,12 +58,16 @@ export function FractalArtView({
   const beat = useMemo(() => computeFractalBeat(lines, measureLength, bpm), [lines, measureLength, bpm]);
 
   useEffect(() => {
+    // Skipped while the video exporter is open on top of this view — its own
+    // Escape handler (registered on the capture phase) closes only itself
+    // and stops this one from also firing, but that guard lives on its side;
+    // this one still shouldn't act on a key it now belongs to.
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !videoExportOpen) onClose();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  }, [onClose, videoExportOpen]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -203,6 +179,18 @@ export function FractalArtView({
                   className="block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400 disabled:opacity-30"
                 >
                   JPEG image
+                </button>
+                <div className="my-1 border-t border-white/10" />
+                <button
+                  type="button"
+                  disabled={beat.layers.length === 0}
+                  onClick={() => {
+                    setVideoExportOpen(true);
+                    setMenuOpen(false);
+                  }}
+                  className="block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400 disabled:opacity-30"
+                >
+                  🎬 Share video (Reels/TikTok)
                 </button>
               </div>
             )}
@@ -341,6 +329,19 @@ export function FractalArtView({
           </div>
         )}
       </div>
+
+      {videoExportOpen && (
+        <FractalVideoExportView
+          lines={lines}
+          bpm={bpm}
+          measureLength={measureLength}
+          kit={kit}
+          customSamples={customSamples}
+          bassline={bassline}
+          initialBackground={background}
+          onClose={() => setVideoExportOpen(false)}
+        />
+      )}
     </div>
   );
 }
