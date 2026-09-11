@@ -39,6 +39,10 @@ export function HomeContent() {
             <Link href="/ai-music" className="text-yellow-400 transition hover:text-yellow-300">
               drum beats for Suno &amp; AI music
             </Link>
+            ,{" "}
+            <Link href="/fractal-art" className="text-yellow-400 transition hover:text-yellow-300">
+              turning a beat into a TikTok/Reels video
+            </Link>
             , and{" "}
             <Link href="/about" className="text-yellow-400 transition hover:text-yellow-300">
               about RockBlocks
@@ -93,6 +97,11 @@ export function HomeContent() {
               <span className="font-semibold text-white/90">Music teachers</span> — a free, no-login step
               sequencer for showing how a groove is built one piece at a time, with a 100-lesson Drum School.
             </li>
+            <li>
+              <span className="font-semibold text-white/90">Content creators</span> — turn a beat into
+              generative Fractal Art and export a share-ready video, sized for TikTok and Instagram Reels,
+              with no video editor.
+            </li>
           </ul>
         </div>
 
@@ -133,6 +142,9 @@ export function HomeContent() {
           </Link>
           <Link href="/ai-music" className="transition hover:text-yellow-400">
             AI music
+          </Link>
+          <Link href="/fractal-art" className="transition hover:text-yellow-400">
+            Fractal Art video
           </Link>
           <Link href="/about" className="transition hover:text-yellow-400">
             About

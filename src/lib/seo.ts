@@ -25,6 +25,7 @@ export const FEATURE_LIST: string[] = [
   "Drag rhythmic values (quarter notes, eighths, sixteenths, triplets and more) into a grid of beat blocks — one row per drum piece",
   "Build beats in regular or odd time signatures (3/4, 5/4, 7/8 and beyond), up to 16 beats per bar",
   "Play through several classic drum-machine kits (TR-808, LinnDrum LM-2, Roland CR-8000, MFB-512, Casio RZ-1) plus an acoustic kit and a synthesized novelty kit",
+  "Two ways to build a beat: RockBlocks' own beat-block grid — one block per beat, drag in a rhythm tile — or a Classic view, a familiar 16-step drum-machine sequencer grid for the exact same pattern; switch anytime, and an edit in either view shows up instantly in the other",
   "Inspiration generator: in a few clicks, spin up a fresh, unique beat in a regular or odd time signature — or a groove variation, fill, or human-playable drum solo from an existing beat, with a complexity dial",
   "Generated bass lines: add a bass part that follows your beat's kick and snare — choose the key, scale (major, minor, modes, pentatonic, blues, jazz and more), octave, how busy the walking line is, and one of five synth bass tones (fingered, pick, upright/double bass, synth sub, muted dub); change key, scale, octave, and volume on the fly or re-roll for a new line",
   "TextyBeat: paste a sentence and get a drum groove generated from its word rhythm, deterministically",
@@ -32,6 +33,8 @@ export const FEATURE_LIST: string[] = [
   "Save a beat to a personal no-login page at rockblocks.app/YourName, or share any pattern by link",
   "Export a beat — with its generated bass line, or drums only — as an MP3 or a MIDI file",
   "Use your beats to power AI music: export an MP3 to seed a track in Suno, Udio, or Riffusion, or export MIDI to build the drums (and bass) in a DAW",
+  "Fractal Art: turn a beat into generative line art — one continuous, colored layer per drum piece, drawing itself in time with the music — in a dark or light background and five visual styles (Classic, Bloom, Vignette, Vivid, Prism)",
+  "Export a share-ready video of a beat's Fractal Art — vertical (9:16) for TikTok and Instagram Reels, or square (1:1) — with the beat's own sheet music and a live playhead overlaid, an optional RockBlocks logo, and a 7–15 second clip length",
   "Drum School: 100 free stepwise lessons that build a full groove one idea at a time",
   "RockBlocks Math: a free, grade-aligned math curriculum where each lesson pairs a math concept with a drum pattern built to correlate with it",
 ];
@@ -125,8 +128,20 @@ export const FAQ: { q: string; a: string }[] = [
     a: "Yes. Export a beat as an MP3 and upload it as the audio input for Suno, Udio, or Riffusion so the generated song follows your drum pattern, or export MIDI to build the drums in a DAW first. Starting an AI song from a real drum groove gives it a rhythmic backbone a text prompt alone usually can't. See the AI music guide at rockblocks.app/ai-music.",
   },
   {
+    q: "Does RockBlocks have a classic step sequencer?",
+    a: "Yes. Switch to Classic view and every beat becomes a familiar 16-step on/off grid, one row per drum piece — the same pattern you can also edit as RockBlocks' own draggable rhythm-tile blocks. An edit in either view applies to the same beat instantly; nothing needs to be rebuilt.",
+  },
+  {
     q: "How is RockBlocks different from a step sequencer?",
-    a: "A step sequencer gives you a fixed grid of on/off steps. RockBlocks gives you one block per beat and a palette of rhythm values — quarter notes, triplets, sixteenth runs — that you drag in, so one beat can hold any rhythm and a bar can be any length for odd time signatures.",
+    a: "A classic step sequencer gives you a fixed grid of on/off steps, and RockBlocks' Classic view is exactly that. Its own beat-block view goes further: one block per beat and a palette of rhythm values — quarter notes, triplets, sixteenth runs — that you drag in, so one beat can hold any rhythm and a bar can be any length for odd time signatures. Both views edit the same beat, so you can use whichever fits the moment.",
+  },
+  {
+    q: "Can RockBlocks turn my beat into a video?",
+    a: "Yes. Fractal Art turns a beat into generative line art — one flowing, colored layer per drum piece, drawing itself in time with the music — and you can export it as a short vertical or square video, with the beat's own sheet music and a live playhead overlaid, ready to post to TikTok, Instagram Reels, or anywhere else.",
+  },
+  {
+    q: "Can I make a TikTok or Instagram Reel from my beat?",
+    a: "Yes. Open Fractal Art, then Share Video, pick a vertical (9:16) or square (1:1) aspect ratio, a background and visual style, and a clip length from 7 to 15 seconds, then record. The export is a standard MP4 with your beat's audio, built to upload straight to TikTok or Instagram Reels, with an optional RockBlocks logo you can turn off.",
   },
   {
     q: "Is there a physical RockBlocks?",
@@ -195,6 +210,69 @@ export const AI_MUSIC_FAQ: { q: string; a: string }[] = [
   {
     q: "Why start an AI song from a drum beat?",
     a: "Text prompts describe a vibe; they don't specify where the kick and snare land, what the fill does, or that the song is in 5/4. Starting from an actual drum pattern locks in the rhythm section, so the AI fills in melody, harmony, and arrangement over a foundation you chose.",
+  },
+];
+
+// --- Fractal Art & video export (the /fractal-art pillar page) --------
+// People search for how to turn a beat into something postable — a TikTok
+// video, a Reel, a visualizer. RockBlocks' answer: Fractal Art renders the
+// beat as generative line art and exports a share-ready clip. Same
+// single-source pattern as AI music above.
+
+export const FRACTAL_ART_DESCRIPTION =
+  "Fractal Art turns any RockBlocks beat into generative line art: each drum piece draws its own continuous, colored layer, its shape built from the beat's own rhythm, looping in sync with the music. Watch it live, or export a short, share-ready video — vertical (9:16) for TikTok and Instagram Reels, or square (1:1) — with a dark or light background, a choice of five visual styles (Classic, Bloom, Vignette, Vivid, Prism), and the beat's own sheet music with a live playhead overlaid. It is a free way to turn a drum pattern into something visual and postable, with no video editor and no account required.";
+
+export const FRACTAL_ART_STEPS: { name: string; text: string }[] = [
+  {
+    name: "Build or generate a beat",
+    text: "Any RockBlocks pattern works — hand-built, from the Inspiration generator, from TextyBeat, or a famous-song pattern. Fractal Art draws from whatever is currently on screen.",
+  },
+  {
+    name: "Open Fractal Art",
+    text: "From the tools menu, open Fractal Art to see the live visualization: one drawing layer per drum piece, colored to match, looping with the beat.",
+  },
+  {
+    name: "Pick a background and a style",
+    text: "Choose a dark (glow) or light (ink) background, then a visual style — Classic, a soft Bloom halo, a poster-like Vignette, a saturated glowing Vivid, or a rainbow-fringed Prism.",
+  },
+  {
+    name: "Open Share Video",
+    text: "Pick a vertical 9:16 (TikTok, Instagram Reels) or square 1:1 aspect ratio, a clip length from 7 to 15 seconds, and whether the RockBlocks logo shows in the corner.",
+  },
+  {
+    name: "Record",
+    text: "RockBlocks records a real-time-lapse clip: the artwork clears and rebuilds itself across the whole clip, opening on a brief flash of the finished piece, with your beat's audio and its sheet music (playhead included) baked in.",
+  },
+  {
+    name: "Download and post",
+    text: "Download the finished MP4 and upload it to TikTok, Instagram Reels, or anywhere else — it's a standard video file, yours to use.",
+  },
+];
+
+export const FRACTAL_ART_FAQ: { q: string; a: string }[] = [
+  {
+    q: "What is Fractal Art?",
+    a: "Fractal Art is a RockBlocks feature that turns a drum beat into generative line art. Each drum piece — kick, snare, hi-hat, and the rest — draws its own continuous, colored layer, its shape derived from the beat's own rhythm, looping in time with the music.",
+  },
+  {
+    q: "Can I export the Fractal Art visualization as a video?",
+    a: "Yes. Open Fractal Art, then Share Video, and record a 7–15 second clip. It's rendered as a real MP4 with the beat's audio, the artwork's time-lapse reveal, and the beat's sheet music with a live playhead — ready to download and post.",
+  },
+  {
+    q: "What video sizes does RockBlocks export for social media?",
+    a: "Vertical 9:16, sized for TikTok and Instagram Reels, and square 1:1. Both bake in the beat's audio, a choice of background and visual style, and the beat's own sheet music.",
+  },
+  {
+    q: "Can I remove the RockBlocks logo from my exported video?",
+    a: "Yes. The Share Video panel has a \"Show RockBlocks logo\" option, on by default, that you can turn off before recording.",
+  },
+  {
+    q: "Will the exported video work on TikTok and Instagram?",
+    a: "Yes. It exports a standard MP4 (H.264 video, AAC audio) built to upload cleanly to TikTok and Instagram Reels.",
+  },
+  {
+    q: "Is the Fractal Art video export free?",
+    a: "Yes. Fractal Art, every visual style, and the video export are free, with no account and no watermark beyond the optional RockBlocks logo you can turn off.",
   },
 ];
 
@@ -322,6 +400,47 @@ export const aiMusicPageJsonLd: Json = {
       "@type": "FAQPage",
       "@id": `${SITE_URL}/ai-music#faq`,
       mainEntity: AI_MUSIC_FAQ.map(({ q, a }) => ({
+        "@type": "Question",
+        name: q,
+        acceptedAnswer: { "@type": "Answer", text: a },
+      })),
+    },
+  ],
+};
+
+// /fractal-art graph — the beat-to-video pillar page. WebPage + a HowTo for
+// the record/export workflow + an FAQPage, layered on top of the root graph.
+export const fractalArtPageJsonLd: Json = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": `${SITE_URL}/fractal-art#webpage`,
+      url: `${SITE_URL}/fractal-art`,
+      name: "Fractal Art — Turn a Beat into a TikTok/Reels Video",
+      description: FRACTAL_ART_DESCRIPTION,
+      isPartOf: { "@id": `${SITE_URL}/#website` },
+      about: { "@id": `${SITE_URL}/#app` },
+      primaryImageOfPage: `${SITE_URL}/opengraph-image`,
+    },
+    {
+      "@type": "HowTo",
+      name: "How to turn a RockBlocks beat into a video for TikTok or Instagram Reels",
+      description:
+        "Record a short, share-ready video of a beat's Fractal Art visualization, with the beat's own audio and sheet music baked in, sized for TikTok and Instagram Reels.",
+      image: `${SITE_URL}/opengraph-image`,
+      totalTime: "PT3M",
+      step: FRACTAL_ART_STEPS.map((s, i) => ({
+        "@type": "HowToStep",
+        position: i + 1,
+        name: s.name,
+        text: s.text,
+      })),
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/fractal-art#faq`,
+      mainEntity: FRACTAL_ART_FAQ.map(({ q, a }) => ({
         "@type": "Question",
         name: q,
         acceptedAnswer: { "@type": "Answer", text: a },

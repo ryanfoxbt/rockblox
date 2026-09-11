@@ -34,11 +34,13 @@ export default function AboutPage() {
 
         <h2 className="mt-4 text-lg font-bold">The idea</h2>
         <p className="text-sm leading-relaxed text-white/70 sm:text-base">
-          A classic drum machine asks you to think in a 16-step grid before you can make a sound. RockBlocks
-          replaces that with <span className="text-white/90">beat blocks</span> — one block per beat, one row
-          per drum piece — and a palette of rhythm tiles you drag in: a quarter note, two eighths, a triplet,
-          a sixteenth run. Drop a tile into a block and it plays. That is the whole learning curve, which is
-          why a five-year-old can build a real groove on their first try.
+          A classic drum machine asks you to think in a fixed 16-step grid before you can make a sound.
+          RockBlocks&apos; own view replaces that with <span className="text-white/90">beat blocks</span> — one
+          block per beat, one row per drum piece — and a palette of rhythm tiles you drag in: a quarter note,
+          two eighths, a triplet, a sixteenth run. Drop a tile into a block and it plays. That is the whole
+          learning curve, which is why a five-year-old can build a real groove on their first try. Prefer the
+          familiar grid instead? Switch to Classic view and the same beat becomes a straight 16-step
+          sequencer — the two views edit one pattern, so you can move between them anytime.
         </p>
         <p className="text-sm leading-relaxed text-white/70 sm:text-base">
           The same model scales up. Bars can be any length from 1 to 16 beats, so odd time signatures like
@@ -68,6 +70,10 @@ export default function AboutPage() {
           or drums only — to{" "}
           <Link href="/ai-music" className="text-yellow-400 transition hover:text-yellow-300">
             use as a drum track for Suno and other AI music tools
+          </Link>
+          , or{" "}
+          <Link href="/fractal-art" className="text-yellow-400 transition hover:text-yellow-300">
+            turn it into a generative Fractal Art video for TikTok and Instagram Reels
           </Link>
           .
         </p>
@@ -99,6 +105,9 @@ export default function AboutPage() {
           </Link>
           <Link href="/ai-music" className="transition hover:text-yellow-400">
             AI music
+          </Link>
+          <Link href="/fractal-art" className="transition hover:text-yellow-400">
+            Fractal Art video
           </Link>
         </nav>
       </div>

@@ -31,6 +31,9 @@ export function SiteFooter() {
           <Link href="/ai-music" className="transition hover:text-yellow-400">
             AI music
           </Link>
+          <Link href="/fractal-art" className="transition hover:text-yellow-400">
+            Fractal Art video
+          </Link>
           <Link href="/about" className="transition hover:text-yellow-400">
             About
           </Link>

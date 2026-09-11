@@ -126,6 +126,9 @@ export default function AiMusicPage() {
           <Link href="/songs" className="transition hover:text-yellow-400">
             Song beats
           </Link>
+          <Link href="/fractal-art" className="transition hover:text-yellow-400">
+            Fractal Art video
+          </Link>
           <Link href="/about" className="transition hover:text-yellow-400">
             About
           </Link>
