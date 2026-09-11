@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NotationLayout, NotationLine, VF, expandStackRows, renderNotationPage } from "@/lib/notation";
+import {
+  NotationLayout,
+  NotationLine,
+  PAPER_PADDING,
+  VF,
+  expandStackRows,
+  keepBeatVisible,
+  placeBeatHighlight,
+  renderNotationPage,
+} from "@/lib/notation";
 import { ExtendedSlotLetter } from "@/lib/board";
 
 export interface StackSheetStep {
@@ -37,10 +46,10 @@ export function StackSheetMusicView({
   const highlightRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<NotationLayout | null>(null);
   const [ready, setReady] = useState(false);
-  // The width the current bar was drawn at. A busy 5-7 beat bar is drawn
-  // wider than a portrait screen so its 16ths don't collide, and the paper
+  // The size the current bar was actually drawn at. A bar busier than the
+  // screen is wide gets drawn at the width its notes need, and the paper
   // grows to match so it scrolls cleanly instead of spilling off the edge.
-  const [renderWidth, setRenderWidth] = useState(0);
+  const [paper, setPaper] = useState({ width: 0, height: 0 });
 
   // Every bar across the arrangement, in play order — one entry per page.
   const bars = useMemo(() => expandStackRows(steps), [steps]);
@@ -87,28 +96,28 @@ export function StackSheetMusicView({
         setReady(true);
         return;
       }
-      // A 5-7 beat bar needs more room than a portrait phone has before its
-      // 16ths stop colliding — draw it at roughly the width it gets in
-      // landscape and let the paper (which grows to `renderWidth`) scroll.
-      // 3-4 beat bars always take the real width, so they never scroll.
-      const drawWidth =
-        bar.numBeats > 4 ? Math.max(availWidth, Math.round(64 + bar.numBeats * 95)) : availWidth;
-      setRenderWidth(drawWidth);
-
       if (!vfModule) vfModule = await import("vexflow");
       // See SheetMusicView for why this await matters: vexflow's Bravura glyph
       // font can still be mid-decode when the SVG <text> noteheads land.
       await document.fonts.ready;
       const target = notationRef.current;
       if (cancelled || !target) return;
-      layoutRef.current = renderNotationPage(
+      // renderNotationPage takes `availWidth` as an offer and reports the
+      // width it actually used — wider, when this bar's notes need more room
+      // than the screen has. The paper follows that, and the box scrolls.
+      const layout = renderNotationPage(
         vfModule,
         target,
         steps[bar.stepIndex].lines,
         bar.startBeat,
         bar.numBeats,
-        drawWidth
+        availWidth
       );
+      layoutRef.current = layout;
+      setPaper({ width: layout.width, height: layout.height });
+      // A freshly turned-to page always starts at its own left edge, even if
+      // the previous (wider) bar had been scrolled along.
+      if (scrollRef.current) scrollRef.current.scrollLeft = 0;
       updateHighlight();
       setReady(true);
     }
@@ -122,7 +131,10 @@ export function StackSheetMusicView({
     // resizes the viewport asynchronously, and there's no single event that
     // reliably fires once the geometry has actually settled. See SheetMusicView.
     const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width || target.clientWidth || 800;
+      const box = entries[0]?.contentRect.width || target.clientWidth || 800;
+      // What's left for the notation once the paper's own padding is taken
+      // off — that's the width the music actually has to work with.
+      const width = Math.max(box - PAPER_PADDING * 2, 200);
       if (Math.abs(width - lastWidth) < 1) return;
       lastWidth = width;
       draw(width);
@@ -144,7 +156,7 @@ export function StackSheetMusicView({
     const el = highlightRef.current;
     if (!el) return;
     if (!isPlaying || !progress || !layout || !bar) {
-      el.style.opacity = "0";
+      placeBeatHighlight(el, null, null);
       return;
     }
 
@@ -167,24 +179,18 @@ export function StackSheetMusicView({
     );
     if (barIndex < 0) barIndex = bars.findIndex((b) => b.stepIndex === stepIndex);
     if (barIndex < 0) {
-      el.style.opacity = "0";
+      placeBeatHighlight(el, null, null);
       return;
     }
 
     if (barIndex !== safePage) {
-      el.style.opacity = "0";
+      placeBeatHighlight(el, null, null);
       goToPage(barIndex);
       return;
     }
 
-    const localBeat = beat - bars[barIndex].startBeat;
-    const x0 = layout.beatBoundariesX[localBeat] ?? 0;
-    const x1 = layout.beatBoundariesX[localBeat + 1] ?? x0 + 20;
-    el.style.opacity = "1";
-    el.style.left = `${x0 - 4}px`;
-    el.style.width = `${Math.max(x1 - x0 + 4, 8)}px`;
-    el.style.top = `${layout.staveTopY}px`;
-    el.style.height = `${layout.staveBottomY - layout.staveTopY}px`;
+    placeBeatHighlight(el, layout, beat - bars[barIndex].startBeat);
+    keepBeatVisible(scrollRef.current, el);
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -192,7 +198,7 @@ export function StackSheetMusicView({
 
   return (
     <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white">
-      <header className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+      <header className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
         <h2 className="text-lg font-bold">
           Stack <span className="text-yellow-400">Sheet Music</span>
         </h2>
@@ -206,7 +212,7 @@ export function StackSheetMusicView({
         </button>
       </header>
 
-      <div className="flex flex-wrap items-center gap-4 border-b border-white/10 px-6 py-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/10 px-4 py-3 sm:px-6">
         <button
           type="button"
           onClick={onTogglePlay}
@@ -254,10 +260,13 @@ export function StackSheetMusicView({
           the width of its (deliberately over-wide) paper child, so instead of
           scrolling, the whole scroll box grows past the screen and the right
           side of a busy 7/4 bar is unreachable on a phone. */}
-      <div ref={scrollRef} className="flex min-w-0 flex-1 items-center overflow-auto p-6">
+      <div ref={scrollRef} className="flex min-w-0 flex-1 items-center overflow-auto p-4 sm:p-6">
         <div
-          className="relative min-h-[280px] w-full shrink-0 rounded-lg bg-white p-4 shadow-xl"
-          style={{ minWidth: renderWidth || undefined }}
+          className="relative w-full shrink-0 rounded-lg bg-white p-4 shadow-xl"
+          style={{
+            minWidth: paper.width ? paper.width + PAPER_PADDING * 2 : undefined,
+            minHeight: paper.height ? paper.height + PAPER_PADDING * 2 : undefined,
+          }}
         >
           <div className="relative w-full" style={{ visibility: ready ? "visible" : "hidden" }}>
             <div ref={notationRef} className="w-full" />

@@ -5,7 +5,14 @@ import { InstrumentId } from "@/lib/instruments";
 import { LineState } from "@/lib/audioEngine";
 import { CustomSamples } from "@/lib/customSamples";
 import { computeHitEvents, DrumHitEvent, Limb } from "@/lib/drumRig";
-import { NotationLayout, renderNotation, VF } from "@/lib/notation";
+import {
+  NotationLayout,
+  PAPER_PADDING,
+  keepBeatVisible,
+  placeBeatHighlight,
+  renderNotation,
+  VF,
+} from "@/lib/notation";
 import { stackPlayheadPosition } from "@/lib/stack";
 import { StackPlayer, StackSlotSource, StackStepSource } from "@/lib/stackPlayer";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -353,8 +360,13 @@ export function DrumTeacherView({
   const overlayRefs = useRef<Partial<Record<VisualPiece, SVGElement>>>({});
   const flamingoRefs = useRef<Partial<Record<VisualPiece, SVGGElement>>>({});
   const snareTongueRef = useRef<SVGRectElement>(null);
+  const notationScrollRef = useRef<HTMLDivElement>(null);
   const notationContainerRef = useRef<HTMLDivElement>(null);
   const notationHighlightRef = useRef<HTMLDivElement>(null);
+  // The size the system was actually drawn at — wider than the panel when
+  // the pattern is too busy to fit, in which case the paper scrolls. See
+  // drawSystem in lib/notation.
+  const notationPaperRef = useRef<HTMLDivElement>(null);
   const notationLayoutRef = useRef<NotationLayout | null>(null);
 
   const [bpm, setBpm] = useState(initialBpm);
@@ -447,15 +459,26 @@ export function DrumTeacherView({
       await document.fonts.ready;
       const target = notationContainerRef.current;
       if (cancelled || !target) return;
-      notationLayoutRef.current = renderNotation(vfModule, target, lines, measureLength, width);
+      const layout = renderNotation(vfModule, target, lines, measureLength, width);
+      notationLayoutRef.current = layout;
+      const paper = notationPaperRef.current;
+      if (paper) {
+        paper.style.minWidth = `${layout.width + PAPER_PADDING * 2}px`;
+        paper.style.minHeight = `${layout.height + PAPER_PADDING * 2}px`;
+      }
       setNotationReady(true);
     }
 
-    const target = notationContainerRef.current;
+    // Measure the scroll viewport, not the notation container — the latter
+    // grows with a busy pattern, which would feed back into the width math.
+    const target = notationScrollRef.current;
     if (!target) return;
 
     const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width || target.clientWidth || 500;
+      const box = entries[0]?.contentRect.width || target.clientWidth || 500;
+      // What's left for the notation once the paper's own padding is taken
+      // off — that's the width the music actually has to work with.
+      const width = Math.max(box - PAPER_PADDING * 2, 200);
       if (Math.abs(width - lastWidth) < 1) return;
       lastWidth = width;
       draw(width);
@@ -656,18 +679,8 @@ export function DrumTeacherView({
     const highlight = notationHighlightRef.current;
     const layout = notationLayoutRef.current;
     if (highlight) {
-      const beat = abs === null ? null : Math.floor(abs);
-      if (beat === null || !layout) {
-        highlight.style.opacity = "0";
-      } else {
-        const x0 = layout.beatBoundariesX[beat] ?? 0;
-        const x1 = layout.beatBoundariesX[beat + 1] ?? x0 + 20;
-        highlight.style.opacity = "1";
-        highlight.style.left = `${x0 - 4}px`;
-        highlight.style.width = `${Math.max(x1 - x0 + 4, 8)}px`;
-        highlight.style.top = `${layout.staveTopY}px`;
-        highlight.style.height = `${layout.staveBottomY - layout.staveTopY}px`;
-      }
+      placeBeatHighlight(highlight, layout, abs === null ? null : Math.floor(abs));
+      keepBeatVisible(notationScrollRef.current, highlight);
     }
   }
 
@@ -789,20 +802,32 @@ export function DrumTeacherView({
             showNotation ? "flex-col lg:flex-row lg:items-stretch" : "flex-col items-center justify-center",
           ].join(" ")}
         >
+          {/* min-w-0 on the scroll box keeps this flex item from being pushed
+              wider than the panel by its (deliberately over-wide) paper child
+              — without it a busy pattern grows the whole column instead of
+              scrolling. */}
           {showNotation && (
-            <div className="relative min-h-[240px] flex-1 self-stretch rounded-lg bg-white p-4 shadow-xl">
-              <div className="relative w-full" style={{ visibility: notationReady ? "visible" : "hidden" }}>
-                <div ref={notationContainerRef} className="w-full" />
-                <div
-                  ref={notationHighlightRef}
-                  className="pointer-events-none absolute rounded bg-yellow-400/40 opacity-0 transition-opacity"
-                />
-              </div>
-              {!notationReady && (
-                <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
-                  Loading notation…
+            <div
+              ref={notationScrollRef}
+              className="flex min-w-0 flex-1 items-center self-stretch overflow-auto"
+            >
+              <div
+                ref={notationPaperRef}
+                className="relative w-full shrink-0 rounded-lg bg-white p-4 shadow-xl"
+              >
+                <div className="relative w-full" style={{ visibility: notationReady ? "visible" : "hidden" }}>
+                  <div ref={notationContainerRef} className="w-full" />
+                  <div
+                    ref={notationHighlightRef}
+                    className="pointer-events-none absolute rounded bg-yellow-400/40 opacity-0 transition-opacity"
+                  />
                 </div>
-              )}
+                {!notationReady && (
+                  <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
+                    Loading notation…
+                  </div>
+                )}
+              </div>
             </div>
           )}
           <div

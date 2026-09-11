@@ -80,15 +80,50 @@ function durationForTicks(ticks: number): DurationInfo {
   return info;
 }
 
-export interface NotationLayout {
-  beatBoundariesX: number[];
-  staveTopY: number;
-  staveBottomY: number;
+// One beat's slice of a stave, in canvas pixels — what the playhead
+// highlight box is drawn over. A bar's last beat runs to its own closing
+// barline rather than to the next bar's first note, so a highlight never
+// straddles a barline.
+export interface BeatSpan {
+  x0: number;
+  x1: number;
 }
 
+export interface NotationLayout {
+  beatSpans: BeatSpan[];
+  staveTopY: number;
+  staveBottomY: number;
+  // The width the system was actually drawn at. This exceeds the width the
+  // caller offered whenever the music needs more room than that — a busy
+  // 16th-note bar on a portrait phone, say. Callers size their "paper" to
+  // this and let the page scroll sideways, which is what keeps the notes
+  // inside their barlines instead of spilling past the end of the stave.
+  width: number;
+  height: number;
+}
+
+// The horizontal padding each view's white "paper" puts around the SVG.
+// Shared so a view can offer drawSystem the width it will really have
+// *inside* that padding, then grow the paper back by the same amount — miss
+// this and the last beat of a bar hangs off the edge of the page.
+export const PAPER_PADDING = 16;
+
 const STAVE_MARGIN_X = 10;
-const STAVE_Y = 110;
-const CANVAS_HEIGHT = 280;
+// A Stave draws its top line 40px below its own y, so this puts the top line
+// 90px down the canvas: headroom for a crash's ledger line, up-stems, beams,
+// tuplet numbers and accent marks, with room left under the bottom line for
+// the kick and for rests.
+const STAVE_Y = 50;
+const CANVAS_HEIGHT = 190;
+// How far past the outer staff lines the playhead box reaches: enough above
+// to cover a crash and its accent, enough below to cover the kick.
+const HIGHLIGHT_ABOVE = 56;
+const HIGHLIGHT_BELOW = 22;
+// Breathing room between a bar's last notehead and its closing barline.
+const NOTE_END_PAD = 12;
+// Floor width for a bar, however empty it is — an all-rests bar shouldn't
+// collapse to the width of its clef.
+const MIN_BAR_WIDTH = 170;
 
 // One instrument's onset at a given tick, carrying its dynamic level along
 // so the notehead can be marked with an accent (">") or wrapped in
@@ -105,14 +140,14 @@ interface Segment {
   instruments: OnsetHit[] | null;
 }
 
-// Draws one measure's stave/voice/beams/tuplets at (x, y) and returns each
-// beat's first-note X (for playhead highlighting) plus the stave's right
-// edge. `startBeat` offsets which of the pattern's beats this measure covers,
-// so an 8-beat pattern can be split across two 4/4 measures — see drawStave.
-interface MeasureDrawOptions {
-  x: number;
+// Everything one measure needs in order to be drawn, built *before* any
+// width has been settled on. Splitting "build" from "draw" is what lets the
+// caller ask how much room the music actually needs (`minWidth`) and then
+// hand back a stave wide enough for it — rather than picking a width first
+// and watching the notes spill past the closing barline, which is what a
+// busy bar on a narrow screen used to do.
+interface MeasureSpec {
   y: number;
-  width: number;
   lines: NotationLine[];
   startBeat: number;
   numBeats: number;
@@ -120,12 +155,28 @@ interface MeasureDrawOptions {
   isContinuation: boolean;
 }
 
-function drawOneMeasure(
+interface PreparedMeasure {
+  stave: InstanceType<VF["Stave"]>;
+  voice: InstanceType<VF["Voice"]>;
+  formatter: InstanceType<VF["Formatter"]>;
+  beams: InstanceType<VF["Beam"]>[];
+  tuplets: InstanceType<VF["Tuplet"]>[];
+  beatStartNotes: (InstanceType<VF["StemmableNote"]> | undefined)[];
+  // Narrowest stave width that still fits every notehead, modifier and the
+  // gap before the closing barline.
+  minWidth: number;
+}
+
+// `startBeat` offsets which of the pattern's beats this measure covers, so
+// an 8-beat pattern can be split across two 4/4 measures — see drawSystem.
+function prepareMeasure(
   VF: VF,
   context: ReturnType<VF["Renderer"]["prototype"]["getContext"]>,
-  { x, y, width, lines, startBeat, numBeats, showClefAndTime, isContinuation }: MeasureDrawOptions
-): { beatStartX: number[]; noteEndX: number } {
-  const stave = new VF.Stave(x, y, Math.max(width, 120));
+  { y, lines, startBeat, numBeats, showClefAndTime, isContinuation }: MeasureSpec
+): PreparedMeasure {
+  // x and width are provisional: drawMeasure moves and resizes the stave
+  // once every bar in the system has reported what it needs.
+  const stave = new VF.Stave(0, y, MIN_BAR_WIDTH);
   if (showClefAndTime) {
     stave.addClef("percussion");
     stave.addTimeSignature(`${numBeats}/4`);
@@ -133,7 +184,7 @@ function drawOneMeasure(
   // A continuation measure butts up against the previous one, so its own
   // begin barline would double against that measure's end barline — drop it.
   if (isContinuation) stave.setBegBarType(VF.Barline.type.NONE);
-  stave.setContext(context).draw();
+  stave.setContext(context);
 
   // Real drum notation puts every instrument on one shared staff voice, with
   // simultaneous hits drawn as one chorded notehead group under a single
@@ -226,10 +277,15 @@ function drawOneMeasure(
     }
 
     const beatNotes: InstanceType<VF["StemmableNote"]>[] = [];
+    // Parallel to `segments`/`beatNotes` — kept around so the tuplet bracket
+    // below can tell a clean single-level triplet run (every subdivision in
+    // the beat the same note value) from a nested mix of two different
+    // triplet levels, without re-deriving durations from ticks a second time.
+    const segmentDurations = segments.map((seg) => durationForTicks(seg.ticks));
     let beatHasTriplet = false;
 
-    for (const seg of segments) {
-      const { code, dots, isTriplet } = durationForTicks(seg.ticks);
+    for (const [i, seg] of segments.entries()) {
+      const { code, dots, isTriplet } = segmentDurations[i];
       if (isTriplet) beatHasTriplet = true;
 
       if (!seg.instruments) {
@@ -247,17 +303,17 @@ function drawOneMeasure(
       const staveNote = new VF.StaveNote({ keys, duration: code, dots });
       if (dots > 0) VF.Dot.buildAndAttach([staveNote], { all: true });
       staveNote.setStemDirection(STEM_DIRECTION);
-      seg.instruments.forEach(({ instrument: inst, accent }, i) => {
+      seg.instruments.forEach(({ instrument: inst, accent }, keyIndex) => {
         const annotation = INSTRUMENT_POSITION[inst].annotation;
         if (annotation) {
           staveNote.addModifier(
             new VF.Annotation(annotation).setVerticalJustification(VF.AnnotationVerticalJustify.TOP),
-            i
+            keyIndex
           );
         }
         // ">" above the notehead for an accented hit — same articulation a
         // real drum chart would use.
-        if (accent === "accent") staveNote.addModifier(new VF.Articulation("a>"), i);
+        if (accent === "accent") staveNote.addModifier(new VF.Articulation("a>"), keyIndex);
       });
       // Parentheses around the whole chord for a ghost note — only when
       // every instrument sounding at this instant is ghosted, since VexFlow
@@ -275,7 +331,31 @@ function drawOneMeasure(
     // generateBeams's beamRests option rather than a plain `new VF.Beam(...)`,
     // which requires every member to already have one.
     if (beatHasTriplet) {
-      tuplets.push(new VF.Tuplet(beatNotes, { numNotes: 3, notesOccupied: 2 }));
+      // VexFlow draws one flat bracket over every note passed to it, with
+      // whatever numNotes/notesOccupied it's given — it has no notion of a
+      // bracket only "really" covering some of its notes. A clean run where
+      // every triplet subdivision in the beat is the same note value (three
+      // eighth-triplets, or six sixteenth-triplets filling the whole beat as
+      // a sextuplet) can report its actual count instead of a hardcoded "3"
+      // that only happened to be right when there were exactly 3 of them —
+      // that hardcoding is what used to bracket a full beat of six
+      // sixteenth-triplets as "3". A beat that nests two different triplet
+      // levels (an eighth-triplet subdivided further into sixteenth-
+      // triplets) has no single honest count to report — VexFlow can't draw
+      // nested brackets here — so it keeps the 3:2 approximation that
+      // already reads fine for those tiles.
+      const tripletTicks = segments
+        .map((seg, i) => (segmentDurations[i].isTriplet ? seg.ticks : null))
+        .filter((t): t is number => t !== null);
+      const sameLevel = tripletTicks.every((t) => t === tripletTicks[0]);
+      const numNotes = sameLevel ? tripletTicks.length : 3;
+      // A triplet note always takes 2/3 the time of a "straight" note at the
+      // same level — that's the definition of "triplet" — so the straight-
+      // note-equivalent count is always 2/3 of the triplet note count.
+      const notesOccupied = sameLevel ? Math.round((tripletTicks.length * 2) / 3) : 2;
+      tuplets.push(
+        new VF.Tuplet(beatNotes, { numNotes, notesOccupied, ratioed: false })
+      );
       const toBeam = beamableRun(
         beatNotes.map((note, i) => ({ note, isRest: !segments[i].instruments }))
       );
@@ -304,112 +384,190 @@ function drawOneMeasure(
   }
 
   voice.addTickables(notes);
-  new VF.Formatter().joinVoices([voice]).formatToStave([voice], stave);
+
+  // joinVoices has to come before preCalculateMinTotalWidth, and both have
+  // to happen on the same Formatter that later justifies the voice — so keep
+  // this one around for drawMeasure instead of making a fresh one there.
+  const formatter = new VF.Formatter().joinVoices([voice]);
+  // What the formatter would need between the stave's note-start and
+  // note-end. Everything left of the note-start (begin barline, clef, time
+  // signature) is fixed by the modifiers, so measure it off the stave itself
+  // rather than guessing at a "clef bonus".
+  const noteRoom = formatter.preCalculateMinTotalWidth([voice]);
+  const leftOverhead = stave.getNoteStartX() - stave.getX();
+  const minWidth = Math.max(
+    MIN_BAR_WIDTH,
+    Math.ceil(leftOverhead + noteRoom + VF.Stave.defaultPadding + NOTE_END_PAD)
+  );
+
+  return { stave, voice, formatter, beams, tuplets, beatStartNotes, minWidth };
+}
+
+// Places a prepared measure at `x` with the width the system settled on, and
+// draws it. Returns one span per beat — a bar's last beat runs to its own
+// note-end, so a playhead box never straddles the barline into the next bar.
+function drawMeasure(
+  context: ReturnType<VF["Renderer"]["prototype"]["getContext"]>,
+  prepared: PreparedMeasure,
+  x: number,
+  width: number
+): BeatSpan[] {
+  const { stave, voice, formatter, beams, tuplets, beatStartNotes } = prepared;
+  stave.setX(x);
+  stave.setWidth(width);
+  stave.draw();
+
+  formatter.formatToStave([voice], stave);
   voice.draw(context, stave);
   beams.forEach((b) => b.setContext(context).draw());
   tuplets.forEach((t) => t.setContext(context).draw());
 
+  const noteEndX = stave.getNoteEndX();
+  const starts = beatStartNotes.map((n) => n?.getAbsoluteX() ?? stave.getNoteStartX());
+  return starts.map((x0, i) => ({ x0, x1: i + 1 < starts.length ? starts[i + 1] : noteEndX }));
+}
+
+// Lays out and draws one or more measures as a single horizontal system, and
+// reports back where each beat sits.
+//
+// `availWidth` is an offer, not an order. Every bar first says how narrow it
+// can get without its notes colliding or running past the barline; if the
+// offer covers the total, the slack is shared out in proportion to what each
+// bar asked for (a bar of 16ths earns more room than a bar of quarters, and
+// the bar carrying the clef and time signature earns the room those take).
+// If it doesn't, the system is drawn at the width the music needs and the
+// caller scrolls — which is the whole trick to making a busy bar read
+// correctly on a portrait phone.
+function drawSystem(
+  VF: VF,
+  context: ReturnType<VF["Renderer"]["prototype"]["getContext"]>,
+  renderer: InstanceType<VF["Renderer"]>,
+  specs: MeasureSpec[],
+  availWidth: number
+): NotationLayout {
+  const prepared = specs.map((spec) => prepareMeasure(VF, context, spec));
+  const totalMin = prepared.reduce((sum, p) => sum + p.minWidth, 0);
+  // Whole pixels: a fractional SVG width leaves a half-pixel seam between
+  // the drawing and the edge of the paper it sits on.
+  const usable = Math.ceil(Math.max(availWidth - STAVE_MARGIN_X * 2, totalMin));
+  const width = usable + STAVE_MARGIN_X * 2;
+
+  // Resize before anything is drawn: the SVG has to be as wide as the system
+  // or the right-hand bar would be clipped by the viewport rather than
+  // scrolled to.
+  renderer.resize(width, CANVAS_HEIGHT);
+
+  const beatSpans: BeatSpan[] = [];
+  let x = STAVE_MARGIN_X;
+  prepared.forEach((p, i) => {
+    // Give the last bar whatever pixels rounding left over, so the system
+    // ends exactly on the right margin.
+    const barWidth =
+      i === prepared.length - 1
+        ? usable - (x - STAVE_MARGIN_X)
+        : Math.round((p.minWidth / totalMin) * usable);
+    beatSpans.push(...drawMeasure(context, p, x, barWidth));
+    x += barWidth;
+  });
+
+  const stave = prepared[0].stave;
   return {
-    beatStartX: beatStartNotes.map((n) => n?.getAbsoluteX() ?? stave.getNoteStartX()),
-    noteEndX: stave.getNoteEndX(),
+    beatSpans,
+    staveTopY: stave.getYForLine(0) - HIGHLIGHT_ABOVE,
+    staveBottomY: stave.getYForLine(4) + HIGHLIGHT_BELOW,
+    width,
+    height: CANVAS_HEIGHT,
   };
 }
 
-// Draws a pattern as one or more measures on a single horizontal system at
-// vertical offset `y`, returning the per-beat X boundaries a playhead
-// highlight needs. An 8-beat pattern is written as two 4/4 measures (see
-// measureSplit) the way a drummer would actually read it; 3-7 beats stay a
-// single bar in their own time signature. Shared by renderNotation and the
-// Stack Builder's renderStackNotation.
-function drawStave(
-  VF: VF,
-  context: ReturnType<VF["Renderer"]["prototype"]["getContext"]>,
-  y: number,
-  lines: NotationLine[],
-  measureLength: number,
-  width: number
-): NotationLayout {
-  const bars = measureSplit(measureLength);
-  const usableWidth = Math.max(width - STAVE_MARGIN_X * 2, 200);
-  // The first measure carries the clef + time signature, so it needs the
-  // extra room; take that evenly off the continuation measures.
-  const clefTimeBonus = bars.length > 1 ? 44 : 0;
-  const evenWidth = usableWidth / bars.length;
-
-  const beatBoundariesX: number[] = [];
-  let x = STAVE_MARGIN_X;
-  let startBeat = 0;
-  let lastNoteEndX = x;
-
-  bars.forEach((numBeats, barIndex) => {
-    const barWidth =
-      barIndex === 0 ? evenWidth + clefTimeBonus : evenWidth - clefTimeBonus / (bars.length - 1);
-    const { beatStartX, noteEndX } = drawOneMeasure(VF, context, {
-      x,
-      y,
-      width: barWidth,
-      lines,
-      startBeat,
-      numBeats,
-      showClefAndTime: barIndex === 0,
-      isContinuation: barIndex > 0,
-    });
-    beatBoundariesX.push(...beatStartX);
-    lastNoteEndX = noteEndX;
-    x += barWidth;
-    startBeat += numBeats;
-  });
-  beatBoundariesX.push(lastNoteEndX);
-
-  return { beatBoundariesX, staveTopY: y - 60, staveBottomY: y + 60 };
+function newRenderer(VF: VF, container: HTMLDivElement) {
+  container.innerHTML = "";
+  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+  return { renderer, context: renderer.getContext() };
 }
 
+// Renders a whole pattern as one system: an 8-beat pattern is written as two
+// 4/4 measures (see measureSplit) the way a drummer would actually read it;
+// 3-7 beats stay a single bar in their own time signature.
 export function renderNotation(
   VF: VF,
   container: HTMLDivElement,
   lines: NotationLine[],
   measureLength: number,
-  width: number
+  availWidth: number
 ): NotationLayout {
-  container.innerHTML = "";
-  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
-  renderer.resize(width, CANVAS_HEIGHT);
-  const context = renderer.getContext();
-  return drawStave(VF, context, STAVE_Y, lines, measureLength, width);
+  const { renderer, context } = newRenderer(VF, container);
+  let startBeat = 0;
+  const specs: MeasureSpec[] = measureSplit(measureLength).map((numBeats, i) => {
+    const spec: MeasureSpec = {
+      y: STAVE_Y,
+      lines,
+      startBeat,
+      numBeats,
+      showClefAndTime: i === 0,
+      isContinuation: i > 0,
+    };
+    startBeat += numBeats;
+    return spec;
+  });
+  return drawSystem(VF, context, renderer, specs, availWidth);
 }
 
 // Renders exactly one measure — beats [startBeat, startBeat + numBeats) of
-// `lines` — as its own clef-and-time-signature stave filling the width. The
-// fullscreen Sheet Music view uses this to page through an 8-beat pattern
-// one 4/4 bar at a time; whole-pattern views use renderNotation /
-// renderStackNotation instead.
+// `lines` — as its own clef-and-time-signature stave. The fullscreen Sheet
+// Music views use this to page through an arrangement one bar at a time;
+// whole-pattern views use renderNotation instead.
 export function renderNotationPage(
   VF: VF,
   container: HTMLDivElement,
   lines: NotationLine[],
   startBeat: number,
   numBeats: number,
-  width: number
+  availWidth: number
 ): NotationLayout {
-  container.innerHTML = "";
-  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
-  renderer.resize(width, CANVAS_HEIGHT);
-  const context = renderer.getContext();
-  const { beatStartX, noteEndX } = drawOneMeasure(VF, context, {
-    x: STAVE_MARGIN_X,
-    y: STAVE_Y,
-    width: Math.max(width - STAVE_MARGIN_X * 2, 200),
-    lines,
-    startBeat,
-    numBeats,
-    showClefAndTime: true,
-    isContinuation: false,
-  });
-  return {
-    beatBoundariesX: [...beatStartX, noteEndX],
-    staveTopY: STAVE_Y - 60,
-    staveBottomY: STAVE_Y + 60,
-  };
+  const { renderer, context } = newRenderer(VF, container);
+  return drawSystem(
+    VF,
+    context,
+    renderer,
+    [{ y: STAVE_Y, lines, startBeat, numBeats, showClefAndTime: true, isContinuation: false }],
+    availWidth
+  );
+}
+
+// Positions a playhead box over one beat of a rendered system. Every view
+// that shows notation highlights the beat the same way, so they share this
+// rather than each re-deriving the geometry from a layout.
+export function placeBeatHighlight(
+  el: HTMLElement,
+  layout: NotationLayout | null,
+  beat: number | null
+) {
+  const span = beat === null ? undefined : layout?.beatSpans[beat];
+  if (!layout || !span) {
+    el.style.opacity = "0";
+    return;
+  }
+  el.style.opacity = "1";
+  el.style.left = `${span.x0 - 5}px`;
+  el.style.width = `${Math.max(span.x1 - span.x0 + 5, 10)}px`;
+  el.style.top = `${layout.staveTopY}px`;
+  el.style.height = `${layout.staveBottomY - layout.staveTopY}px`;
+}
+
+// Scrolls a highlighted beat back into view when the bar is wider than the
+// screen — otherwise the playhead walks off the right edge of a busy bar on
+// a phone and the reader has to chase it by hand.
+export function keepBeatVisible(scroller: HTMLElement | null, el: HTMLElement) {
+  if (!scroller || el.style.opacity === "0") return;
+  const box = el.getBoundingClientRect();
+  const view = scroller.getBoundingClientRect();
+  const margin = 24;
+  if (box.left < view.left + margin) {
+    scroller.scrollLeft -= view.left + margin - box.left;
+  } else if (box.right > view.right - margin) {
+    scroller.scrollLeft += box.right - (view.right - margin);
+  }
 }
 
 // One bar of a Stack arrangement, tied back to its step. The Stack sheet-

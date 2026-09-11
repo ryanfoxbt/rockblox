@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LineData, measureSplit, timeSignatureLabel } from "@/lib/song";
-import { NotationLayout, renderNotationPage, VF } from "@/lib/notation";
+import {
+  NotationLayout,
+  PAPER_PADDING,
+  keepBeatVisible,
+  placeBeatHighlight,
+  renderNotationPage,
+  VF,
+} from "@/lib/notation";
 
 export function SheetMusicView({
   lines,
@@ -24,10 +31,16 @@ export function SheetMusicView({
   onClose: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const notationRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<NotationLayout | null>(null);
   const [ready, setReady] = useState(false);
+  // The size the current bar was actually drawn at. A bar busier than the
+  // screen is wide gets drawn at the width its notes need, and the paper
+  // grows to match so it scrolls cleanly instead of spilling past the
+  // barline — see drawSystem in lib/notation.
+  const [paper, setPaper] = useState({ width: 0, height: 0 });
 
   // An 8-beat pattern is written as two 4/4 measures, shown one per page
   // (3-7 beats stay a single page). Playback turns the page automatically;
@@ -84,12 +97,20 @@ export function SheetMusicView({
       await document.fonts.ready;
       const target = notationRef.current;
       if (cancelled || !target) return;
-      layoutRef.current = renderNotationPage(vfModule, target, lines, pageStartBeat, pageBeats, width);
+      const layout = renderNotationPage(vfModule, target, lines, pageStartBeat, pageBeats, width);
+      layoutRef.current = layout;
+      setPaper({ width: layout.width, height: layout.height });
+      // A freshly turned-to page always starts at its own left edge, even if
+      // the previous (wider) bar had been scrolled along.
+      if (scrollRef.current) scrollRef.current.scrollLeft = 0;
       updateHighlight();
       setReady(true);
     }
 
-    const target = notationRef.current;
+    // Measure the scroll viewport, not the notation container — the latter
+    // grows with a wide bar, which would feed straight back into the width
+    // the next draw is offered.
+    const target = scrollRef.current;
     if (!target) return;
 
     // Measuring clientWidth right when vexflow's dynamic import resolves is
@@ -104,7 +125,10 @@ export function SheetMusicView({
     // resizes and provides the very first measurement (no separate initial
     // draw() call needed).
     const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width || target.clientWidth || 800;
+      const box = entries[0]?.contentRect.width || target.clientWidth || 800;
+      // What's left for the notation once the paper's own padding is taken
+      // off — that's the width the music actually has to work with.
+      const width = Math.max(box - PAPER_PADDING * 2, 200);
       if (Math.abs(width - lastWidth) < 1) return;
       lastWidth = width;
       draw(width);
@@ -123,7 +147,7 @@ export function SheetMusicView({
     const el = highlightRef.current;
     if (!el) return;
     if (!isPlaying || playheadBeat === null || !layout) {
-      el.style.opacity = "0";
+      placeBeatHighlight(el, null, null);
       return;
     }
     // Which page (measure) the global playhead beat lands on, and where it
@@ -138,18 +162,12 @@ export function SheetMusicView({
       acc += bars[i];
     }
     if (beatPage !== safePage) {
-      el.style.opacity = "0";
+      placeBeatHighlight(el, null, null);
       goToPage(beatPage);
       return;
     }
-    const localBeat = playheadBeat - acc;
-    const x0 = layout.beatBoundariesX[localBeat] ?? 0;
-    const x1 = layout.beatBoundariesX[localBeat + 1] ?? x0 + 20;
-    el.style.opacity = "1";
-    el.style.left = `${x0 - 4}px`;
-    el.style.width = `${Math.max(x1 - x0 + 4, 8)}px`;
-    el.style.top = `${layout.staveTopY}px`;
-    el.style.height = `${layout.staveBottomY - layout.staveTopY}px`;
+    placeBeatHighlight(el, layout, playheadBeat - acc);
+    keepBeatVisible(scrollRef.current, el);
   }
 
   // updateHighlight also reads bars/pageCount/goToPage, but those only change
@@ -163,7 +181,7 @@ export function SheetMusicView({
       ref={containerRef}
       className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white"
     >
-      <header className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+      <header className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
         <h2 className="text-lg font-bold">
           Rock<span className="text-yellow-400">Blocks</span> Sheet Music
         </h2>
@@ -177,7 +195,7 @@ export function SheetMusicView({
         </button>
       </header>
 
-      <div className="flex items-center gap-4 border-b border-white/10 px-6 py-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/10 px-4 py-3 sm:px-6">
         <button
           type="button"
           onClick={onTogglePlay}
@@ -230,8 +248,18 @@ export function SheetMusicView({
         )}
       </div>
 
-      <div className="flex flex-1 items-center overflow-auto p-6">
-        <div className="relative min-h-[280px] w-full rounded-lg bg-white p-4 shadow-xl">
+      {/* min-w-0 is load-bearing: without it this flex item refuses to shrink
+          below the width of its (deliberately over-wide) paper child, so a
+          busy bar grows the whole box past the screen instead of scrolling,
+          and its right-hand beats become unreachable on a phone. */}
+      <div ref={scrollRef} className="flex min-w-0 flex-1 items-center overflow-auto p-4 sm:p-6">
+        <div
+          className="relative w-full shrink-0 rounded-lg bg-white p-4 shadow-xl"
+          style={{
+            minWidth: paper.width ? paper.width + PAPER_PADDING * 2 : undefined,
+            minHeight: paper.height ? paper.height + PAPER_PADDING * 2 : undefined,
+          }}
+        >
           <div className="relative w-full" style={{ visibility: ready ? "visible" : "hidden" }}>
             <div ref={notationRef} className="w-full" />
             <div
