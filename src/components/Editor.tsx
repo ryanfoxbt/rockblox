@@ -529,6 +529,19 @@ export function Editor({
     }
   }
 
+  // Fractal Art has no idea the main transport is playing — it's a pure
+  // visualization computed from `lines`/`bpm`, not wired to playerRef the
+  // way SheetMusicView is (which takes isPlaying/onTogglePlay itself and so
+  // can show/control the same playback). Without this, hitting Play in the
+  // regular editor and then opening Fractal Art left the beat looping
+  // audibly underneath it with no visible player to stop it from.
+  function stopPlayback() {
+    if (playerRef.current?.isPlaying()) {
+      playerRef.current.stop();
+      setIsPlaying(false);
+    }
+  }
+
   function triggerDownload(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -1103,6 +1116,7 @@ export function Editor({
                   <button
                     type="button"
                     onClick={() => {
+                      stopPlayback();
                       setShowFractalArt(true);
                       setToolsMenuOpen(false);
                     }}
