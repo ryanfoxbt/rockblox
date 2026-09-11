@@ -78,33 +78,52 @@ export function FractalArtView({
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [menuOpen]);
 
-  // Both presentations are rendered up front, into two stacked canvases —
-  // toggling Dark/Light just switches which one is visible (see the JSX
-  // below), so it's instant no matter how long a render actually takes.
+  // Only the background actually on screen gets rendered eagerly — each
+  // presentation redraws every one of a layer's points (up to 55,000, times
+  // however many instruments are active) from scratch, so rendering *both*
+  // on every mount and every resize tick (a smooth window drag can fire the
+  // observer many times a second) was real, easily-felt cost paid for a
+  // Dark/Light toggle most sessions never touch. The inactive canvas is left
+  // stale — renderedRef tracks what each one last drew — and only catches up
+  // when the user actually switches to it (see the toggle buttons' onClick),
+  // at which point it's cached until the beat or size changes again.
+  const renderedRef = useRef<{ dark: number | null; light: number | null }>({ dark: null, light: null });
+
+  function renderBackground(bg: Background, size: number) {
+    const canvas = bg === "dark" ? darkCanvasRef.current : lightCanvasRef.current;
+    if (!canvas) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    renderFrame(canvas, size, dpr, bg, beat.layers);
+    renderedRef.current[bg] = size;
+  }
+
   useEffect(() => {
     const frame = frameRef.current;
-    const darkCanvas = darkCanvasRef.current;
-    const lightCanvas = lightCanvasRef.current;
-    if (!frame || !darkCanvas || !lightCanvas) return;
-
-    function draw(size: number) {
-      if (!darkCanvas || !lightCanvas) return;
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      renderFrame(darkCanvas, size, dpr, "dark", beat.layers);
-      renderFrame(lightCanvas, size, dpr, "light", beat.layers);
-    }
+    if (!frame) return;
+    renderedRef.current = { dark: null, light: null };
 
     let lastSize = frame.clientWidth || 380;
-    draw(lastSize);
+    renderBackground(background, lastSize);
     const observer = new ResizeObserver((entries) => {
       const size = entries[0]?.contentRect.width || frame.clientWidth || 380;
       if (Math.abs(size - lastSize) < 1) return;
       lastSize = size;
-      draw(size);
+      renderBackground(background, size);
     });
     observer.observe(frame);
     return () => observer.disconnect();
+    // background is deliberately excluded: switching it is handled by the
+    // toggle buttons themselves (render-if-stale), not by this effect —
+    // re-running this on every toggle would defeat the whole point.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [beat]);
+
+  function switchBackground(bg: Background) {
+    const frame = frameRef.current;
+    const size = frame?.clientWidth || 380;
+    if (renderedRef.current[bg] !== size) renderBackground(bg, size);
+    setBackground(bg);
+  }
 
   const activeCanvasRef = background === "dark" ? darkCanvasRef : lightCanvasRef;
 
@@ -140,7 +159,7 @@ export function FractalArtView({
                 </p>
                 <button
                   type="button"
-                  onClick={() => setBackground("dark")}
+                  onClick={() => switchBackground("dark")}
                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
                 >
                   <span className="w-3 text-yellow-400">{background === "dark" ? "✓" : ""}</span>
@@ -148,7 +167,7 @@ export function FractalArtView({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setBackground("light")}
+                  onClick={() => switchBackground("light")}
                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
                 >
                   <span className="w-3 text-yellow-400">{background === "light" ? "✓" : ""}</span>

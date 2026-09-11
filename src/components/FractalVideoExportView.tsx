@@ -6,7 +6,7 @@ import type { CustomSamples } from "@/lib/customSamples";
 import { InstrumentId } from "@/lib/instruments";
 import { LineState, renderSongToBuffer } from "@/lib/audioEngine";
 import { computeFractalBeat } from "@/lib/fractalArt";
-import { drawLayer, fillBackground, type FractalBackground } from "@/lib/fractalRender";
+import { drawLayer, fillBackground, renderFrame, type FractalBackground } from "@/lib/fractalRender";
 import { NotationLayout, VF, renderNotationMeasureToCanvas } from "@/lib/notation";
 import type { LineData } from "@/lib/song";
 import { measureSplit } from "@/lib/song";
@@ -23,10 +23,20 @@ import {
 } from "@/lib/videoExport";
 
 // A handful of named looks for the fractal square, on top of the existing
-// dark/light background choice — picked for being cheap to composite (no
-// per-point cost, just one or two extra drawImage/gradient calls per frame)
-// so they don't threaten the real-time capture budget.
-export type FractalStyle = "classic" | "bloom" | "vignette";
+// dark/light background choice — picked for being cheap to composite (a
+// handful of extra drawImage/gradient calls per frame, not a per-point
+// cost) so they don't threaten the real-time capture budget. "vivid" is the
+// one exception that touches point-drawing itself (bigger dots) — see
+// dotScaleForStyle.
+export type FractalStyle = "classic" | "bloom" | "vignette" | "vivid" | "prism";
+
+// How much bigger than normal each point draws — only "vivid" asks for
+// bolder marks; every other style keeps the same fine dots the static
+// Fractal Art view uses, drawn via the exact same drawLayer everything else
+// here already shares.
+function dotScaleForStyle(style: FractalStyle): number {
+  return style === "vivid" ? 2.1 : 1;
+}
 
 // Same 2x2 beat-block mark as the favicon (icon.tsx/apple-icon.tsx) — the
 // product's own step-sequencer UI reduced to its simplest form — drawn
@@ -274,6 +284,22 @@ export function FractalVideoExportView({
   // straight from useRef is exempt.
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const revealCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  // A fully-drawn snapshot of the current beat/background/style, rebuilt
+  // once whenever any of those actually change (see the reset effect below)
+  // rather than on every frame — the sforzando intro used to redraw every
+  // point of every layer from scratch (up to 55,000 per layer) the instant
+  // it started, which was slow enough on its own to feel like general
+  // sluggishness — and, back when light mode composited per-point draws
+  // with "multiply" instead of today's "source-over" (see fractalRender.ts),
+  // 20-70x slower still, so real time had often already carried past the
+  // whole intro window by the time that burst of drawing finished and the
+  // flash it was supposed to show never actually got seen (or captured).
+  // Entering the intro now just blits this cached image instead.
+  const completeCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  // The logo + wordmark, pre-drawn once per layout (aspect change) rather
+  // than redrawn — a handful of fillText/measureText/roundRect calls —
+  // every single animation frame; blitted with one drawImage instead.
+  const logoCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const vfModuleRef = useRef<VF | null>(null);
   const revealSegmentRef = useRef(-1);
   const drawnCountRef = useRef<Map<InstrumentId, number>>(new Map());
@@ -324,8 +350,31 @@ export function FractalVideoExportView({
     const rctx = canvas.getContext("2d");
     if (!rctx) return;
     fillBackground(rctx, canvas.width, canvas.height, bg);
-    rctx.globalCompositeOperation = bg === "dark" ? "lighter" : "multiply";
+    rctx.globalCompositeOperation = bg === "dark" ? "lighter" : "source-over";
     drawnCountRef.current.clear();
+  }
+
+  // Rebuilds the cached "fully drawn" snapshot the sforzando intro blits
+  // from — see completeCanvasRef above for why this is cached rather than
+  // drawn fresh every time the intro segment starts.
+  function rebuildCompleteSnapshot(bg: FractalBackground, sty: FractalStyle, layers: DrawParams["layers"]) {
+    const revealCanvas = revealCanvasRef.current;
+    if (!revealCanvas) return;
+    if (!completeCanvasRef.current) completeCanvasRef.current = document.createElement("canvas");
+    renderFrame(completeCanvasRef.current, revealCanvas.width, 1, bg, layers, dotScaleForStyle(sty));
+  }
+
+  // Rebuilds the cached logo+wordmark overlay — see logoCanvasRef above.
+  function rebuildLogoCanvas(lay: FrameLayout, width: number, height: number) {
+    if (!logoCanvasRef.current) logoCanvasRef.current = document.createElement("canvas");
+    const lc = logoCanvasRef.current;
+    lc.width = width;
+    lc.height = height;
+    const lctx = lc.getContext("2d");
+    if (!lctx) return;
+    lctx.clearRect(0, 0, width, height);
+    drawLogo(lctx, lay.logoX, lay.logoY, lay.logoUnit);
+    drawWordmark(lctx, lay.wordmarkX, lay.logoY + lay.logoUnit + lay.logoUnit * 0.11, lay.wordmarkFontPx);
   }
 
   // Re-renders one page of sheet music onto an offscreen canvas — async, so
@@ -405,10 +454,18 @@ export function FractalVideoExportView({
       revealSegmentRef.current = segment;
       resetReveal(p.background);
       if (inIntro) {
-        for (const layer of p.layers) {
-          drawLayer(revealCtx, revealCanvas.width, 1, layer, 0, layer.pointCount);
-          drawnCountRef.current.set(layer.instrument, layer.pointCount);
+        // A plain blit of the cached snapshot (see completeCanvasRef)
+        // instead of redrawing every point of every layer from scratch —
+        // the whole reason this segment can transition into cleanly and
+        // near-instantly rather than needing a moment (or, previously, more
+        // than the entire intro window) to catch up.
+        const snapshot = completeCanvasRef.current;
+        if (snapshot) {
+          revealCtx.globalCompositeOperation = "source-over";
+          revealCtx.drawImage(snapshot, 0, 0);
+          revealCtx.globalCompositeOperation = p.background === "dark" ? "lighter" : "source-over";
         }
+        for (const layer of p.layers) drawnCountRef.current.set(layer.instrument, layer.pointCount);
       }
     }
 
@@ -416,11 +473,12 @@ export function FractalVideoExportView({
       const buildDuration = p.totalSeconds - p.introSeconds;
       const buildElapsed = cycleElapsed - p.introSeconds;
       const revealT = easeInOut(buildDuration > 0 ? buildElapsed / buildDuration : 1);
+      const dotScale = dotScaleForStyle(p.style);
       for (const layer of p.layers) {
         const target = Math.floor(layer.pointCount * revealT);
         const already = drawnCountRef.current.get(layer.instrument) ?? 0;
         if (target > already) {
-          drawLayer(revealCtx, revealCanvas.width, 1, layer, already, target);
+          drawLayer(revealCtx, revealCanvas.width, 1, layer, already, target, dotScale);
           drawnCountRef.current.set(layer.instrument, target);
         }
       }
@@ -460,6 +518,55 @@ export function FractalVideoExportView({
         cctx.globalCompositeOperation = "multiply";
       }
       cctx.drawImage(revealCanvas, f.x, f.y, f.w, f.h);
+      cctx.restore();
+    }
+    if (p.style === "vivid") {
+      // The saturated, glowing end of the family — points are already
+      // drawn bigger for this style (see dotScaleForStyle), and on top of
+      // that a two-layer glow (a tight, bright inner pass and a wider,
+      // softer outer one — a single blur reads flatter/blurrier rather than
+      // "radiant") plus a saturation boost push the color itself toward
+      // neon rather than just brightening it.
+      cctx.save();
+      cctx.filter = `blur(${Math.max(2, Math.round(f.w * 0.01))}px) saturate(190%)`;
+      cctx.globalAlpha = p.background === "dark" ? 0.85 : 0.55;
+      cctx.globalCompositeOperation = p.background === "dark" ? "lighter" : "multiply";
+      cctx.drawImage(revealCanvas, f.x, f.y, f.w, f.h);
+      cctx.filter = `blur(${Math.max(6, Math.round(f.w * 0.035))}px) saturate(190%)`;
+      cctx.globalAlpha = p.background === "dark" ? 0.5 : 0.3;
+      cctx.drawImage(revealCanvas, f.x, f.y, f.w, f.h);
+      cctx.restore();
+      // The saturation boost applies to the sharp copy underneath too, or
+      // the glow reads more vivid than the lines it's supposedly coming
+      // from.
+      cctx.save();
+      cctx.filter = "saturate(190%)";
+      cctx.globalCompositeOperation = p.background === "dark" ? "lighter" : "multiply";
+      cctx.globalAlpha = p.background === "dark" ? 0.5 : 0.35;
+      cctx.drawImage(revealCanvas, f.x, f.y, f.w, f.h);
+      cctx.restore();
+    }
+    if (p.style === "prism") {
+      // A handful of copies, each nudged a few pixels apart and hue-shifted,
+      // layered on with a non-erasing blend the same way bloom's glow is —
+      // chromatic-aberration fringing around every edge, the "double
+      // vision, everything's got a rainbow edge" effect the name is going
+      // for. Ink doesn't literally refract color, so light mode reads it
+      // instead as slightly-misregistered print plates — a different but
+      // equally legible metaphor for the same shifted-copies technique.
+      const shift = Math.max(2, Math.round(f.w * 0.009));
+      const passes: { dx: number; dy: number; hue: number }[] = [
+        { dx: -shift, dy: 0, hue: -40 },
+        { dx: shift, dy: 0, hue: 40 },
+        { dx: 0, dy: -shift, hue: 120 },
+      ];
+      cctx.save();
+      cctx.globalCompositeOperation = p.background === "dark" ? "lighter" : "multiply";
+      cctx.globalAlpha = p.background === "dark" ? 0.55 : 0.32;
+      for (const pass of passes) {
+        cctx.filter = `hue-rotate(${pass.hue}deg) saturate(200%)`;
+        cctx.drawImage(revealCanvas, f.x + pass.dx, f.y + pass.dy, f.w, f.h);
+      }
       cctx.restore();
     }
     if (p.style === "vignette") {
@@ -526,8 +633,7 @@ export function FractalVideoExportView({
       }
     }
 
-    drawLogo(cctx, p.layout.logoX, p.layout.logoY, p.layout.logoUnit);
-    drawWordmark(cctx, p.layout.wordmarkX, p.layout.logoY + p.layout.logoUnit + p.layout.logoUnit * 0.11, p.layout.wordmarkFontPx);
+    if (logoCanvasRef.current) cctx.drawImage(logoCanvasRef.current, 0, 0);
 
     if (recordingRef.current) {
       if (elapsed >= p.totalSeconds && !stoppingRef.current) {
@@ -555,13 +661,13 @@ export function FractalVideoExportView({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
-  // (Re)sizes the two canvases and starts a fresh reveal cycle whenever the
-  // aspect ratio, background, or clip length changes — a new clip length
-  // changes the reveal cycle's own length, so it needs the same clean
-  // restart a new look does. Other reactive values (beat, bpm, measureLength)
-  // don't affect canvas dimensions or reveal timing, so they flow into the
-  // already-running loop purely through paramsRef instead of resetting
-  // anything here.
+  // (Re)sizes the two canvases, rebuilds both caches (see completeCanvasRef
+  // and logoCanvasRef), and starts a fresh reveal cycle whenever anything
+  // that changes what should actually be on screen changes: aspect ratio
+  // and clip length affect layout/timing directly; background, style, and
+  // the beat itself all affect what the cached snapshot needs to show.
+  // bpm/measureLength don't affect any of that and flow into the already-
+  // running loop purely through paramsRef instead of resetting anything.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -571,11 +677,13 @@ export function FractalVideoExportView({
     revealCanvasRef.current.width = layout.fractal.w;
     revealCanvasRef.current.height = layout.fractal.h;
     resetReveal(background);
+    rebuildCompleteSnapshot(background, style, beat.layers);
+    rebuildLogoCanvas(layout, size.width, size.height);
     revealSegmentRef.current = -1;
     sheetRasterRef.current = null;
     startTimeRef.current = performance.now() / 1000;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aspect, background, clipSeconds]);
+  }, [aspect, background, clipSeconds, style, beat]);
 
   // Starts the one continuous animation loop on mount and tears it down on
   // unmount — see tick() above for why it never needs restarting in between.
@@ -832,7 +940,7 @@ export function FractalVideoExportView({
               </button>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap justify-center gap-2">
               <button
                 type="button"
                 disabled={phase === "recording"}
@@ -873,6 +981,34 @@ export function FractalVideoExportView({
                 ].join(" ")}
               >
                 Vignette
+              </button>
+              <button
+                type="button"
+                disabled={phase === "recording"}
+                onClick={() => setStyle("vivid")}
+                title="Bigger, glowing, more saturated — a vibrant, neon-leaning look"
+                className={[
+                  "rounded-full border px-3 py-1 text-xs font-medium transition disabled:opacity-40",
+                  style === "vivid"
+                    ? "border-yellow-400 bg-yellow-400/20 text-yellow-300"
+                    : "border-white/15 bg-white/5 text-white/70 hover:border-yellow-400 hover:text-yellow-400",
+                ].join(" ")}
+              >
+                Vivid
+              </button>
+              <button
+                type="button"
+                disabled={phase === "recording"}
+                onClick={() => setStyle("prism")}
+                title="Rainbow-fringed, trippy chromatic-shift copies"
+                className={[
+                  "rounded-full border px-3 py-1 text-xs font-medium transition disabled:opacity-40",
+                  style === "prism"
+                    ? "border-yellow-400 bg-yellow-400/20 text-yellow-300"
+                    : "border-white/15 bg-white/5 text-white/70 hover:border-yellow-400 hover:text-yellow-400",
+                ].join(" ")}
+              >
+                Prism
               </button>
             </div>
 
