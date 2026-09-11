@@ -939,13 +939,7 @@ export function Editor({
               <button
                 type="button"
                 onClick={() => setToolsMenuOpen((v) => !v)}
-                title={
-                  board
-                    ? board.readOnly
-                      ? "Stacks, Save a copy, Inspiration"
-                      : "Stacks, TextyBeat, Wall, Inspiration"
-                    : "TextyBeat, Inspiration"
-                }
+                title="More tools & views"
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
@@ -962,7 +956,7 @@ export function Editor({
                 // the modal that opens covers it completely (higher
                 // z-index), and the outside-click handler above closes it
                 // on the next unrelated click.
-                <div className="absolute right-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-md border border-white/10 bg-slate-800 shadow-lg">
+                <div className="absolute right-0 top-full z-10 mt-1 w-48 overflow-hidden rounded-md border border-white/10 bg-slate-800 shadow-lg">
                   {board && (
                     <>
                       <Link
@@ -1005,50 +999,43 @@ export function Editor({
                     variant="menuItem"
                     onOpen={() => setBasslineModalOpen(true)}
                   />
+                  <div className="my-1 border-t border-white/10" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSheet(true);
+                      setToolsMenuOpen(false);
+                    }}
+                    disabled={measureLength < 1}
+                    className="block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400 disabled:pointer-events-none disabled:opacity-30"
+                  >
+                    Sheet music
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDrumTeacher(true);
+                      setToolsMenuOpen(false);
+                    }}
+                    disabled={measureLength < 1}
+                    className="block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400 disabled:pointer-events-none disabled:opacity-30"
+                  >
+                    Drum teacher
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowFractalArt(true);
+                      setToolsMenuOpen(false);
+                    }}
+                    disabled={measureLength < 1}
+                    className="block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400 disabled:pointer-events-none disabled:opacity-30"
+                  >
+                    Fractal art
+                  </button>
                 </div>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => setShowSheet(true)}
-              disabled={measureLength < 1}
-              title="View sheet music"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                <line x1="3" y1="7" x2="21" y2="7" />
-                <line x1="3" y1="11" x2="21" y2="11" />
-                <line x1="3" y1="15" x2="21" y2="15" />
-                <circle cx="9" cy="17.5" r="2" fill="currentColor" stroke="none" />
-                <line x1="11" y1="17.5" x2="11" y2="9" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowDrumTeacher(true)}
-              disabled={measureLength < 1}
-              title="Watch how to play this on a real kit"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                <ellipse cx="12" cy="16" rx="8" ry="4" />
-                <path d="M6 8 17 19" strokeLinecap="round" />
-                <path d="M17 8 6 19" strokeLinecap="round" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowFractalArt(true)}
-              disabled={measureLength < 1}
-              title="See this beat as fractal art"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-30"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                <circle cx="9" cy="9" r="6" />
-                <circle cx="15" cy="9" r="6" />
-                <circle cx="12" cy="15" r="6" />
-              </svg>
-            </button>
           </div>
         </div>
       </header>

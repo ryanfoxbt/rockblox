@@ -35,6 +35,12 @@ export interface FractalLayer {
   pointCount: number;
   alpha: number;
   bounds: { minX: number; maxX: number; minY: number; maxY: number };
+  // What actually produced `params`, for a "show your work" view — the seed
+  // string that got hashed (before any nudge) and how many seed variants it
+  // took to clear MIN_OCCUPIED_CELLS (1 means the first draw was already
+  // fine).
+  seed: string;
+  tries: number;
 }
 
 export interface FractalBeat {
@@ -193,6 +199,8 @@ function renderLayer(instrument: InstrumentId, hex: string, pattern: number[], b
     pointCount,
     alpha,
     bounds: result.bounds,
+    seed: seedBase,
+    tries,
   };
 }
 
