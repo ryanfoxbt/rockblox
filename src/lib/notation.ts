@@ -93,11 +93,12 @@ export interface NotationLayout {
   beatSpans: BeatSpan[];
   staveTopY: number;
   staveBottomY: number;
-  // The width the system was actually drawn at. This exceeds the width the
-  // caller offered whenever the music needs more room than that — a busy
-  // 16th-note bar on a portrait phone, say. Callers size their "paper" to
-  // this and let the page scroll sideways, which is what keeps the notes
-  // inside their barlines instead of spilling past the end of the stave.
+  // The width/height the system was actually drawn at, in whole pixels —
+  // always the width the caller offered, or (from float rounding) a pixel
+  // either side of it. A bar too busy to fit at full size draws at the size
+  // it actually needs and then shrinks — see drawSystem — so this never
+  // exceeds what was offered by more than rounding: callers size their
+  // "paper" to it and never need to scroll to see the rest of a bar.
   width: number;
   height: number;
 }
@@ -107,6 +108,13 @@ export interface NotationLayout {
 // *inside* that padding, then grow the paper back by the same amount — miss
 // this and the last beat of a bar hangs off the edge of the page.
 export const PAPER_PADDING = 16;
+
+// Floor a caller should clamp its measured width to before offering it to
+// drawSystem — low enough that it can never itself exceed a real container's
+// width (guarding only against a momentary 0px reading mid-transition, not
+// against any screen an actual phone would ever report), so this floor can
+// never become the reason a bar doesn't fit.
+export const MIN_DRAW_WIDTH = 40;
 
 const STAVE_MARGIN_X = 10;
 // A Stave draws its top line 40px below its own y, so this puts the top line
@@ -430,14 +438,18 @@ function drawMeasure(
 // Lays out and draws one or more measures as a single horizontal system, and
 // reports back where each beat sits.
 //
-// `availWidth` is an offer, not an order. Every bar first says how narrow it
-// can get without its notes colliding or running past the barline; if the
-// offer covers the total, the slack is shared out in proportion to what each
-// bar asked for (a bar of 16ths earns more room than a bar of quarters, and
-// the bar carrying the clef and time signature earns the room those take).
-// If it doesn't, the system is drawn at the width the music needs and the
-// caller scrolls — which is the whole trick to making a busy bar read
-// correctly on a portrait phone.
+// `availWidth` is an offer, not an order, but it's never exceeded. Every bar
+// first says how narrow it can get without its notes colliding or running
+// past the barline; if the offer covers that total, the slack is shared out
+// in proportion to what each bar asked for (a bar of 16ths earns more room
+// than a bar of quarters, and the bar carrying the clef and time signature
+// earns the room those take). If it doesn't — a busy bar on a narrow phone —
+// the system is drawn at the natural size its notes need and then the whole
+// drawing is scaled down (via the SVG's viewBox, so every note, beam and
+// tuplet shrinks together rather than any one element being recomputed at a
+// different size) until it fits inside what was offered. A bar never has to
+// be scrolled to see the rest of it; on a very narrow screen a very busy bar
+// just reads smaller.
 function drawSystem(
   VF: VF,
   context: ReturnType<VF["Renderer"]["prototype"]["getContext"]>,
@@ -447,15 +459,15 @@ function drawSystem(
 ): NotationLayout {
   const prepared = specs.map((spec) => prepareMeasure(VF, context, spec));
   const totalMin = prepared.reduce((sum, p) => sum + p.minWidth, 0);
-  // Whole pixels: a fractional SVG width leaves a half-pixel seam between
-  // the drawing and the edge of the paper it sits on.
-  const usable = Math.ceil(Math.max(availWidth - STAVE_MARGIN_X * 2, totalMin));
-  const width = usable + STAVE_MARGIN_X * 2;
+  // The system's natural size: fills availWidth when the music has room to
+  // spare, or grows past it to whatever the busiest layout actually needs —
+  // never squeezed at this stage, so nothing collides or gets clipped.
+  const naturalUsable = Math.ceil(Math.max(availWidth - STAVE_MARGIN_X * 2, totalMin));
+  const naturalWidth = naturalUsable + STAVE_MARGIN_X * 2;
 
   // Resize before anything is drawn: the SVG has to be as wide as the system
-  // or the right-hand bar would be clipped by the viewport rather than
-  // scrolled to.
-  renderer.resize(width, CANVAS_HEIGHT);
+  // or a bar would be clipped by the viewport rather than laid out fully.
+  renderer.resize(naturalWidth, CANVAS_HEIGHT);
 
   const beatSpans: BeatSpan[] = [];
   let x = STAVE_MARGIN_X;
@@ -464,19 +476,36 @@ function drawSystem(
     // ends exactly on the right margin.
     const barWidth =
       i === prepared.length - 1
-        ? usable - (x - STAVE_MARGIN_X)
-        : Math.round((p.minWidth / totalMin) * usable);
+        ? naturalUsable - (x - STAVE_MARGIN_X)
+        : Math.round((p.minWidth / totalMin) * naturalUsable);
     beatSpans.push(...drawMeasure(context, p, x, barWidth));
     x += barWidth;
   });
 
+  // Shrink the finished drawing down to fit, if it needed more than it was
+  // offered. Scale is never above 1 — a system that already fit at natural
+  // size (the common case) is left exactly as drawn.
+  const scale = Math.min(1, availWidth / naturalWidth);
+  const width = Math.round(naturalWidth * scale);
+  const height = Math.round(CANVAS_HEIGHT * scale);
+  if (scale < 1) {
+    // renderer.resize shrinks the SVG's own width/height attributes, which
+    // on its own would crop the natural-sized drawing rather than shrink
+    // it — VexFlow's resize resets the viewBox to match 1:1. Stretching the
+    // viewBox back out to the natural coordinate space after is what turns
+    // that crop into a scale-down: the browser fits the full (unclipped)
+    // drawing into the smaller box.
+    renderer.resize(width, height);
+    (context as InstanceType<VF["SVGContext"]>).setViewBox(0, 0, naturalWidth, CANVAS_HEIGHT);
+  }
+
   const stave = prepared[0].stave;
   return {
-    beatSpans,
-    staveTopY: stave.getYForLine(0) - HIGHLIGHT_ABOVE,
-    staveBottomY: stave.getYForLine(4) + HIGHLIGHT_BELOW,
+    beatSpans: beatSpans.map((s) => ({ x0: s.x0 * scale, x1: s.x1 * scale })),
+    staveTopY: (stave.getYForLine(0) - HIGHLIGHT_ABOVE) * scale,
+    staveBottomY: (stave.getYForLine(4) + HIGHLIGHT_BELOW) * scale,
     width,
-    height: CANVAS_HEIGHT,
+    height,
   };
 }
 

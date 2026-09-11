@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { LineData, measureSplit, timeSignatureLabel } from "@/lib/song";
 import {
+  MIN_DRAW_WIDTH,
   NotationLayout,
   PAPER_PADDING,
   keepBeatVisible,
@@ -36,10 +37,10 @@ export function SheetMusicView({
   const highlightRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<NotationLayout | null>(null);
   const [ready, setReady] = useState(false);
-  // The size the current bar was actually drawn at. A bar busier than the
-  // screen is wide gets drawn at the width its notes need, and the paper
-  // grows to match so it scrolls cleanly instead of spilling past the
-  // barline — see drawSystem in lib/notation.
+  // The size the current bar was actually drawn at — always sized to fit
+  // what the scroll viewport offered (drawSystem in lib/notation shrinks a
+  // bar too busy to fit at full size rather than letting it overflow), so
+  // in practice this never asks for more room than the viewport already has.
   const [paper, setPaper] = useState({ width: 0, height: 0 });
 
   // An 8-beat pattern is written as two 4/4 measures, shown one per page
@@ -128,7 +129,7 @@ export function SheetMusicView({
       const box = entries[0]?.contentRect.width || target.clientWidth || 800;
       // What's left for the notation once the paper's own padding is taken
       // off — that's the width the music actually has to work with.
-      const width = Math.max(box - PAPER_PADDING * 2, 200);
+      const width = Math.max(box - PAPER_PADDING * 2, MIN_DRAW_WIDTH);
       if (Math.abs(width - lastWidth) < 1) return;
       lastWidth = width;
       draw(width);
@@ -248,10 +249,11 @@ export function SheetMusicView({
         )}
       </div>
 
-      {/* min-w-0 is load-bearing: without it this flex item refuses to shrink
-          below the width of its (deliberately over-wide) paper child, so a
-          busy bar grows the whole box past the screen instead of scrolling,
-          and its right-hand beats become unreachable on a phone. */}
+      {/* min-w-0 is a safety net, not the primary fit mechanism — drawSystem
+          already shrinks a bar to fit rather than growing the paper past the
+          viewport. Without it, though, a flex item refuses to shrink below
+          its child's width, so any leftover pixel of rounding slop would
+          grow the whole box instead of quietly scrolling it. */}
       <div ref={scrollRef} className="flex min-w-0 flex-1 items-center overflow-auto p-4 sm:p-6">
         <div
           className="relative w-full shrink-0 rounded-lg bg-white p-4 shadow-xl"

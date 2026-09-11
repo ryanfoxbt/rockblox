@@ -6,6 +6,7 @@ import { LineState } from "@/lib/audioEngine";
 import { CustomSamples } from "@/lib/customSamples";
 import { computeHitEvents, DrumHitEvent, Limb } from "@/lib/drumRig";
 import {
+  MIN_DRAW_WIDTH,
   NotationLayout,
   PAPER_PADDING,
   keepBeatVisible,
@@ -363,9 +364,10 @@ export function DrumTeacherView({
   const notationScrollRef = useRef<HTMLDivElement>(null);
   const notationContainerRef = useRef<HTMLDivElement>(null);
   const notationHighlightRef = useRef<HTMLDivElement>(null);
-  // The size the system was actually drawn at — wider than the panel when
-  // the pattern is too busy to fit, in which case the paper scrolls. See
-  // drawSystem in lib/notation.
+  // The size the system was actually drawn at — always sized to fit the
+  // panel (drawSystem in lib/notation shrinks a pattern too busy to fit at
+  // full size rather than letting it overflow), so this never asks for more
+  // room than the panel already has.
   const notationPaperRef = useRef<HTMLDivElement>(null);
   const notationLayoutRef = useRef<NotationLayout | null>(null);
 
@@ -478,7 +480,7 @@ export function DrumTeacherView({
       const box = entries[0]?.contentRect.width || target.clientWidth || 500;
       // What's left for the notation once the paper's own padding is taken
       // off — that's the width the music actually has to work with.
-      const width = Math.max(box - PAPER_PADDING * 2, 200);
+      const width = Math.max(box - PAPER_PADDING * 2, MIN_DRAW_WIDTH);
       if (Math.abs(width - lastWidth) < 1) return;
       lastWidth = width;
       draw(width);
@@ -802,10 +804,12 @@ export function DrumTeacherView({
             showNotation ? "flex-col lg:flex-row lg:items-stretch" : "flex-col items-center justify-center",
           ].join(" ")}
         >
-          {/* min-w-0 on the scroll box keeps this flex item from being pushed
-              wider than the panel by its (deliberately over-wide) paper child
-              — without it a busy pattern grows the whole column instead of
-              scrolling. */}
+          {/* min-w-0 is a safety net, not the primary fit mechanism —
+              drawSystem (lib/notation) already shrinks a busy pattern to fit
+              rather than growing the paper past the panel. Without it,
+              though, a flex item refuses to shrink below its child's width,
+              so any leftover pixel of rounding slop would grow the whole
+              column instead of quietly scrolling it. */}
           {showNotation && (
             <div
               ref={notationScrollRef}

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  MIN_DRAW_WIDTH,
   NotationLayout,
   NotationLine,
   PAPER_PADDING,
@@ -22,9 +23,11 @@ export interface StackSheetStep {
 // The whole arrangement written out one measure per screen, exactly like the
 // editor's Sheet Music view: an 8-beat step becomes two 4/4 pages, a 3-7
 // beat step stays a single bar in its own time signature. Playback turns the
-// page; ◀/▶ do it by hand while stopped. (The earlier version stacked several
-// staves per page and tried to shrink wide bars to fit — that read badly on a
-// portrait phone; this mirrors the single-measure model that already works.)
+// page; ◀/▶ do it by hand while stopped. (An earlier version stacked several
+// staves per page and tried to eyeball a width for wide bars — that read
+// badly on a portrait phone. This mirrors the single-measure model that
+// already worked, and drawSystem in lib/notation now shrinks a bar that's
+// too busy for the screen to fit exactly, rather than guessing a width.)
 export function StackSheetMusicView({
   steps,
   bpm,
@@ -46,9 +49,10 @@ export function StackSheetMusicView({
   const highlightRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<NotationLayout | null>(null);
   const [ready, setReady] = useState(false);
-  // The size the current bar was actually drawn at. A bar busier than the
-  // screen is wide gets drawn at the width its notes need, and the paper
-  // grows to match so it scrolls cleanly instead of spilling off the edge.
+  // The size the current bar was actually drawn at — always sized to fit
+  // what the scroll viewport offered (drawSystem in lib/notation shrinks a
+  // bar too busy to fit at full size rather than letting it overflow), so
+  // in practice this never asks for more room than the viewport already has.
   const [paper, setPaper] = useState({ width: 0, height: 0 });
 
   // Every bar across the arrangement, in play order — one entry per page.
@@ -103,8 +107,9 @@ export function StackSheetMusicView({
       const target = notationRef.current;
       if (cancelled || !target) return;
       // renderNotationPage takes `availWidth` as an offer and reports the
-      // width it actually used — wider, when this bar's notes need more room
-      // than the screen has. The paper follows that, and the box scrolls.
+      // width it actually used — shrunk down to fit, when this bar's notes
+      // need more room than the screen has. The paper follows that, so it
+      // always matches without needing to scroll.
       const layout = renderNotationPage(
         vfModule,
         target,
@@ -134,7 +139,7 @@ export function StackSheetMusicView({
       const box = entries[0]?.contentRect.width || target.clientWidth || 800;
       // What's left for the notation once the paper's own padding is taken
       // off — that's the width the music actually has to work with.
-      const width = Math.max(box - PAPER_PADDING * 2, 200);
+      const width = Math.max(box - PAPER_PADDING * 2, MIN_DRAW_WIDTH);
       if (Math.abs(width - lastWidth) < 1) return;
       lastWidth = width;
       draw(width);
@@ -256,10 +261,11 @@ export function StackSheetMusicView({
         )}
       </div>
 
-      {/* min-w-0 is load-bearing: without it this flex item won't shrink below
-          the width of its (deliberately over-wide) paper child, so instead of
-          scrolling, the whole scroll box grows past the screen and the right
-          side of a busy 7/4 bar is unreachable on a phone. */}
+      {/* min-w-0 is a safety net, not the primary fit mechanism — drawSystem
+          already shrinks a busy bar to fit rather than growing the paper past
+          the viewport. Without it, though, a flex item refuses to shrink
+          below its child's width, so any leftover pixel of rounding slop
+          would grow the whole box instead of quietly scrolling it. */}
       <div ref={scrollRef} className="flex min-w-0 flex-1 items-center overflow-auto p-4 sm:p-6">
         <div
           className="relative w-full shrink-0 rounded-lg bg-white p-4 shadow-xl"
