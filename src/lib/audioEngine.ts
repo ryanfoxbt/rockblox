@@ -2,6 +2,7 @@ import { InstrumentId } from "./instruments";
 import { hitVelocityMultiplier, NOTE_FRACTION, RhythmTile } from "./rhythm";
 import { DEFAULT_KIT, sampleUrlsForKit } from "./drumKits";
 import { loadFartBuffers } from "./fartKit";
+import { loadCatBuffers } from "./catKit";
 import { CustomSamples, base64ToArrayBuffer } from "./customSamples";
 import { type Bassline, type ExportPart, basslineHasNotes, basslineVoice } from "./bassline";
 import { triggerBassNote } from "./bassVoice";
@@ -34,10 +35,11 @@ export function loadDrumBuffers(ctx: BaseAudioContext, kit: string): Promise<Buf
   const loading = loadingByKit.get(kit);
   if (loading) return loading;
 
-  if (kit === "Fart") {
+  if (kit === "Fart" || kit === "Cats") {
     // Synthesized per slot by default, with any real recording dropped into
-    // public/fart-kit/ overriding that slot — see fartKit.ts.
-    const promise = loadFartBuffers(ctx).then((map) => {
+    // public/fart-kit/ or public/cat-kit/ overriding that slot — see
+    // fartKit.ts / catKit.ts.
+    const promise = (kit === "Fart" ? loadFartBuffers(ctx) : loadCatBuffers(ctx)).then((map) => {
       bufferCacheByKit.set(kit, map);
       loadingByKit.delete(kit);
       return map;

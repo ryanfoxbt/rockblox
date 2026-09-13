@@ -1,13 +1,23 @@
 import { InstrumentId } from "./instruments";
 import { SAMPLE_URL as ACOUSTIC_SAMPLE_URL } from "./drumSamples";
 
-export const DRUM_KITS = ["Acoustic", "TR-808", "Casio-RZ1", "LM-2", "MFB-512", "Roland CR-8000", "Fart"] as const;
+export const DRUM_KITS = [
+  "Acoustic",
+  "TR-808",
+  "Casio-RZ1",
+  "LM-2",
+  "MFB-512",
+  "Roland CR-8000",
+  "Fart",
+  "Cats",
+] as const;
 export type DrumKit = (typeof DRUM_KITS)[number];
 export const DEFAULT_KIT: DrumKit = "MFB-512";
 
-// "Fart" isn't sample-backed at all — it's synthesized in audioEngine.ts —
-// so it's excluded from the sample-based machine kits below.
-type MachineKit = Exclude<DrumKit, "Acoustic" | "Fart">;
+// "Fart" and "Cats" aren't sample-backed at all — each is synthesized in
+// audioEngine.ts (see fartKit.ts / catKit.ts) — so they're excluded from the
+// sample-based machine kits below.
+type MachineKit = Exclude<DrumKit, "Acoustic" | "Fart" | "Cats">;
 
 const DRUM_MACHINE_BASE_URL: Record<MachineKit, string> = {
   "TR-808": "https://smpldsnds.github.io/drum-machines/TR-808",
