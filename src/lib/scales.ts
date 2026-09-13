@@ -1,7 +1,20 @@
 // Scale catalog for the bassline generator. Each scale is a set of semitone
-// offsets from its root, within one octave (0 = the root, 12 excluded). The
-// generator snaps every pitch it picks to one of these so a bassline stays in
-// the key the user chose — see generateBassline.ts.
+// offsets from its root, within one octave (0 = the root, 12 excluded). Most
+// scales only use whole semitones, but a few (Middle Eastern maqamat) fall on
+// the half-semitone (quarter-tone) grid too — see the "quarter-tone" note
+// below. The generator snaps every pitch it picks to one of these so a
+// bassline stays in the key the user chose — see generateBassline.ts.
+//
+// Quarter tones: standard MIDI note numbers are integers, so there's no
+// note number for "a quarter tone above C". This app sidesteps that by
+// keeping `midi` a plain float everywhere pitch flows through (BassNote.midi,
+// the functions below) — the live synth in bassVoice.ts already converts an
+// arbitrary float to a frequency, so e.g. 60.5 just plays a quarter tone above
+// C4. All the pitch math here works in half-semitone steps (round to the
+// nearest 0.5) so a fractional scale degree round-trips exactly. The one
+// place this can't reach is a plain MIDI file export, where note numbers must
+// be integers — see pushBassNoteEvents in midiEncoder.ts for how that's
+// handled with a per-note pitch bend instead.
 
 export const NOTE_NAMES = [
   "C",
@@ -20,11 +33,19 @@ export const NOTE_NAMES = [
 
 // Human, octave-numbered name for an absolute MIDI note (MIDI 60 = C4), used
 // by the read-only bassline row. Middle C as C4 is the convention the rest of
-// the app's MIDI export already assumes (see midiEncoder.ts).
+// the app's MIDI export already assumes (see midiEncoder.ts). A quarter tone
+// (a .5 remainder) is named relative to the note above it, half-flat — e.g.
+// 63.5 is "Ed4" (E half-flat, the maqam-notation convention), the same way a
+// written flat borrows its octave number from the letter above rather than
+// the pitch below.
 export function midiNoteName(midi: number): string {
-  const name = NOTE_NAMES[((midi % 12) + 12) % 12];
-  const octave = Math.floor(midi / 12) - 1;
-  return `${name}${octave}`;
+  const rounded = Math.round(midi * 2) / 2;
+  const flooredPc = Math.floor(rounded);
+  const isQuarterTone = rounded - flooredPc === 0.5;
+  const pc = isQuarterTone ? flooredPc + 1 : flooredPc;
+  const name = NOTE_NAMES[((pc % 12) + 12) % 12];
+  const octave = Math.floor(pc / 12) - 1;
+  return isQuarterTone ? `${name}d${octave}` : `${name}${octave}`;
 }
 
 export interface ScaleDef {
@@ -161,6 +182,46 @@ export const SCALES = {
   iwato: { name: "Iwato", group: "Japanese", intervals: [0, 1, 5, 6, 10] },
   kumoi: { name: "Kumoi", group: "Japanese", intervals: [0, 2, 3, 7, 9] },
   yo: { name: "Yo", group: "Japanese", intervals: [0, 2, 5, 7, 9] },
+
+  // Arabic/Turkish/Persian maqam theory formally divides the octave into 24
+  // quarter tones rather than 12 semitones — these use the .5 (half-semitone)
+  // steps described up top for their neutral 2nds/3rds/7ths. Notes land a
+  // quarter tone off the piano's grid entirely, not just off this scale's
+  // degrees, so nearestScaleTone etc. below search in 0.5 steps everywhere,
+  // not just for these.
+  maqamRast: {
+    name: "Maqam Rast",
+    group: "Maqam (quarter-tone)",
+    intervals: [0, 2, 3.5, 5, 7, 9, 10.5],
+  },
+  maqamBayati: {
+    name: "Maqam Bayati",
+    group: "Maqam (quarter-tone)",
+    intervals: [0, 1.5, 3, 5, 7, 8, 10],
+  },
+  maqamSaba: {
+    name: "Maqam Saba",
+    group: "Maqam (quarter-tone)",
+    intervals: [0, 1.5, 3, 4, 7, 8, 10],
+  },
+  maqamHijaz: {
+    name: "Maqam Hijaz",
+    group: "Maqam (quarter-tone)",
+    intervals: [0, 1, 4, 5, 7, 8, 10],
+  },
+
+  // Hindustani ragas: theory describes these via 22 just-intonation shrutis,
+  // but unlike the maqamat above that's a tuning nuance within each scale
+  // step rather than extra scale degrees, so these stay on the ordinary
+  // 12-tone grid — the same convention every notation staff and MIDI-based
+  // sequencer uses for ragas.
+  ragaTodi: { name: "Raga Todi", group: "Raga", intervals: [0, 1, 3, 6, 7, 8, 11] },
+  ragaAhirBhairav: {
+    name: "Raga Ahir Bhairav",
+    group: "Raga",
+    intervals: [0, 1, 4, 5, 7, 9, 10],
+  },
+  ragaMarwa: { name: "Raga Marwa", group: "Raga", intervals: [0, 1, 4, 6, 9, 11] },
 } satisfies Record<string, ScaleDef>;
 
 export type ScaleId = keyof typeof SCALES;
@@ -187,12 +248,17 @@ export function scalesByGroup(): { group: string; ids: ScaleId[] }[] {
 }
 
 // True when `midi` is a member of `scaleId` rooted at pitch class `root` (0-11).
+// Compares in half-semitone steps (an integer count of quarter tones) rather
+// than raw float degrees, so a maqam's .5 intervals match exactly instead of
+// depending on float equality.
 export function isInScale(midi: number, root: number, scaleId: ScaleId): boolean {
-  const degree = (((midi - root) % 12) + 12) % 12;
+  const halfSteps = Math.round((midi - root) * 2);
+  const degree = (((halfSteps % 24) + 24) % 24) / 2;
   return SCALES[scaleId].intervals.includes(degree);
 }
 
-// Every scale tone from `lowMidi` to `highMidi` inclusive, ascending.
+// Every scale tone from `lowMidi` to `highMidi` inclusive, ascending. Steps in
+// half-semitones so a maqam's quarter tones aren't skipped.
 export function scalePitches(
   root: number,
   scaleId: ScaleId,
@@ -200,7 +266,7 @@ export function scalePitches(
   highMidi: number
 ): number[] {
   const out: number[] = [];
-  for (let m = lowMidi; m <= highMidi; m++) {
+  for (let m = Math.round(lowMidi * 2) / 2; m <= highMidi; m += 0.5) {
     if (isInScale(m, root, scaleId)) out.push(m);
   }
   return out;
@@ -208,25 +274,27 @@ export function scalePitches(
 
 // Snap an arbitrary pitch to the nearest member of the scale. Ties resolve
 // downward — a bassline sitting a hair low reads better than a hair sharp.
+// Steps in half-semitones so a maqam's quarter-tone degrees are reachable.
 export function nearestScaleTone(midi: number, root: number, scaleId: ScaleId): number {
-  const target = Math.round(midi);
-  for (let d = 0; d <= 6; d++) {
-    if (isInScale(target - d, root, scaleId)) return target - d;
-    if (isInScale(target + d, root, scaleId)) return target + d;
+  const target = Math.round(midi * 2) / 2;
+  for (let d = 0; d <= 12; d++) {
+    const step = d * 0.5;
+    if (isInScale(target - step, root, scaleId)) return target - step;
+    if (isInScale(target + step, root, scaleId)) return target + step;
   }
   return target;
 }
 
 // The next scale tone strictly above / below `midi`.
 export function scaleToneAbove(midi: number, root: number, scaleId: ScaleId): number {
-  let m = Math.round(midi) + 1;
-  while (!isInScale(m, root, scaleId)) m++;
+  let m = Math.round(midi * 2) / 2 + 0.5;
+  while (!isInScale(m, root, scaleId)) m += 0.5;
   return m;
 }
 
 export function scaleToneBelow(midi: number, root: number, scaleId: ScaleId): number {
-  let m = Math.round(midi) - 1;
-  while (!isInScale(m, root, scaleId)) m--;
+  let m = Math.round(midi * 2) / 2 - 0.5;
+  while (!isInScale(m, root, scaleId)) m -= 0.5;
   return m;
 }
 

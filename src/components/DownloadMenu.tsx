@@ -71,7 +71,7 @@ export function DownloadMenu({
         {rendering ? "Rendering…" : "Download ▾"}
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-10 mt-1 w-52 overflow-hidden rounded-md border border-white/10 bg-slate-800 py-1 shadow-lg">
+        <div className="absolute left-0 top-full z-10 mt-1 max-h-[70vh] w-52 overflow-y-auto rounded-md border border-white/10 bg-slate-800 py-1 shadow-lg">
           {hasBassline ? (
             <>
               {sectionLabel("MP3 audio")}

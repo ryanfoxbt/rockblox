@@ -54,6 +54,7 @@ import {
 import { LineState, RockBloxPlayer, renderSongToBuffer } from "@/lib/audioEngine";
 import { Bassline, BasslineSettings, BassVoiceId, ExportPart, basslineHasNotes } from "@/lib/bassline";
 import { generateBassline, repitchBassline } from "@/lib/generateBassline";
+import { generateMelody } from "@/lib/generateMelody";
 import { DownloadFormat } from "@/components/DownloadMenu";
 import { DEFAULT_KIT, DRUM_KITS } from "@/lib/drumKits";
 import { useHistoryState } from "@/lib/useHistoryState";
@@ -84,6 +85,13 @@ function computeVariationSources(
       return !!data && measureLengthFromStoredLines(data.lines) > 0;
     })
     .map((slot) => ({ slot, label: `Slot ${slot}` }));
+}
+
+// The drum pattern and its bassline, undone/redone together — see the
+// useHistoryState call below.
+interface EditorDocument {
+  lines: LineData[];
+  bassline: Bassline | null;
 }
 
 export function Editor({
@@ -163,13 +171,43 @@ export function Editor({
   const slotsRef = useRef<SlotMap>(board?.slots ?? {});
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  const [lines, setLines, { undo, redo, reset: resetLines, canUndo, canRedo }] = useHistoryState<LineData[]>(() => {
-    if (board) {
-      const data = board.slots[activeSlot];
-      return data && data.lines.length > 0 ? deserializeLines(data.lines) : createDefaultLines();
-    }
-    return initialLines && initialLines.length > 0 ? deserializeLines(initialLines) : createDefaultLines();
+  // `lines` and `bassline` share one undo/redo timeline (EditorDocument) so a
+  // bassline edit — generating, re-pitching, removing — undoes and redoes
+  // alongside drum edits in the order they actually happened, rather than
+  // living on a separate stack a single Ctrl+Z can't reach. `setLines` and
+  // `setBassline` below are thin wrappers over the combined setter so every
+  // other call site keeps its original (value | updater-fn) signature.
+  const [doc, setDoc, { undo, redo, reset: resetDoc, canUndo, canRedo }] = useHistoryState<EditorDocument>(() => {
+    const linesValue = board
+      ? board.slots[activeSlot] && board.slots[activeSlot]!.lines.length > 0
+        ? deserializeLines(board.slots[activeSlot]!.lines)
+        : createDefaultLines()
+      : initialLines && initialLines.length > 0
+        ? deserializeLines(initialLines)
+        : createDefaultLines();
+    const basslineValue = board ? (board.slots[activeSlot]?.bassline ?? null) : (initialBassline ?? null);
+    return { lines: linesValue, bassline: basslineValue };
   });
+  const lines = doc.lines;
+  const bassline = doc.bassline;
+  function setLines(update: LineData[] | ((prev: LineData[]) => LineData[])) {
+    setDoc((prev) => ({
+      ...prev,
+      lines: typeof update === "function" ? (update as (p: LineData[]) => LineData[])(prev.lines) : update,
+    }));
+  }
+  function setBassline(update: Bassline | null | ((prev: Bassline | null) => Bassline | null)) {
+    setDoc((prev) => ({
+      ...prev,
+      bassline: typeof update === "function" ? (update as (p: Bassline | null) => Bassline | null)(prev.bassline) : update,
+    }));
+  }
+  // Loading a slot's/draft's already-persisted document isn't an edit — reset
+  // both fields together and clear undo history, same as resetLines used to
+  // alone.
+  function resetDocument(nextLines: LineData[], nextBassline: Bassline | null) {
+    resetDoc({ lines: nextLines, bassline: nextBassline });
+  }
   const [bpm, setBpm] = useState(() => {
     if (board) return board.slots[activeSlot]?.bpm ?? 100;
     return initialBpm ?? 100;
@@ -233,13 +271,6 @@ export function Editor({
     return initialCustomSamples ?? {};
   });
   const [samplesLoading, setSamplesLoading] = useState(true);
-  // The generated bassline for the active slot (null = none). Not routed
-  // through useHistoryState — it's re-rolled from its modal, not hand-edited,
-  // so it stays outside the drum-pattern undo stack for now.
-  const [bassline, setBassline] = useState<Bassline | null>(() => {
-    if (board) return board.slots[activeSlot]?.bassline ?? null;
-    return initialBassline ?? null;
-  });
   const [basslineModalOpen, setBasslineModalOpen] = useState(false);
 
   const isMobile = useIsMobile();
@@ -339,14 +370,14 @@ export function Editor({
       // No setGridBeats here: on a scratchpad mount gridBeats is already at
       // its 4-beat floor, and visibleBeats widens on its own to cover a
       // longer restored pattern (see the measureLength derivation).
-      if (draft.lines.length > 0) resetLines(deserializeLines(draft.lines));
+      if (draft.lines.length > 0) resetDocument(deserializeLines(draft.lines), draft.bassline ?? null);
+      else setBassline(draft.bassline ?? null);
       // One-time rehydration from an external store (localStorage) on mount
       // — not derived from props/state, so there's no dependency to move
       // these into render or a plain event handler instead.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setBpm(draft.bpm);
       setCustomSamples(draft.customSamples);
-      setBassline(draft.bassline ?? null);
       playerRef.current?.clearCustomSamples();
       if (Object.keys(draft.customSamples).length > 0) playerRef.current?.loadCustomSamples(draft.customSamples);
       if (draft.kit !== kit) applyKit(draft.kit);
@@ -423,11 +454,10 @@ export function Editor({
     if (groupIdx >= 0) setSlotPage(groupIdx);
     setArmedTile(null);
     setMovingFrom(null);
-    resetLines(nextLines);
+    resetDocument(nextLines, nextBassline);
     setGridBeats(Math.min(MAX_BEATS, Math.max(initialGridBeats ?? DEFAULT_GRID_BEATS, computeMeasureLength(nextLines))));
     setBpm(nextBpm);
     setCustomSamples(nextCustomSamples);
-    setBassline(nextBassline);
     playerRef.current?.clearCustomSamples();
     if (Object.keys(nextCustomSamples).length > 0) playerRef.current?.loadCustomSamples(nextCustomSamples);
     if (nextKit !== kit) applyKit(nextKit);
@@ -721,13 +751,21 @@ export function Editor({
     setLines(generateRandomBeat({ complexity, beats }));
   }
 
+  // Dispatches to whichever generator the settings' mode calls for — "groove"
+  // locks onto the drum pattern on screen, "melody" only needs its length.
+  function generateBasslineNotes(settings: BasslineSettings) {
+    return settings.mode === "melody"
+      ? generateMelody(measureLength, settings)
+      : generateBassline(lines, measureLength, settings);
+  }
+
   // (Re-)roll the bassline from the drum pattern currently on screen. Enabled
   // by the act of generating; "Remove bassline" in the modal clears it.
   function handleGenerateBassline(settings: BasslineSettings) {
     setBassline({
       enabled: true,
       settings,
-      notes: generateBassline(lines, measureLength, settings),
+      notes: generateBasslineNotes(settings),
     });
   }
 
@@ -736,18 +774,19 @@ export function Editor({
     setBassline((prev) => (prev ? { ...prev, settings: { ...prev.settings, voice } } : prev));
   }
 
-  // Live edits from the Bassline modal to an *existing* line, no full re-roll:
-  // key / octave / scale re-pitch the current notes in place (rhythm untouched),
-  // volume is playback-only. Fills is the one knob that decides which notes
-  // exist, so it re-rolls against the drum pattern on screen.
+  // Live edits from the Bassline modal to an *existing* line never produce new
+  // notes on their own — only key / octave / scale do anything to them at all
+  // (re-pitching in place, rhythm untouched), the same way nudging a drum
+  // line's randomizer dial doesn't touch the pattern until you actually hit
+  // Generate. Mode, Fills/Complexity and Sound just update settings for
+  // whenever the line is next (re)generated — see handleGenerateBassline,
+  // wired to the modal's explicit Generate/Regenerate button.
   function handleBasslineSettingsChange(next: BasslineSettings) {
     setBassline((prev) => {
       if (!prev) return prev;
       const p = prev.settings;
       let notes = prev.notes;
-      if (next.fills !== p.fills) {
-        notes = generateBassline(lines, measureLength, next);
-      } else if (next.root !== p.root || next.octave !== p.octave || next.scale !== p.scale) {
+      if (next.root !== p.root || next.octave !== p.octave || next.scale !== p.scale) {
         notes = repitchBassline(prev.notes, p, next);
       }
       return { enabled: true, settings: next, notes };
@@ -1089,6 +1128,7 @@ export function Editor({
                   <BasslineButton
                     variant="menuItem"
                     onOpen={() => setBasslineModalOpen(true)}
+                    disabled={measureLength < 1}
                   />
                   <div className="my-1 border-t border-white/10" />
                   <button

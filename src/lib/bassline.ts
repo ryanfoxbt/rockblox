@@ -1,11 +1,15 @@
-// A bassline is a pitched part generated from a drum pattern's kick and snare
-// (see generateBassline.ts). Unlike a drum line it isn't hand-edited: the user
-// sets a few knobs — root, scale, how busy the fills are — and re-rolls. The
+// A bassline is a pitched part in one of two modes: "groove" locks onto the
+// drum pattern's kick and snare (see generateBassline.ts), "melody" composes
+// freely across the bar instead, only borrowing the drum pattern's length
+// (see generateMelody.ts). Unlike a drum line it isn't hand-edited: the user
+// sets a few knobs — root, scale, how busy the line is — and re-rolls. The
 // resolved `notes` are stored alongside the drum pattern so a reload plays the
 // exact same part rather than re-generating a different one.
 
 import type { HitAccent } from "./rhythm";
 import { isScaleId, type ScaleId } from "./scales";
+
+export type BasslineMode = "groove" | "melody";
 
 // The synthesized bass tone. Each id maps to an oscillator+filter+envelope
 // recipe in bassVoice.ts — no samples, so every voice works offline and in
@@ -34,9 +38,20 @@ export interface BasslineSettings {
   // Which octave the root note sits in, 1-3. 2 puts the part around E1-G2 —
   // a natural electric-bass register.
   octave: number;
-  // 0 = a root note on every kick and nothing else; 10 = a busy walking line
-  // with runs, chromatic approach notes and syncopation. See generateBassline.
+  // Which generator produces `notes`. Older saved basslines predate this
+  // field (they're always "groove") — read it through `basslineMode()` below,
+  // never directly.
+  mode: BasslineMode;
+  // "groove" mode's dial: 0 = a root note on every kick and nothing else;
+  // 10 = a busy walking line with runs, chromatic approach notes and
+  // syncopation. See generateBassline. Unused in "melody" mode.
   fills: number;
+  // "melody" mode's dial, on its own 1-10 scale rather than sharing `fills` —
+  // it's a different generator with a different notion of "busy": 1 is a
+  // simple, mostly-stepwise line; 10 roams widely and ornaments its landings
+  // with fast neighbor-tone turns. See generateMelody. Unused in "groove"
+  // mode. Older saved basslines predate this field too.
+  melodyComplexity: number;
   volume: number; // 0-100, like a drum line's volume
   // Which synthesized bass tone to play. Older saved basslines predate this
   // field — read it through `basslineVoice()` below, never directly.
@@ -47,6 +62,12 @@ export interface BasslineSettings {
 // existed (and any stray value off the wire).
 export function basslineVoice(settings: BasslineSettings | undefined | null): BassVoiceId {
   return settings && isBassVoiceId(settings.voice) ? settings.voice : DEFAULT_BASS_VOICE;
+}
+
+// The mode for a settings object, tolerating basslines saved before "melody"
+// mode existed — every one of those is a groove line.
+export function basslineMode(settings: BasslineSettings | undefined | null): BasslineMode {
+  return settings?.mode === "melody" ? "melody" : "groove";
 }
 
 export interface BassNote {
@@ -76,11 +97,17 @@ export const MIN_FILLS = 0;
 export const MAX_FILLS = 10;
 export const DEFAULT_FILLS = 3;
 
+export const MIN_MELODY_COMPLEXITY = 1;
+export const MAX_MELODY_COMPLEXITY = 10;
+export const DEFAULT_MELODY_COMPLEXITY = 5;
+
 export const DEFAULT_BASSLINE_SETTINGS: BasslineSettings = {
   root: 0, // C
   scale: "naturalMinor",
   octave: 2,
+  mode: "groove",
   fills: DEFAULT_FILLS,
+  melodyComplexity: DEFAULT_MELODY_COMPLEXITY,
   volume: 90,
   voice: DEFAULT_BASS_VOICE,
 };

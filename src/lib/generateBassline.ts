@@ -125,7 +125,10 @@ export function generateBassline(
       beat,
       offset: clamp(pos - beat, 0, 0.9999),
       duration: 0.25, // provisional; recomputed as gap-to-next below
-      midi: clamp(Math.round(midi), BASS_LOW, BASS_HIGH),
+      // Round to the nearest half-semitone, not the nearest whole one — a
+      // maqam's quarter-tone degrees (see scales.ts) would otherwise get
+      // rounded away here.
+      midi: clamp(Math.round(midi * 2) / 2, BASS_LOW, BASS_HIGH),
       accent,
     });
   };

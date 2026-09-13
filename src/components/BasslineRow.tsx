@@ -29,6 +29,7 @@ export function BasslineRow({
   for (const list of byBeat) list.sort((a, b) => a.offset - b.offset);
 
   const voiceName = BASS_VOICES.find((v) => v.id === basslineVoice(settings))?.name ?? "";
+  const isMelody = settings.mode === "melody";
   const keyLabel = `${NOTE_NAMES[settings.root]} ${SCALES[settings.scale].name} · ${voiceName}`;
 
   return (
@@ -36,7 +37,7 @@ export function BasslineRow({
       <div className="flex items-center gap-3">
         <span className="h-3 w-3 shrink-0 rounded-full bg-yellow-400" aria-hidden />
         <div className="flex flex-col md:flex-none">
-          <span className="text-sm font-medium text-white">Bass</span>
+          <span className="text-sm font-medium text-white">{isMelody ? "Bass melody" : "Bass"}</span>
           <span className="text-[10px] uppercase tracking-wide text-white/40">{keyLabel}</span>
         </div>
         <button

@@ -4,19 +4,27 @@ import { useState } from "react";
 import {
   Bassline,
   BASS_VOICES,
+  BasslineMode,
   BasslineSettings,
   BassVoiceId,
   DEFAULT_BASSLINE_SETTINGS,
   MAX_FILLS,
+  MAX_MELODY_COMPLEXITY,
   MIN_FILLS,
+  MIN_MELODY_COMPLEXITY,
 } from "@/lib/bassline";
 import { midiNoteName, NOTE_NAMES, SCALES, scalesByGroup } from "@/lib/scales";
 
-// Trigger + modal for the generated bassline: pick a key root and scale, set
-// how busy the fills are, and (re-)roll a line that follows the beat's kick and
-// snare. Kept out of Editor so its transient form state doesn't add to the
-// editor's already-long state list. The Editor owns the drum pattern, so
-// generation itself is a callback.
+// Trigger + modal for the generated bassline: pick a key root and scale, a
+// mode (Groove locks onto the beat's kick and snare; Melody composes freely
+// across the bar), how busy the line is on that mode's own dial, and
+// (re-)roll it. Every setting only ever applies to the *next* roll — the
+// current line only changes on its own when key/octave/scale re-pitch it in
+// place, or when Generate/Regenerate is actually clicked — same as the drum
+// randomizer never touching the pattern until you hit its button. Kept out of
+// Editor so its transient form state doesn't add to the editor's already-long
+// state list. The Editor owns the drum pattern, so generation itself is a
+// callback.
 //
 // The modal (BasslineModal) is rendered by Editor at the top level rather than
 // nested here, because this trigger lives inside the header tools menu — which
@@ -26,19 +34,25 @@ import { midiNoteName, NOTE_NAMES, SCALES, scalesByGroup } from "@/lib/scales";
 export function BasslineButton({
   onOpen,
   variant = "menuItem",
+  disabled = false,
 }: {
   onOpen: () => void;
   variant?: "button" | "menuItem";
+  // There's nothing for generateBassline to follow yet — no kick/snare
+  // onsets to anchor notes on — until the drum pattern has at least one hit.
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onOpen}
+      disabled={disabled}
       title="Bassline — generate a bass part that follows the beat"
       className={
-        variant === "menuItem"
+        (variant === "menuItem"
           ? "block w-full px-3 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-yellow-400"
-          : "flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+          : "flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400") +
+        " disabled:pointer-events-none disabled:opacity-30"
       }
     >
       {variant === "menuItem" ? (
@@ -68,8 +82,10 @@ export function BasslineModal({
   bassline: Bassline | null;
   onGenerate: (settings: BasslineSettings) => void;
   // Live edits to an existing line: key / octave / scale re-pitch the current
-  // notes in place, volume is playback-only, Fills re-rolls. No-op until a line
-  // exists (the "Generate bassline" button makes the first one).
+  // notes in place; everything else (mode, Fills/Complexity, volume) just
+  // updates settings for whenever the line is next (re)generated — it never
+  // touches the current notes on its own. No-op until a line exists (the
+  // "Generate bassline" button makes the first one).
   onSettingsChange: (settings: BasslineSettings) => void;
   // Changing the bass sound doesn't re-roll the notes — it applies straight
   // away so you can audition tones against the same line.
@@ -85,20 +101,16 @@ export function BasslineModal({
 
   const hasBassline = !!bassline && bassline.notes.length > 0;
   const previewNotes = bassline?.notes ?? [];
+  const isMelody = settings.mode === "melody";
 
   // Update one field. When a line already exists the change applies immediately
-  // (re-pitch / volume); otherwise it's just held for the first Generate.
+  // — for key/octave/scale that's a re-pitch in place, for everything else
+  // it's just saved for next time the line is (re)generated (see
+  // handleBasslineSettingsChange in Editor).
   function set<K extends keyof BasslineSettings>(key: K, value: BasslineSettings[K]) {
     const next = { ...settings, [key]: value };
     setSettings(next);
     if (hasBassline) onSettingsChange(next);
-  }
-
-  // Fills decides which notes exist, so committing it re-rolls the line. Track
-  // the slider live for the readout, but only commit when the drag settles so
-  // sweeping the range doesn't spray a new random line per pixel.
-  function commitFills() {
-    if (hasBassline) onSettingsChange(settings);
   }
 
   function generate() {
@@ -113,7 +125,7 @@ export function BasslineModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xs rounded-lg border border-white/15 bg-slate-900 p-5 text-white shadow-xl"
+        className="max-h-[90vh] w-full max-w-xs overflow-y-auto rounded-lg border border-white/15 bg-slate-900 p-5 text-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
@@ -128,8 +140,26 @@ export function BasslineModal({
           </button>
         </div>
 
+        <div className="mb-3 grid grid-cols-2 gap-1 rounded-md bg-white/5 p-1">
+          {(["groove", "melody"] as BasslineMode[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => set("mode", m)}
+              className={
+                "rounded-md px-2 py-1 text-sm font-medium capitalize transition " +
+                (settings.mode === m ? "bg-yellow-400 text-slate-900" : "text-white/60 hover:text-white")
+              }
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+
         <p className="mb-3 text-xs text-white/50">
-          Follows the kick and snare of the beat on screen. Snapped to your scale.
+          {isMelody
+            ? "Composed freely across the bar, independent of your drum pattern. Snapped to your scale."
+            : "Follows the kick and snare of the beat on screen. Snapped to your scale."}
         </p>
 
         <div className="mb-3 grid grid-cols-2 gap-2">
@@ -203,27 +233,40 @@ export function BasslineModal({
         </label>
 
         <label className="mb-1 flex items-center justify-between text-sm text-white/70">
-          <span>Fills</span>
-          <span className="font-mono text-yellow-400">{settings.fills}</span>
+          <span>{isMelody ? "Complexity" : "Fills"}</span>
+          <span className="font-mono text-yellow-400">
+            {isMelody ? settings.melodyComplexity : settings.fills}
+          </span>
         </label>
-        <input
-          type="range"
-          min={MIN_FILLS}
-          max={MAX_FILLS}
-          step={1}
-          value={settings.fills}
-          onChange={(e) => setSettings((prev) => ({ ...prev, fills: Number(e.target.value) }))}
-          onPointerUp={commitFills}
-          onKeyUp={commitFills}
-          className="w-full accent-yellow-400"
-        />
+        {isMelody ? (
+          <input
+            type="range"
+            min={MIN_MELODY_COMPLEXITY}
+            max={MAX_MELODY_COMPLEXITY}
+            step={1}
+            value={settings.melodyComplexity}
+            onChange={(e) => set("melodyComplexity", Number(e.target.value))}
+            className="w-full accent-yellow-400"
+          />
+        ) : (
+          <input
+            type="range"
+            min={MIN_FILLS}
+            max={MAX_FILLS}
+            step={1}
+            value={settings.fills}
+            onChange={(e) => set("fills", Number(e.target.value))}
+            className="w-full accent-yellow-400"
+          />
+        )}
         <div className="mt-1 flex justify-between text-[10px] uppercase tracking-wide text-white/40">
-          <span>Root-locked</span>
-          <span>Busy walking</span>
+          <span>{isMelody ? "Simple & singable" : "Root-locked"}</span>
+          <span>{isMelody ? "Wild & ornamented" : "Busy walking"}</span>
         </div>
         {hasBassline && (
           <p className="mt-1 text-[10px] text-white/40">
-            Key, octave and scale re-pitch the current line; Fills re-rolls it.
+            Key, octave and scale re-pitch the current line in place. Everything else applies next time you hit
+            Regenerate.
           </p>
         )}
 
