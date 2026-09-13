@@ -19,6 +19,15 @@ export const DEFAULT_KIT: DrumKit = "MFB-512";
 // sample-based machine kits below.
 type MachineKit = Exclude<DrumKit, "Acoustic" | "Fart" | "Cats">;
 
+// The two novelty kits support the "record your own ___" feature — each
+// slot's synthesized (or, once recorded over, real-file — see fartKit.ts /
+// catKit.ts) sound can be replaced by a short mic take for that session. See
+// SoundRecorder.tsx and audioEngine.ts's withCustomSamples.
+const CUSTOM_SAMPLE_KITS = new Set<DrumKit>(["Fart", "Cats"]);
+export function supportsCustomSamples(kit: string): boolean {
+  return CUSTOM_SAMPLE_KITS.has(kit as DrumKit);
+}
+
 const DRUM_MACHINE_BASE_URL: Record<MachineKit, string> = {
   "TR-808": "https://smpldsnds.github.io/drum-machines/TR-808",
   "Casio-RZ1": "https://smpldsnds.github.io/drum-machines/Casio-RZ1",

@@ -31,7 +31,7 @@ export interface BoardSlotData {
   // Optional so old, already-saved slots (from before a given setting
   // existed) still deserialize fine — add future remembered settings here.
   kit?: string;
-  // User-recorded sounds (currently just for the Fart kit) that replace one
+  // User-recorded sounds (for the Fart and Cats novelty kits) that replace one
   // or more of the kit's stock samples, keyed by instrument slot.
   customSamples?: CustomSamples;
   // A generated bass part that follows this slot's kick and snare. Optional

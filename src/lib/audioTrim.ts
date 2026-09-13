@@ -1,4 +1,4 @@
-// Trims a recorded take (see FartRecorder) down to the transient "spike"
+// Trims a recorded take (see SoundRecorder) down to the transient "spike"
 // that drum-like sounds start with, so the saved one-shot begins right on
 // the hit instead of after a leading gap of mic-room-noise silence — the
 // take then lands exactly on the beat when triggered like any other sample.

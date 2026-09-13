@@ -25,12 +25,16 @@ async function trimRecordedTake(rawBlob: Blob): Promise<Blob> {
   }
 }
 
-// Lets a user record a short mic take and drop it into one Fart-kit slot,
-// swapping out that synthesized sound for their own. Scoped narrow on
-// purpose: in-browser mic capture only, no file upload, no other kits.
-export function FartRecorder({
+// Lets a user record a short mic take and drop it into one slot of whichever
+// novelty kit is active (Fart or Cats), swapping out that kit's default
+// sound for their own. Scoped narrow on purpose: in-browser mic capture
+// only, no file upload. `soundName` (e.g. "fart", "cat") only changes the
+// button/dialog wording — the recording pipeline is identical either way.
+export function SoundRecorder({
+  soundName,
   onRecorded,
 }: {
+  soundName: string;
   onRecorded: (instrument: InstrumentId, arrayBuffer: ArrayBuffer) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -151,10 +155,10 @@ export function FartRecorder({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        title="Record your own fart"
+        title={`Record your own ${soundName}`}
         className="rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-yellow-400 hover:text-yellow-400"
       >
-        Record your own fart
+        Record your own {soundName}
       </button>
 
       {open && (
@@ -164,7 +168,7 @@ export function FartRecorder({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">Record your own fart</h2>
+              <h2 className="text-lg font-bold">Record your own {soundName}</h2>
               <button
                 type="button"
                 onClick={close}
@@ -175,11 +179,11 @@ export function FartRecorder({
               </button>
             </div>
 
-            <label className="mb-1 block text-xs text-white/50" htmlFor="fart-slot">
+            <label className="mb-1 block text-xs text-white/50" htmlFor="sound-recorder-slot">
               Replace which sound?
             </label>
             <select
-              id="fart-slot"
+              id="sound-recorder-slot"
               value={instrument}
               onChange={(e) => setInstrument(e.target.value as InstrumentId)}
               disabled={status === "recording"}
@@ -210,7 +214,7 @@ export function FartRecorder({
                     onClick={useTake}
                     className="rounded-full bg-yellow-400 px-4 py-1.5 text-sm font-bold text-slate-900 transition hover:bg-yellow-300"
                   >
-                    Use this fart
+                    Use this {soundName}
                   </button>
                 </div>
               </div>

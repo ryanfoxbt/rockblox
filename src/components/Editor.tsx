@@ -20,7 +20,7 @@ import { SheetMusicView } from "@/components/SheetMusicView";
 import { DrumTeacherStep, DrumTeacherView } from "@/components/DrumTeacherView";
 import { FractalArtView } from "@/components/FractalArtView";
 import { TileVisual } from "@/components/TileVisual";
-import { FartRecorder } from "@/components/FartRecorder";
+import { SoundRecorder } from "@/components/SoundRecorder";
 import { RandomizeButton, VariationKind } from "@/components/RandomizeButton";
 import { BasslineButton, BasslineModal } from "@/components/BasslineButton";
 import { BasslineRow } from "@/components/BasslineRow";
@@ -1249,7 +1249,7 @@ export function Editor({
             >
               {kit === "Fart" && (
                 <>
-                  <FartRecorder onRecorded={handleCustomSampleRecorded} />
+                  <SoundRecorder soundName="fart" onRecorded={handleCustomSampleRecorded} />
                   <a
                     href="https://albumsanonymous.com/"
                     target="_blank"
@@ -1260,6 +1260,7 @@ export function Editor({
                   </a>
                 </>
               )}
+              {kit === "Cats" && <SoundRecorder soundName="cat" onRecorded={handleCustomSampleRecorded} />}
             </Transport>
 
             <div className="flex items-stretch gap-1.5">

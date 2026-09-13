@@ -1,6 +1,6 @@
 import { InstrumentId } from "./instruments";
 import { hitVelocityMultiplier, NOTE_FRACTION, RhythmTile } from "./rhythm";
-import { DEFAULT_KIT, sampleUrlsForKit } from "./drumKits";
+import { DEFAULT_KIT, sampleUrlsForKit, supportsCustomSamples } from "./drumKits";
 import { loadFartBuffers } from "./fartKit";
 import { loadCatBuffers } from "./catKit";
 import { CustomSamples, base64ToArrayBuffer } from "./customSamples";
@@ -67,8 +67,8 @@ export function loadDrumBuffers(ctx: BaseAudioContext, kit: string): Promise<Buf
   return promise;
 }
 
-// User-recorded takes (from the "record your own fart" feature) only make
-// sense layered onto the Fart kit's slots — decode each one and overlay it
+// User-recorded takes (from the "record your own ___" feature) only make
+// sense layered onto a novelty kit's slots — decode each one and overlay it
 // onto a copy of that kit's buffers, leaving the shared cache untouched.
 async function withCustomSamples(
   ctx: BaseAudioContext,
@@ -76,7 +76,7 @@ async function withCustomSamples(
   kit: string,
   customSamples?: CustomSamples
 ): Promise<BufferMap> {
-  if (kit !== "Fart" || !customSamples) return buffers;
+  if (!supportsCustomSamples(kit) || !customSamples) return buffers;
   const entries = Object.entries(customSamples) as [InstrumentId, string | undefined][];
   const decoded = await Promise.all(
     entries
@@ -429,12 +429,12 @@ export class RockBloxPlayer {
     }
   }
 
-  // Layers any recorded takes (currently Fart-kit-only) onto the freshly
-  // loaded kit buffers, without touching the shared, cross-session cache in
+  // Layers any recorded takes (novelty-kit-only) onto the freshly loaded kit
+  // buffers, without touching the shared, cross-session cache in
   // bufferCacheByKit.
   private recomputeBuffers() {
     if (!this.baseBuffers) return;
-    if (this.kit !== "Fart" || this.customBuffers.size === 0) {
+    if (!supportsCustomSamples(this.kit) || this.customBuffers.size === 0) {
       this.buffers = this.baseBuffers;
       return;
     }
@@ -443,7 +443,7 @@ export class RockBloxPlayer {
     this.buffers = merged;
   }
 
-  /** Records a live mic take (see FartRecorder) into one kit slot for this session. */
+  /** Records a live mic take (see SoundRecorder) into one kit slot for this session. */
   async setCustomSample(instrument: InstrumentId, arrayBuffer: ArrayBuffer): Promise<void> {
     const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
     this.customBuffers.set(instrument, audioBuffer);

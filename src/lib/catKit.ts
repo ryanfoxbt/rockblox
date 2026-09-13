@@ -1,15 +1,18 @@
 import { INSTRUMENTS, InstrumentId } from "./instruments";
 
-// The "Cats" kit has no sample files — like fartKit.ts, each hit is
-// synthesized on the fly, so it works offline and needs no third-party
-// sample host. Every voice is built from the same small model: a sawtooth
-// (for a meow's vocal "buzz") blended with noise (breath/hiss), driven
-// through two resonant peaks standing in for a vowel's formants — the same
-// trick real formant synthesizers use to turn a buzzy source into something
-// that reads as a voice instead of a tone. `toneAmount` controls that
-// blend, so the same machinery covers a pitched "meow" (mostly sawtooth) and
-// a noise-only "hiss" (mostly noise, still shaped by the resonators — that's
-// what makes filtered noise read as "sss" instead of static).
+// The "Cats" kit's real sound is a full set of real cat recordings in
+// public/cat-kit/ (see loadCatBuffers below), one per instrument slot. What
+// this file actually synthesizes is the *fallback* underneath them: every
+// slot's default sound if a recording is ever missing, in the same spirit as
+// fartKit.ts — no sample files required, works offline. Every synthesized
+// voice is built from the same small model: a sawtooth (for a meow's vocal
+// "buzz") blended with noise (breath/hiss), driven through two resonant
+// peaks standing in for a vowel's formants — the same trick real formant
+// synthesizers use to turn a buzzy source into something that reads as a
+// voice instead of a tone. `toneAmount` controls that blend, so the same
+// machinery covers a pitched "meow" (mostly sawtooth) and a noise-only
+// "hiss" (mostly noise, still shaped by the resonators — that's what makes
+// filtered noise read as "sss" instead of static).
 interface CatParams {
   duration: number; // seconds
   // 3-point pitch contour: rises from startFreq to peakFreq over the first
@@ -320,15 +323,16 @@ export function synthesizeCatBuffers(ctx: BaseAudioContext): Map<InstrumentId, A
   return map;
 }
 
-// Real recordings, one per instrument slot, dropped into public/cat-kit/ —
-// e.g. public/cat-kit/kick.mp3 — take over from the synthesized default for
-// that slot, the same override convention as fartKit.ts. Nothing to wire up:
-// any slot without a file just keeps using its synthesized sound.
+// Real recordings, one per instrument slot, in public/cat-kit/ — e.g.
+// public/cat-kit/kick.wav — take over from the synthesized default for that
+// slot, the same override convention as fartKit.ts (real cat recordings ship
+// for every slot here, but the fallback still matters: SoundRecorder lets a
+// user overwrite individual slots for their own session, on top of these).
 const CAT_SAMPLE_BASE_URL = "/cat-kit";
 
 async function loadCatSample(ctx: BaseAudioContext, id: InstrumentId): Promise<AudioBuffer | null> {
   try {
-    const res = await fetch(`${CAT_SAMPLE_BASE_URL}/${id}.mp3`);
+    const res = await fetch(`${CAT_SAMPLE_BASE_URL}/${id}.wav`);
     if (!res.ok) return null;
     return await ctx.decodeAudioData(await res.arrayBuffer());
   } catch {
