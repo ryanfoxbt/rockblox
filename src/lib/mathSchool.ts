@@ -1,5 +1,7 @@
 import type { InstrumentId } from "@/lib/instruments";
-import type { SlotLetter } from "@/lib/board";
+import type { BoardSlotData, SlotLetter } from "@/lib/board";
+import { DEFAULT_LINE_INSTRUMENTS, MAX_BEATS } from "@/lib/song";
+import type { StackArrangement, StackStep } from "@/lib/stack";
 
 // The curated /math library's index — metadata only (the actual beat data
 // lives in the `math_lessons` table, seeded by scripts/seedMathLessons.mts).
@@ -66,10 +68,12 @@ export interface MathGrade {
   label: string;
 }
 
-// Only Grade 1 exists today; more grades append here as they're written —
-// index/list pages derive their grade sections from this, not a hardcoded
-// "Grade 1" string.
-export const MATH_GRADES: MathGrade[] = [{ grade: 1, label: "Grade 1" }];
+// Grades 1-2 exist today; more append here as they're written — index/list
+// pages derive their grade sections from this, not a hardcoded grade string.
+export const MATH_GRADES: MathGrade[] = [
+  { grade: 1, label: "Grade 1" },
+  { grade: 2, label: "Grade 2" },
+];
 
 export const MATH_LESSONS: MathLesson[] = [
   // --- Addition & Subtraction Foundations (1.OA.A/B) -----------------------
@@ -890,8 +894,1049 @@ export const MATH_LESSONS: MathLesson[] = [
       },
     },
   },
+
+  // ============================================================
+  // GRADE 2
+  // ============================================================
+  // Grade 2 Common Core spends most of its weight on base-ten place value
+  // (2.NBT has 9 standards spanning hundreds/tens/ones, skip counting to
+  // 1000, and adding/subtracting within 100 and 1000) with operations &
+  // algebraic thinking (2.OA: fluency within 20, odd/even, arrays as the
+  // seed of multiplication) a close second — so this batch does the same,
+  // then measurement/data and geometry. A 2nd grader's numbers are bigger
+  // than 1st grade's, often too big to build as one row of individual hits
+  // (nobody should have to place 65 hits by hand) — so wherever an answer
+  // is a 2- or 3-digit number, it's built split across a hundreds/tens/ones
+  // row per place, the same trick Grade 1's own place-value lessons used,
+  // just extended. That split is also exactly where "multiple drum pieces"
+  // earns its keep pedagogically, not just as variety for its own sake:
+  // arrays split into a rows row and a columns row, a length comparison
+  // splits into both lengths plus their difference, four addends that
+  // cross 100 split into hundreds/tens/ones — every extra instrument here
+  // is standing in for a real, separate quantity in the problem.
+  {
+    slug: "math-g2-l01-addition-word-problems-within-100",
+    grade: 2,
+    lessonNumber: 1,
+    title: "Addition Word Problems Within 100",
+    mathSkill: "Addition Word Problems Within 100 (2.OA.A.1)",
+    teaches:
+      "Every slot is a two-digit addition word problem. The total is too big to build as one long row, so split it: a bass drum row for the tens, a hi-hat row for the ones.",
+    bpm: 86,
+    challenges: {
+      A: {
+        prompt:
+          "A drum shop sells 24 sticks in the morning and 35 more in the afternoon. How many sticks were sold in all? Build the tens row and the ones row for the total.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "hihatClosed", count: 9 },
+        ],
+        explanation: "24 + 35 = 59 — 5 tens and 9 ones.",
+      },
+      B: {
+        prompt:
+          "A pet store has 18 fish in one tank and 46 fish in another. How many fish are there in all? Build the tens row and the ones row for the total.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "hihatClosed", count: 4 },
+        ],
+        explanation: "18 + 46 = 64 — 6 tens and 4 ones.",
+      },
+      C: {
+        prompt:
+          "A school has 27 first graders and 38 second graders. How many students are there in all? Build the tens row and the ones row for the total.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "hihatClosed", count: 5 },
+        ],
+        explanation: "27 + 38 = 65 — 6 tens and 5 ones.",
+      },
+      D: {
+        prompt:
+          "A farmer picks 16 apples in the morning and 29 more in the afternoon. How many apples in all? Build the tens row and the ones row for the total.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "hihatClosed", count: 5 },
+        ],
+        explanation: "16 + 29 = 45 — 4 tens and 5 ones.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l02-subtraction-word-problems-within-100",
+    grade: 2,
+    lessonNumber: 2,
+    title: "Subtraction Word Problems Within 100",
+    mathSkill: "Subtraction Word Problems Within 100 (2.OA.A.1)",
+    teaches:
+      "Every slot is a two-digit subtraction word problem — build what's left split into a tens row and a ones row.",
+    bpm: 86,
+    challenges: {
+      A: {
+        prompt:
+          "A recording studio has 84 drumsticks. 37 of them get used up during the session. How many drumsticks are left? Build the tens row and the ones row for what's left.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "hihatClosed", count: 7 },
+        ],
+        explanation: "84 - 37 = 47 — 4 tens and 7 ones.",
+      },
+      B: {
+        prompt:
+          "A marching band has 62 members. 28 of them go home early. How many band members are left? Build the tens row and the ones row for what's left.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "hihatClosed", count: 4 },
+        ],
+        explanation: "62 - 28 = 34 — 3 tens and 4 ones.",
+      },
+      C: {
+        prompt:
+          "A music store has 73 cymbals in stock. 45 of them get sold. How many cymbals are left? Build the tens row and the ones row for what's left.",
+        targets: [
+          { instrument: "kick", count: 2 },
+          { instrument: "hihatClosed", count: 8 },
+        ],
+        explanation: "73 - 45 = 28 — 2 tens and 8 ones.",
+      },
+      D: {
+        prompt:
+          "A drum circle sets up 91 seats. 56 people are sitting in them. How many seats are still empty? Build the tens row and the ones row for what's left.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "hihatClosed", count: 5 },
+        ],
+        explanation: "91 - 56 = 35 — 3 tens and 5 ones.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l03-two-step-word-problems",
+    grade: 2,
+    lessonNumber: 3,
+    title: "Two-Step Word Problems",
+    mathSkill: "Two-Step Word Problems (2.OA.A.1)",
+    teaches:
+      "Every slot happens in two steps — work through them in order, and build only the final total in one row.",
+    bpm: 88,
+    challenges: {
+      A: {
+        prompt:
+          "A drummer has 8 drumsticks. She buys 5 more, then gives 3 away. How many drumsticks does she have now? Build a bass drum row with that many hits.",
+        targets: [{ instrument: "kick", count: 10 }],
+        explanation: "8 + 5 = 13, then 13 - 3 = 10 — work through two steps in order.",
+      },
+      B: {
+        prompt:
+          "A band has 6 members. 4 more join, then 2 leave. How many members are in the band now? Build a snare drum row with that many hits.",
+        targets: [{ instrument: "snare", count: 8 }],
+        explanation: "6 + 4 = 10, then 10 - 2 = 8.",
+      },
+      C: {
+        prompt:
+          "A drum kit has 12 pieces. 3 break and get removed, then 5 new pieces are added. How many pieces does the kit have now? Build a hi-hat row with that many hits.",
+        targets: [{ instrument: "hihatClosed", count: 14 }],
+        explanation: "12 - 3 = 9, then 9 + 5 = 14.",
+      },
+      D: {
+        prompt:
+          "A concert has 15 songs planned. 4 get cut, then 2 encore songs get added. How many songs will be played? Build a bass drum row with that many hits.",
+        targets: [{ instrument: "kick", count: 13 }],
+        explanation: "15 - 4 = 11, then 11 + 2 = 13.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l04-odd-and-even-numbers",
+    grade: 2,
+    lessonNumber: 4,
+    title: "Odd and Even Numbers",
+    mathSkill: "Odd and Even Numbers (2.OA.C.3)",
+    teaches:
+      "Every slot gives you an even number — show it's even by splitting it into two EQUAL groups on two different instruments.",
+    bpm: 88,
+    challenges: {
+      A: {
+        prompt:
+          "Is 8 even? An even number splits into two equal groups. Build a bass drum row and a snare drum row with 4 hits each to show 8 = 4 + 4.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 4 },
+        ],
+        explanation: "8 is even because it splits evenly into two equal groups: 4 + 4 = 8.",
+      },
+      B: {
+        prompt:
+          "Is 10 even? Build a bass drum row and a snare drum row with 5 hits each to show 10 = 5 + 5.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 5 },
+        ],
+        explanation: "10 is even: 5 + 5 = 10.",
+      },
+      C: {
+        prompt:
+          "Is 14 even? Build a bass drum row and a snare drum row with 7 hits each to show 14 = 7 + 7.",
+        targets: [
+          { instrument: "kick", count: 7 },
+          { instrument: "snare", count: 7 },
+        ],
+        explanation: "14 is even: 7 + 7 = 14.",
+      },
+      D: {
+        prompt:
+          "Is 18 even? Build a bass drum row and a snare drum row with 9 hits each to show 18 = 9 + 9.",
+        targets: [
+          { instrument: "kick", count: 9 },
+          { instrument: "snare", count: 9 },
+        ],
+        explanation: "18 is even: 9 + 9 = 18 — every even number splits into two equal groups; an odd number always has one left over.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l05-repeated-addition-and-arrays",
+    grade: 2,
+    lessonNumber: 5,
+    title: "Repeated Addition & Arrays",
+    mathSkill: "Repeated Addition & Arrays (2.OA.C.4)",
+    teaches:
+      "Every slot arranges equal rows of something — build a rimshot row with the number of rows, and a second row with the total, added the same amount over and over.",
+    bpm: 88,
+    challenges: {
+      A: {
+        prompt:
+          "A drummer arranges 4 rows of drum pads, with 3 pads in each row. Build a rimshot row with the number of rows, and a bass drum row with the total number of pads (3+3+3+3).",
+        targets: [
+          { instrument: "rimshot", count: 4 },
+          { instrument: "kick", count: 12 },
+        ],
+        explanation: "4 rows means 3 added 4 times: 3+3+3+3 = 12 — repeated addition is the start of multiplication.",
+      },
+      B: {
+        prompt:
+          "A drummer arranges 3 rows of cymbals, with 5 cymbals in each row. Build a rimshot row with the number of rows, and a crash cymbal row with the total number of cymbals (5+5+5).",
+        targets: [
+          { instrument: "rimshot", count: 3 },
+          { instrument: "crash", count: 15 },
+        ],
+        explanation: "3 rows means 5 added 3 times: 5+5+5 = 15.",
+      },
+      C: {
+        prompt:
+          "A drummer arranges 5 rows of tambourines, with 2 tambourines in each row. Build a rimshot row with the number of rows, and a snare drum row with the total number of tambourines (2+2+2+2+2).",
+        targets: [
+          { instrument: "rimshot", count: 5 },
+          { instrument: "snare", count: 10 },
+        ],
+        explanation: "5 rows means 2 added 5 times: 2+2+2+2+2 = 10.",
+      },
+      D: {
+        prompt:
+          "A drummer arranges 2 rows of triangles, with 6 triangles in each row. Build a rimshot row with the number of rows, and a ride cymbal row with the total number of triangles (6+6).",
+        targets: [
+          { instrument: "rimshot", count: 2 },
+          { instrument: "ride", count: 12 },
+        ],
+        explanation: "2 rows means 6 added 2 times: 6+6 = 12.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l06-fluency-within-20",
+    grade: 2,
+    lessonNumber: 6,
+    title: "Building Fluency: Sums and Differences Within 20",
+    mathSkill: "Fluency Within 20 (2.OA.B.2)",
+    teaches: "Every slot is a fast fact, addition or subtraction — build the answer in one row.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "9 + 6 = ? Build a bass drum row with the total.",
+        targets: [{ instrument: "kick", count: 15 }],
+        explanation: "9 + 6 = 15.",
+      },
+      B: {
+        prompt: "13 - 7 = ? Build a snare drum row with what's left.",
+        targets: [{ instrument: "snare", count: 6 }],
+        explanation: "13 - 7 = 6.",
+      },
+      C: {
+        prompt: "8 + 8 = ? Build a hi-hat row with the total.",
+        targets: [{ instrument: "hihatClosed", count: 16 }],
+        explanation: "8 + 8 = 16.",
+      },
+      D: {
+        prompt: "17 - 9 = ? Build a bass drum row with what's left.",
+        targets: [{ instrument: "kick", count: 8 }],
+        explanation: "17 - 9 = 8.",
+      },
+    },
+  },
+  // --- Number & Operations in Base Ten (2.NBT) --------------------------
+  {
+    slug: "math-g2-l07-place-value-hundreds-tens-ones",
+    grade: 2,
+    lessonNumber: 7,
+    title: "Place Value: Hundreds, Tens, and Ones",
+    mathSkill: "Three-Digit Place Value (2.NBT.A.1)",
+    teaches:
+      "Every slot gives you a three-digit number — build its hundreds on the bass drum, its tens on the snare, and its ones on the hi-hat.",
+    bpm: 88,
+    challenges: {
+      A: {
+        prompt:
+          "243 has 2 hundreds, 4 tens, and 3 ones. Build a bass drum row for the hundreds, a snare drum row for the tens, and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 2 },
+          { instrument: "snare", count: 4 },
+          { instrument: "hihatClosed", count: 3 },
+        ],
+        explanation: "243 = 2 hundreds + 4 tens + 3 ones.",
+      },
+      B: {
+        prompt: "516 has 5 hundreds, 1 ten, and 6 ones. Build the hundreds, tens, and ones rows.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 1 },
+          { instrument: "hihatClosed", count: 6 },
+        ],
+        explanation: "516 = 5 hundreds + 1 ten + 6 ones.",
+      },
+      C: {
+        prompt: "372 has 3 hundreds, 7 tens, and 2 ones. Build the hundreds, tens, and ones rows.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 7 },
+          { instrument: "hihatClosed", count: 2 },
+        ],
+        explanation: "372 = 3 hundreds + 7 tens + 2 ones.",
+      },
+      D: {
+        prompt:
+          "608 has 6 hundreds, 0 tens, and 8 ones. Build the hundreds row and the ones row — there are no tens, so that row just stays empty.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "hihatClosed", count: 8 },
+        ],
+        explanation: "608 = 6 hundreds + 0 tens + 8 ones — when a place is zero, that row simply stays empty.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l08-expanded-form",
+    grade: 2,
+    lessonNumber: 8,
+    title: "Expanded Form",
+    mathSkill: "Reading & Writing Numbers in Expanded Form (2.NBT.A.3)",
+    teaches:
+      "Every slot gives you a number already broken into hundreds, tens, and ones — build each digit on its own tom, low to high matching big to small.",
+    bpm: 88,
+    challenges: {
+      A: {
+        prompt:
+          "300 + 40 + 2 = 342. Build a low tom row for the hundreds digit, a mid tom row for the tens digit, and a high tom row for the ones digit.",
+        targets: [
+          { instrument: "lowTom", count: 3 },
+          { instrument: "midTom", count: 4 },
+          { instrument: "highTom", count: 2 },
+        ],
+        explanation: "300 + 40 + 2 = 342 — 3 hundreds, 4 tens, 2 ones.",
+      },
+      B: {
+        prompt: "600 + 70 + 5 = 675. Build the hundreds, tens, and ones rows using low tom, mid tom, and high tom.",
+        targets: [
+          { instrument: "lowTom", count: 6 },
+          { instrument: "midTom", count: 7 },
+          { instrument: "highTom", count: 5 },
+        ],
+        explanation: "600 + 70 + 5 = 675 — 6 hundreds, 7 tens, 5 ones.",
+      },
+      C: {
+        prompt: "100 + 90 + 8 = 198. Build the hundreds, tens, and ones rows using low tom, mid tom, and high tom.",
+        targets: [
+          { instrument: "lowTom", count: 1 },
+          { instrument: "midTom", count: 9 },
+          { instrument: "highTom", count: 8 },
+        ],
+        explanation: "100 + 90 + 8 = 198 — 1 hundred, 9 tens, 8 ones.",
+      },
+      D: {
+        prompt:
+          "500 + 20 = 520. There's no ones digit to add — build just the hundreds row and the tens row.",
+        targets: [
+          { instrument: "lowTom", count: 5 },
+          { instrument: "midTom", count: 2 },
+        ],
+        explanation: "500 + 20 = 520 — 5 hundreds, 2 tens, and 0 ones, so the ones row stays empty.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l09-skip-counting-5s-10s-100s",
+    grade: 2,
+    lessonNumber: 9,
+    title: "Skip Counting by 5s, 10s, and 100s",
+    mathSkill: "Skip Counting to 1000 (2.NBT.A.2)",
+    teaches: "Every slot asks how many equal jumps it takes to reach a number — skip count and build the number of jumps, not the number itself.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "300 is how many groups of 100? Build a bass drum row with that many hits.",
+        targets: [{ instrument: "kick", count: 3 }],
+        explanation: "100, 200, 300 — that's 3 jumps of 100.",
+      },
+      B: {
+        prompt: "700 is how many groups of 100? Build a snare drum row with that many hits.",
+        targets: [{ instrument: "snare", count: 7 }],
+        explanation: "100, 200, 300, 400, 500, 600, 700 — 7 jumps of 100.",
+      },
+      C: {
+        prompt: "45 is how many groups of 5? Build a hi-hat row with that many hits.",
+        targets: [{ instrument: "hihatClosed", count: 9 }],
+        explanation: "5, 10, 15, ... up to 45 — that's 9 jumps of 5.",
+      },
+      D: {
+        prompt: "90 is how many groups of 10? Build a bass drum row with that many hits.",
+        targets: [{ instrument: "kick", count: 9 }],
+        explanation: "10, 20, 30, ... up to 90 — that's 9 jumps of 10.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l10-comparing-three-digit-numbers",
+    grade: 2,
+    lessonNumber: 10,
+    title: "Comparing Three-Digit Numbers",
+    mathSkill: "Comparing Numbers to 1000 (2.NBT.A.4)",
+    teaches:
+      "Every slot gives you a number by its hundreds digit and asks you to beat it, or lose to it — a bigger hundreds digit always makes the whole number bigger.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "426 has 4 hundreds. Build a bass drum row with MORE than 4 hits, so your number's hundreds digit would beat it.",
+        targets: [{ instrument: "kick", count: 4, comparison: "gt" }],
+        explanation: "426 has 4 hundreds. 5 or more hits here gives a bigger hundreds digit, and a bigger hundreds digit always wins.",
+      },
+      B: {
+        prompt: "719 has 7 hundreds. Build a snare drum row with MORE than 7 hits, so your number's hundreds digit would beat it.",
+        targets: [{ instrument: "snare", count: 7, comparison: "gt" }],
+        explanation: "719 has 7 hundreds. 8 or more hits here makes your number greater than 719.",
+      },
+      C: {
+        prompt: "382 has 3 hundreds. Build a hi-hat row with FEWER than 3 hits, so your number's hundreds digit would lose to it.",
+        targets: [{ instrument: "hihatClosed", count: 3, comparison: "lt" }],
+        explanation: "382 has 3 hundreds. 1 or 2 hits here makes your number less than 382.",
+      },
+      D: {
+        prompt: "555 has 5 hundreds. Build a bass drum row with FEWER than 5 hits, so your number's hundreds digit would lose to it.",
+        targets: [{ instrument: "kick", count: 5, comparison: "lt" }],
+        explanation: "555 has 5 hundreds. Fewer than 5 hits here makes your number less than 555.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l11-ten-hundred-more-less",
+    grade: 2,
+    lessonNumber: 11,
+    title: "Ten More, Ten Less, Hundred More, Hundred Less",
+    mathSkill: "Ten/Hundred More or Less (2.NBT.B.8)",
+    teaches:
+      "Slots A-B change the number by 10 — only the tens (and ones) matter. Slots C-D change it by 100 — only the hundreds (and tens) matter.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "156 is 1 hundred, 5 tens, 6 ones. Build the tens row and the ones row for the number that's 10 MORE than 156.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "hihatClosed", count: 6 },
+        ],
+        explanation: "10 more than 156 is 166 — the tens go from 5 to 6, the ones stay at 6.",
+      },
+      B: {
+        prompt: "283 is 2 hundreds, 8 tens, 3 ones. Build the tens row and the ones row for the number that's 10 LESS than 283.",
+        targets: [
+          { instrument: "kick", count: 7 },
+          { instrument: "hihatClosed", count: 3 },
+        ],
+        explanation: "10 less than 283 is 273 — the tens go from 8 to 7, the ones stay at 3.",
+      },
+      C: {
+        prompt: "156 is 1 hundred, 5 tens, 6 ones. Build the hundreds row and the tens row for the number that's 100 MORE than 156.",
+        targets: [
+          { instrument: "kick", count: 2 },
+          { instrument: "hihatClosed", count: 5 },
+        ],
+        explanation: "100 more than 156 is 256 — the hundreds go from 1 to 2, the tens stay at 5.",
+      },
+      D: {
+        prompt: "412 is 4 hundreds, 1 ten, 2 ones. Build the hundreds row and the tens row for the number that's 100 LESS than 412.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "hihatClosed", count: 1 },
+        ],
+        explanation: "100 less than 412 is 312 — the hundreds go from 4 to 3, the tens stay at 1.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l12-adding-two-digit-numbers-with-regrouping",
+    grade: 2,
+    lessonNumber: 12,
+    title: "Adding Two-Digit Numbers, With Regrouping",
+    mathSkill: "Add Within 100 With Regrouping (2.NBT.B.5)",
+    teaches:
+      "Every slot's ones add up past 10 — carry a new ten into the tens place, then build the total split into a tens row and a ones row.",
+    bpm: 92,
+    challenges: {
+      A: {
+        prompt: "27 + 38 = ? Build the tens row and the ones row for the total.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "hihatClosed", count: 5 },
+        ],
+        explanation: "27 + 38 = 65 — the 7 and 8 ones make 15, carry a ten, so it's 6 tens and 5 ones.",
+      },
+      B: {
+        prompt: "45 + 19 = ? Build the tens row and the ones row for the total.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "hihatClosed", count: 4 },
+        ],
+        explanation: "45 + 19 = 64 — 6 tens and 4 ones.",
+      },
+      C: {
+        prompt: "58 + 26 = ? Build the tens row and the ones row for the total.",
+        targets: [
+          { instrument: "kick", count: 8 },
+          { instrument: "hihatClosed", count: 4 },
+        ],
+        explanation: "58 + 26 = 84 — 8 tens and 4 ones.",
+      },
+      D: {
+        prompt: "34 + 49 = ? Build the tens row and the ones row for the total.",
+        targets: [
+          { instrument: "kick", count: 8 },
+          { instrument: "hihatClosed", count: 3 },
+        ],
+        explanation: "34 + 49 = 83 — 8 tens and 3 ones.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l13-subtracting-two-digit-numbers-with-regrouping",
+    grade: 2,
+    lessonNumber: 13,
+    title: "Subtracting Two-Digit Numbers, With Regrouping",
+    mathSkill: "Subtract Within 100 With Regrouping (2.NBT.B.5)",
+    teaches:
+      "Every slot needs to borrow a ten to subtract the ones — then build what's left split into a tens row and a ones row.",
+    bpm: 92,
+    challenges: {
+      A: {
+        prompt: "62 - 27 = ? Build the tens row and the ones row for what's left.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "hihatClosed", count: 5 },
+        ],
+        explanation: "62 - 27 = 35 — borrow a ten to take 7 ones from 2, then subtract the tens: 3 tens and 5 ones.",
+      },
+      B: {
+        prompt: "81 - 36 = ? Build the tens row and the ones row for what's left.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "hihatClosed", count: 5 },
+        ],
+        explanation: "81 - 36 = 45 — 4 tens and 5 ones.",
+      },
+      C: {
+        prompt: "50 - 24 = ? Build the tens row and the ones row for what's left.",
+        targets: [
+          { instrument: "kick", count: 2 },
+          { instrument: "hihatClosed", count: 6 },
+        ],
+        explanation: "50 - 24 = 26 — 2 tens and 6 ones.",
+      },
+      D: {
+        prompt: "93 - 58 = ? Build the tens row and the ones row for what's left.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "hihatClosed", count: 5 },
+        ],
+        explanation: "93 - 58 = 35 — 3 tens and 5 ones.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l14-adding-four-two-digit-numbers",
+    grade: 2,
+    lessonNumber: 14,
+    title: "Adding Four Two-Digit Numbers",
+    mathSkill: "Add Up To Four Two-Digit Numbers (2.NBT.B.6)",
+    teaches:
+      "Every slot adds four two-digit numbers at once — add them one pair at a time, and the total crosses 100, so build it split into hundreds, tens, and ones.",
+    bpm: 92,
+    challenges: {
+      A: {
+        prompt: "24 + 38 + 41 + 34 = ? Add them one at a time, then build the hundreds, tens, and ones rows for the total.",
+        targets: [
+          { instrument: "kick", count: 1 },
+          { instrument: "snare", count: 3 },
+          { instrument: "hihatClosed", count: 7 },
+        ],
+        explanation: "24+38=62, 62+41=103, 103+34=137 — 1 hundred, 3 tens, 7 ones.",
+      },
+      B: {
+        prompt: "26 + 35 + 48 + 45 = ? Add them one at a time, then build the hundreds, tens, and ones rows for the total.",
+        targets: [
+          { instrument: "kick", count: 1 },
+          { instrument: "snare", count: 5 },
+          { instrument: "hihatClosed", count: 4 },
+        ],
+        explanation: "26+35=61, 61+48=109, 109+45=154 — 1 hundred, 5 tens, 4 ones.",
+      },
+      C: {
+        prompt: "19 + 27 + 38 + 44 = ? Add them one at a time, then build the hundreds, tens, and ones rows for the total.",
+        targets: [
+          { instrument: "kick", count: 1 },
+          { instrument: "snare", count: 2 },
+          { instrument: "hihatClosed", count: 8 },
+        ],
+        explanation: "19+27=46, 46+38=84, 84+44=128 — 1 hundred, 2 tens, 8 ones.",
+      },
+      D: {
+        prompt: "32 + 41 + 53 + 37 = ? Add them one at a time, then build the hundreds, tens, and ones rows for the total.",
+        targets: [
+          { instrument: "kick", count: 1 },
+          { instrument: "snare", count: 6 },
+          { instrument: "hihatClosed", count: 3 },
+        ],
+        explanation: "32+41=73, 73+53=126, 126+37=163 — 1 hundred, 6 tens, 3 ones.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l15-adding-within-1000",
+    grade: 2,
+    lessonNumber: 15,
+    title: "Adding Within 1000",
+    mathSkill: "Add Within 1000 (2.NBT.B.7)",
+    teaches:
+      "Every slot adds two three-digit numbers — add each place separately, then build the total's hundreds, tens, and ones as their own rows.",
+    bpm: 94,
+    challenges: {
+      A: {
+        prompt: "234 + 142 = ? Build the hundreds, tens, and ones rows for the total.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 7 },
+          { instrument: "hihatClosed", count: 6 },
+        ],
+        explanation: "234 + 142 = 376 — 3 hundreds, 7 tens, 6 ones.",
+      },
+      B: {
+        prompt: "315 + 263 = ? Build the hundreds, tens, and ones rows for the total.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 7 },
+          { instrument: "hihatClosed", count: 8 },
+        ],
+        explanation: "315 + 263 = 578 — 5 hundreds, 7 tens, 8 ones.",
+      },
+      C: {
+        prompt: "428 + 351 = ? Build the hundreds, tens, and ones rows for the total.",
+        targets: [
+          { instrument: "kick", count: 7 },
+          { instrument: "snare", count: 7 },
+          { instrument: "hihatClosed", count: 9 },
+        ],
+        explanation: "428 + 351 = 779 — 7 hundreds, 7 tens, 9 ones.",
+      },
+      D: {
+        prompt: "256 + 133 = ? Build the hundreds, tens, and ones rows for the total.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 8 },
+          { instrument: "hihatClosed", count: 9 },
+        ],
+        explanation: "256 + 133 = 389 — 3 hundreds, 8 tens, 9 ones.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l16-subtracting-within-1000",
+    grade: 2,
+    lessonNumber: 16,
+    title: "Subtracting Within 1000",
+    mathSkill: "Subtract Within 1000 (2.NBT.B.7)",
+    teaches:
+      "Every slot subtracts two three-digit numbers — subtract each place separately, then build what's left as hundreds, tens, and ones rows.",
+    bpm: 94,
+    challenges: {
+      A: {
+        prompt: "486 - 253 = ? Build the hundreds, tens, and ones rows for what's left.",
+        targets: [
+          { instrument: "kick", count: 2 },
+          { instrument: "snare", count: 3 },
+          { instrument: "hihatClosed", count: 3 },
+        ],
+        explanation: "486 - 253 = 233 — 2 hundreds, 3 tens, 3 ones.",
+      },
+      B: {
+        prompt: "579 - 324 = ? Build the hundreds, tens, and ones rows for what's left.",
+        targets: [
+          { instrument: "kick", count: 2 },
+          { instrument: "snare", count: 5 },
+          { instrument: "hihatClosed", count: 5 },
+        ],
+        explanation: "579 - 324 = 255 — 2 hundreds, 5 tens, 5 ones.",
+      },
+      C: {
+        prompt: "648 - 216 = ? Build the hundreds, tens, and ones rows for what's left.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 3 },
+          { instrument: "hihatClosed", count: 2 },
+        ],
+        explanation: "648 - 216 = 432 — 4 hundreds, 3 tens, 2 ones.",
+      },
+      D: {
+        prompt: "795 - 462 = ? Build the hundreds, tens, and ones rows for what's left.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 3 },
+          { instrument: "hihatClosed", count: 3 },
+        ],
+        explanation: "795 - 462 = 333 — 3 hundreds, 3 tens, 3 ones.",
+      },
+    },
+  },
+  // --- Measurement & Data (2.MD) ------------------------------------------
+  {
+    slug: "math-g2-l17-measuring-and-comparing-lengths",
+    grade: 2,
+    lessonNumber: 17,
+    title: "Measuring and Comparing Lengths",
+    mathSkill: "Measure & Compare Lengths (2.MD.A.1, 2.MD.A.4)",
+    teaches:
+      "Every slot measures two objects — build each one's length on its own tom, then build the difference between them on the rimshot.",
+    bpm: 88,
+    challenges: {
+      A: {
+        prompt:
+          "A drumstick is 9 units long. A mallet is 6 units long. Build a low tom row for the drumstick's length, a mid tom row for the mallet's length, and a rimshot row for how much longer the drumstick is.",
+        targets: [
+          { instrument: "lowTom", count: 9 },
+          { instrument: "midTom", count: 6 },
+          { instrument: "rimshot", count: 3 },
+        ],
+        explanation: "9 - 6 = 3 — the drumstick is 3 units longer than the mallet.",
+      },
+      B: {
+        prompt:
+          "A snare stand is 12 units tall. A cymbal stand is 7 units tall. Build a low tom row for the snare stand, a mid tom row for the cymbal stand, and a rimshot row for how much taller the snare stand is.",
+        targets: [
+          { instrument: "lowTom", count: 12 },
+          { instrument: "midTom", count: 7 },
+          { instrument: "rimshot", count: 5 },
+        ],
+        explanation: "12 - 7 = 5 — the snare stand is 5 units taller.",
+      },
+      C: {
+        prompt:
+          "A guitar is 14 units long. A ukulele is 8 units long. Build a low tom row for the guitar, a mid tom row for the ukulele, and a rimshot row for how much longer the guitar is.",
+        targets: [
+          { instrument: "lowTom", count: 14 },
+          { instrument: "midTom", count: 8 },
+          { instrument: "rimshot", count: 6 },
+        ],
+        explanation: "14 - 8 = 6 — the guitar is 6 units longer.",
+      },
+      D: {
+        prompt:
+          "A conga is 11 units tall. A bongo is 5 units tall. Build a low tom row for the conga, a mid tom row for the bongo, and a rimshot row for how much taller the conga is.",
+        targets: [
+          { instrument: "lowTom", count: 11 },
+          { instrument: "midTom", count: 5 },
+          { instrument: "rimshot", count: 6 },
+        ],
+        explanation: "11 - 5 = 6 — the conga is 6 units taller.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l18-telling-time-five-minutes",
+    grade: 2,
+    lessonNumber: 18,
+    title: "Telling Time to Five Minutes",
+    mathSkill: "Telling Time to Five Minutes (2.MD.C.7)",
+    teaches: "Every slot counts ticks in our clock groove — one tick every 5 minutes. Skip count and build the total.",
+    bpm: 88,
+    challenges: {
+      A: {
+        prompt: "Our clock groove ticks once every 5 minutes. Build a bass drum row with how many ticks happen in 20 minutes.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "20 minutes is four 5-minute ticks: 5, 10, 15, 20.",
+      },
+      B: {
+        prompt: "Our clock groove ticks once every 5 minutes. Build a snare drum row with how many ticks happen in 35 minutes.",
+        targets: [{ instrument: "snare", count: 7 }],
+        explanation: "35 minutes is seven 5-minute ticks.",
+      },
+      C: {
+        prompt: "Our clock groove ticks once every 5 minutes. Build a hi-hat row with how many ticks happen in 50 minutes.",
+        targets: [{ instrument: "hihatClosed", count: 10 }],
+        explanation: "50 minutes is ten 5-minute ticks.",
+      },
+      D: {
+        prompt: "Our clock groove ticks once every 5 minutes. Build a bass drum row with how many ticks happen in half an hour (30 minutes).",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "Half an hour is 30 minutes, six 5-minute ticks.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l19-counting-money",
+    grade: 2,
+    lessonNumber: 19,
+    title: "Counting Money",
+    mathSkill: "Counting Coin Values (2.MD.C.8)",
+    teaches:
+      "Slots A-B skip count one coin at a time to reach a value. Slots C-D mix two coins — build each coin's own count on its own row.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "A nickel is worth 5 cents. Build a bass drum row with how many nickels it takes to make 40 cents.",
+        targets: [{ instrument: "kick", count: 8 }],
+        explanation: "5, 10, 15, ... up to 40 — that's 8 nickels.",
+      },
+      B: {
+        prompt: "A dime is worth 10 cents. Build a snare drum row with how many dimes it takes to make 70 cents.",
+        targets: [{ instrument: "snare", count: 7 }],
+        explanation: "10, 20, 30, ... up to 70 — that's 7 dimes.",
+      },
+      C: {
+        prompt: "You have 3 dimes and 4 pennies. Build a snare drum row for the dimes and a rimshot row for the pennies.",
+        targets: [
+          { instrument: "snare", count: 3 },
+          { instrument: "rimshot", count: 4 },
+        ],
+        explanation: "3 dimes and 4 pennies is 30 + 4 = 34 cents — build each coin's own count.",
+      },
+      D: {
+        prompt: "You have 2 quarters and 6 pennies. Build a crash cymbal row for the quarters and a rimshot row for the pennies.",
+        targets: [
+          { instrument: "crash", count: 2 },
+          { instrument: "rimshot", count: 6 },
+        ],
+        explanation: "2 quarters and 6 pennies is 50 + 6 = 56 cents — build each coin's own count.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l20-picture-and-bar-graphs",
+    grade: 2,
+    lessonNumber: 20,
+    title: "Picture Graphs and Bar Graphs",
+    mathSkill: "Reading Graphs (2.MD.D.10)",
+    teaches:
+      "Every slot reads off a graph with two categories — build each one's count on its own row; some slots also ask how many more one category got.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "A class graph shows 6 votes for cats and 4 votes for dogs. Build a snare drum row for the cat votes and a bass drum row for the dog votes.",
+        targets: [
+          { instrument: "snare", count: 6 },
+          { instrument: "kick", count: 4 },
+        ],
+        explanation: "Read each bar straight off the graph: cats = 6, dogs = 4.",
+      },
+      B: {
+        prompt: "A class graph shows 3 votes for pizza and 8 votes for tacos. Build a snare drum row for the pizza votes and a bass drum row for the taco votes.",
+        targets: [
+          { instrument: "snare", count: 3 },
+          { instrument: "kick", count: 8 },
+        ],
+        explanation: "Read each bar straight off the graph: pizza = 3, tacos = 8.",
+      },
+      C: {
+        prompt:
+          "A class graph shows 7 votes for red and 2 votes for blue. Build a snare drum row for the red votes, a bass drum row for the blue votes, and a hi-hat row for how many more votes red got.",
+        targets: [
+          { instrument: "snare", count: 7 },
+          { instrument: "kick", count: 2 },
+          { instrument: "hihatClosed", count: 5 },
+        ],
+        explanation: "Red = 7, blue = 2, and 7 - 2 = 5 more votes for red.",
+      },
+      D: {
+        prompt:
+          "A class graph shows 9 votes for summer and 5 votes for winter. Build a snare drum row for the summer votes, a bass drum row for the winter votes, and a hi-hat row for how many more votes summer got.",
+        targets: [
+          { instrument: "snare", count: 9 },
+          { instrument: "kick", count: 5 },
+          { instrument: "hihatClosed", count: 4 },
+        ],
+        explanation: "Summer = 9, winter = 5, and 9 - 5 = 4 more votes for summer.",
+      },
+    },
+  },
+  // --- Geometry (2.G) -------------------------------------------------------
+  {
+    slug: "math-g2-l21-2d-and-3d-shapes",
+    grade: 2,
+    lessonNumber: 21,
+    title: "2D and 3D Shapes",
+    mathSkill: "Shape Attributes (2.G.A.1)",
+    teaches: "Every slot is a shape — count its sides, angles, or faces, and build that many hits.",
+    bpm: 88,
+    challenges: {
+      A: {
+        prompt: "A pentagon has 5 sides. Build a bass drum row with that many hits.",
+        targets: [{ instrument: "kick", count: 5 }],
+        explanation: "A pentagon has 5 sides — one hit for each.",
+      },
+      B: {
+        prompt: "A hexagon has 6 sides. Build a snare drum row with that many hits.",
+        targets: [{ instrument: "snare", count: 6 }],
+        explanation: "A hexagon has 6 sides — one hit for each.",
+      },
+      C: {
+        prompt: "A quadrilateral has 4 angles. Build a hi-hat row with that many hits.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
+        explanation: "Any quadrilateral — square, rectangle, or otherwise — has 4 angles.",
+      },
+      D: {
+        prompt: "A cube has 6 faces. Build a bass drum row with that many hits.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "A cube has 6 faces — one hit for each.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l22-rows-and-columns-arrays",
+    grade: 2,
+    lessonNumber: 22,
+    title: "Partitioning Rectangles: Rows and Columns",
+    mathSkill: "Rows & Columns of Squares (2.G.A.2)",
+    teaches:
+      "Every slot splits a rectangle into equal-size squares — build the number of rows and the number of columns; two slots also ask for the total.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt:
+          "A rectangle is split into 3 rows and 4 columns of equal squares. Build a rimshot row with the number of rows and a ride cymbal row with the number of columns.",
+        targets: [
+          { instrument: "rimshot", count: 3 },
+          { instrument: "ride", count: 4 },
+        ],
+        explanation: "3 rows and 4 columns — the rectangle has 12 squares in all, even without building the total.",
+      },
+      B: {
+        prompt:
+          "A rectangle is split into 5 rows and 2 columns of equal squares. Build a rimshot row with the number of rows and a ride cymbal row with the number of columns.",
+        targets: [
+          { instrument: "rimshot", count: 5 },
+          { instrument: "ride", count: 2 },
+        ],
+        explanation: "5 rows and 2 columns — 10 squares in all.",
+      },
+      C: {
+        prompt:
+          "A rectangle is split into 4 rows and 4 columns of equal squares. Build a rimshot row with the number of rows, a ride cymbal row with the number of columns, and a bass drum row with the total number of squares.",
+        targets: [
+          { instrument: "rimshot", count: 4 },
+          { instrument: "ride", count: 4 },
+          { instrument: "kick", count: 16 },
+        ],
+        explanation: "4 rows of 4 is 4+4+4+4 = 16 squares in all.",
+      },
+      D: {
+        prompt:
+          "A rectangle is split into 3 rows and 5 columns of equal squares. Build a rimshot row with the number of rows, a ride cymbal row with the number of columns, and a bass drum row with the total number of squares.",
+        targets: [
+          { instrument: "rimshot", count: 3 },
+          { instrument: "ride", count: 5 },
+          { instrument: "kick", count: 15 },
+        ],
+        explanation: "3 rows of 5 is 5+5+5 = 15 squares in all.",
+      },
+    },
+  },
+  {
+    slug: "math-g2-l23-equal-shares-halves-thirds-fourths",
+    grade: 2,
+    lessonNumber: 23,
+    title: "Equal Shares: Halves, Thirds, and Fourths",
+    mathSkill: "Partitioning Shapes into Equal Shares (2.G.A.3)",
+    teaches: "Every slot splits a shape into equal shares — build the number of pieces that split makes.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "If you split a pizza into 2 equal shares (halves), how many pieces are there? Build a hi-hat row with that many hits.",
+        targets: [{ instrument: "hihatClosed", count: 2 }],
+        explanation: "Halves means 2 equal shares.",
+      },
+      B: {
+        prompt: "If you split a pizza into 3 equal shares (thirds), how many pieces are there? Build a snare drum row with that many hits.",
+        targets: [{ instrument: "snare", count: 3 }],
+        explanation: "Thirds means 3 equal shares.",
+      },
+      C: {
+        prompt: "If you split a pizza into 4 equal shares (fourths), how many pieces are there? Build a bass drum row with that many hits.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "Fourths, also called quarters, means 4 equal shares.",
+      },
+      D: {
+        prompt:
+          "One drum head is split into halves, and another drum head is split into fourths. Build a hi-hat row with the number of halves, and a bass drum row with the number of fourths.",
+        targets: [
+          { instrument: "hihatClosed", count: 2 },
+          { instrument: "kick", count: 4 },
+        ],
+        explanation: "Halves means 2 equal shares; fourths means 4 equal shares — two different splits of the same size whole.",
+      },
+    },
+  },
 ];
 
 export function mathLessonsForGrade(grade: number): MathLesson[] {
   return MATH_LESSONS.filter((l) => l.grade === grade);
+}
+
+// A slot still opens "blank" — no hits anywhere, nothing pre-built — but its
+// starter lines now cover every instrument that slot's own challenge asks
+// for, not just the Editor's normal three-piece starter (see
+// DEFAULT_LINE_INSTRUMENTS in song.ts). Without this, a challenge reaching
+// for a tom or a cymbal (which this Grade 2 batch does a lot more of, to
+// bring more of the kit into the lessons) would leave the student stuck
+// clicking "+ Add drum piece" one or more times before they could even
+// start building their answer. Used by scripts/seedMathLessons.mts to build
+// each lesson's slotA-D.
+export function starterSlotForChallenge(bpm: number, challenge: MathChallenge): BoardSlotData {
+  const instruments: InstrumentId[] = [...DEFAULT_LINE_INSTRUMENTS];
+  for (const target of challenge.targets) {
+    if (!instruments.includes(target.instrument)) instruments.push(target.instrument);
+  }
+  return {
+    bpm,
+    lines: instruments.map((instrument) => ({ instrument, blocks: Array(MAX_BEATS).fill(null) })),
+  };
+}
+
+function mathStackStepId(slug: string, n: number): string {
+  return `step-${slug}-${n}`;
+}
+
+// The shape every one of the 100 Drum School lessons converged on (6 groove
+// steps, 2 fill/variation steps) — every RockBlocks Math lesson reuses it so
+// a lesson's Stack isn't just "repeat A forever." Since every slot is blank
+// until the student builds it, a fresh visitor's Stack plays back whatever
+// they've answered so far (silence for anything not yet built). Shared by
+// scripts/seedMathLessons.mts and the admin "create a lesson" API route so
+// both paths produce the same default arrangement.
+export function standardMathStack(slug: string, bpm: number): StackArrangement {
+  const seq: SlotLetter[] = ["A", "A", "B", "A", "C", "A", "B", "D"];
+  const steps: StackStep[] = seq.map((slot, i) => ({ id: mathStackStepId(slug, i + 1), slot }));
+  return { bpm, steps, kitOverride: null };
 }

@@ -10,27 +10,14 @@
 // Third pass: every slot is now its own question the student answers by
 // building a beat, rather than 3 read-only demo patterns plus one answer
 // slot — so there's no demo StoredLine content left to seed at all. Every
-// slot opens on the Editor's normal blank starter; only the metadata
-// (challenges, a Stack arrangement) comes from the database.
+// slot still opens with no hits placed anywhere, but its starter lines are
+// built (via starterSlotForChallenge) to cover whatever instruments that
+// slot's own challenge targets, on top of the Editor's normal three-piece
+// starter — so a challenge reaching for a tom or a cymbal doesn't leave the
+// student stuck adding drum pieces before they can start.
 import { getDb } from "../src/db";
 import { mathLessons } from "../src/db/schema";
-import type { SlotLetter } from "../src/lib/board";
-import type { StackArrangement } from "../src/lib/stack";
-import { MATH_LESSONS } from "../src/lib/mathSchool";
-
-function stackId(slug: string, n: number): string {
-  return `step-${slug}-${n}`;
-}
-
-// The shape every one of the 100 Drum School lessons converged on (6 groove
-// steps, 2 fill/variation steps) — reused here so a lesson's Stack isn't
-// just "repeat A forever." Since every slot is blank until the student
-// builds it, a fresh visitor's Stack plays back whatever they've answered
-// so far (silence for anything not yet built).
-function standardSteps(slug: string): { id: string; slot: SlotLetter }[] {
-  const seq: SlotLetter[] = ["A", "A", "B", "A", "C", "A", "B", "D"];
-  return seq.map((s, i) => ({ id: stackId(slug, i + 1), slot: s }));
-}
+import { MATH_LESSONS, standardMathStack, starterSlotForChallenge } from "../src/lib/mathSchool";
 
 const db = getDb();
 
@@ -41,11 +28,7 @@ const db = getDb();
 await db.delete(mathLessons);
 
 for (const meta of MATH_LESSONS) {
-  const stack: StackArrangement = {
-    bpm: meta.bpm,
-    steps: standardSteps(meta.slug),
-    kitOverride: null,
-  };
+  const stack = standardMathStack(meta.slug, meta.bpm);
 
   const row = {
     slug: meta.slug,
@@ -55,10 +38,10 @@ for (const meta of MATH_LESSONS) {
     mathSkill: meta.mathSkill,
     teaches: meta.teaches,
     challenges: meta.challenges,
-    slotA: null,
-    slotB: null,
-    slotC: null,
-    slotD: null,
+    slotA: starterSlotForChallenge(meta.bpm, meta.challenges.A),
+    slotB: starterSlotForChallenge(meta.bpm, meta.challenges.B),
+    slotC: starterSlotForChallenge(meta.bpm, meta.challenges.C),
+    slotD: starterSlotForChallenge(meta.bpm, meta.challenges.D),
     stack,
   };
 

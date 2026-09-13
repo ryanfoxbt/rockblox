@@ -4,33 +4,9 @@ import { getDb } from "@/db";
 import { mathLessons } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isMathAdmin } from "@/lib/auth/mathAdmin";
-import { SLOT_LETTERS, type SlotLetter } from "@/lib/board";
-import type { BeatChallengeTarget, MathChallenge } from "@/lib/mathSchool";
-import { INSTRUMENTS } from "@/lib/instruments";
-
-function isValidTarget(t: unknown): t is BeatChallengeTarget {
-  if (!t || typeof t !== "object") return false;
-  const o = t as Record<string, unknown>;
-  if (typeof o.instrument !== "string" || !INSTRUMENTS.some((i) => i.id === o.instrument)) return false;
-  if (typeof o.count !== "number" || !Number.isInteger(o.count) || o.count < 1) return false;
-  if (o.comparison !== undefined && o.comparison !== "eq" && o.comparison !== "gt" && o.comparison !== "lt") return false;
-  return true;
-}
-
-function isValidChallenge(c: unknown): c is MathChallenge {
-  if (!c || typeof c !== "object") return false;
-  const o = c as Record<string, unknown>;
-  if (typeof o.prompt !== "string" || !o.prompt.trim()) return false;
-  if (typeof o.explanation !== "string" || !o.explanation.trim()) return false;
-  if (!Array.isArray(o.targets) || o.targets.length === 0 || !o.targets.every(isValidTarget)) return false;
-  return true;
-}
-
-function isValidChallenges(c: unknown): c is Record<SlotLetter, MathChallenge> {
-  if (!c || typeof c !== "object") return false;
-  const o = c as Record<string, unknown>;
-  return SLOT_LETTERS.every((letter) => isValidChallenge(o[letter]));
-}
+import type { SlotLetter } from "@/lib/board";
+import type { MathChallenge } from "@/lib/mathSchool";
+import { isValidChallenges } from "@/lib/mathLessonValidation";
 
 // GET /api/math-admin/lessons/[slug] — the full editable record for one
 // lesson (published or not).
