@@ -181,23 +181,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 70,
     challenges: {
       A: {
-        prompt: "Which is bigger: 3 or 7? Build a bass drum row with the BIGGER number of quarter notes.",
-        targets: [{ instrument: "kick", count: 7 }],
+        prompt: "Which is bigger: 3 or 7? Build a snare drum row with the BIGGER number of quarter notes.",
+        targets: [{ instrument: "snare", count: 7 }],
         explanation: "7 is bigger than 3, so you build 7 quarter notes.",
       },
       B: {
-        prompt: "Which is bigger: 5 or 2? Build a snare drum row with the BIGGER number of quarter notes.",
-        targets: [{ instrument: "snare", count: 5 }],
+        prompt: "Which is bigger: 5 or 2? Build a hi-hat row with the BIGGER number of quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 5 }],
         explanation: "5 is bigger than 2, so you build 5 quarter notes.",
       },
       C: {
-        prompt: "Which is bigger: 4 or 8? Build a hi-hat row with the BIGGER number of quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 8 }],
+        prompt: "Which is bigger: 4 or 8? Build a bass drum row with the BIGGER number of quarter notes.",
+        targets: [{ instrument: "kick", count: 8 }],
         explanation: "8 is bigger than 4, so you build 8 quarter notes.",
       },
       D: {
-        prompt: "Which is bigger: 6 or 1? Build a bass drum row with the BIGGER number of quarter notes.",
-        targets: [{ instrument: "kick", count: 6 }],
+        prompt: "Which is bigger: 6 or 1? Build a snare drum row with the BIGGER number of quarter notes.",
+        targets: [{ instrument: "snare", count: 6 }],
         explanation: "6 is bigger than 1, so you build 6 quarter notes.",
       },
     },
@@ -212,8 +212,8 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 70,
     challenges: {
       A: {
-        prompt: "Count in order: 1, 2, 3, __, 5. What number is missing? Build a snare drum row with that many quarter notes.",
-        targets: [{ instrument: "snare", count: 4 }],
+        prompt: "Count in order: 1, 2, 3, __, 5. What number is missing? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
         explanation: "1, 2, 3, 4, 5 — the missing number is 4.",
       },
       B: {
@@ -222,13 +222,13 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4, 5, 6, 7, 8 — the missing number is 6.",
       },
       C: {
-        prompt: "Count in order: 6, 7, __, 9, 10. What number is missing? Build a hi-hat row with that many quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 8 }],
+        prompt: "Count in order: 6, 7, __, 9, 10. What number is missing? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 8 }],
         explanation: "6, 7, 8, 9, 10 — the missing number is 8.",
       },
       D: {
-        prompt: "Count in order: 2, __, 4, 5, 6. What number is missing? Build a snare drum row with that many quarter notes.",
-        targets: [{ instrument: "snare", count: 3 }],
+        prompt: "Count in order: 2, __, 4, 5, 6. What number is missing? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 3 }],
         explanation: "2, 3, 4, 5, 6 — the missing number is 3.",
       },
     },
@@ -306,23 +306,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 72,
     challenges: {
       A: {
-        prompt: "Count backward from 5: 5, 4, 3. What number do you land on after 2 backward steps? Build a bass drum row with that many quarter notes.",
-        targets: [{ instrument: "kick", count: 3 }],
+        prompt: "Count backward from 5: 5, 4, 3. What number do you land on after 2 backward steps? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 3 }],
         explanation: "5, 4, 3 — two steps back from 5 lands on 3.",
       },
       B: {
-        prompt: "Count backward from 7: 7, 6, 5, 4. What number do you land on after 3 backward steps? Build a snare drum row with that many quarter notes.",
-        targets: [{ instrument: "snare", count: 4 }],
+        prompt: "Count backward from 7: 7, 6, 5, 4. What number do you land on after 3 backward steps? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
         explanation: "7, 6, 5, 4 — three steps back from 7 lands on 4.",
       },
       C: {
-        prompt: "Count backward from 10: 10, 9, 8. What number do you land on after 2 backward steps? Build a hi-hat row with that many quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 8 }],
+        prompt: "Count backward from 10: 10, 9, 8. What number do you land on after 2 backward steps? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 8 }],
         explanation: "10, 9, 8 — two steps back from 10 lands on 8.",
       },
       D: {
-        prompt: "Count backward from 6: 6, 5, 4, 3. What number do you land on after 3 backward steps? Build a bass drum row with that many quarter notes.",
-        targets: [{ instrument: "kick", count: 3 }],
+        prompt: "Count backward from 6: 6, 5, 4, 3. What number do you land on after 3 backward steps? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 3 }],
         explanation: "6, 5, 4, 3 — three steps back from 6 lands on 3.",
       },
     },
@@ -380,23 +380,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 72,
     challenges: {
       A: {
-        prompt: "You have 2 crayons. A friend gives you 1 more. How many crayons do you have now? Build a bass drum row with that many quarter notes.",
-        targets: [{ instrument: "kick", count: 3 }],
+        prompt: "You have 2 crayons. A friend gives you 1 more. How many crayons do you have now? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 3 }],
         explanation: "2 and 1 more makes 3.",
       },
       B: {
-        prompt: "You have 3 stickers. A friend gives you 2 more. How many stickers do you have now? Build a snare drum row with that many quarter notes.",
-        targets: [{ instrument: "snare", count: 5 }],
+        prompt: "You have 3 stickers. A friend gives you 2 more. How many stickers do you have now? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 5 }],
         explanation: "3 and 2 more makes 5.",
       },
       C: {
-        prompt: "You have 4 blocks. A friend gives you 1 more. How many blocks do you have now? Build a hi-hat row with that many quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 5 }],
+        prompt: "You have 4 blocks. A friend gives you 1 more. How many blocks do you have now? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 5 }],
         explanation: "4 and 1 more makes 5.",
       },
       D: {
-        prompt: "You have 1 marble. A friend gives you 3 more. How many marbles do you have now? Build a bass drum row with that many quarter notes.",
-        targets: [{ instrument: "kick", count: 4 }],
+        prompt: "You have 1 marble. A friend gives you 3 more. How many marbles do you have now? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
         explanation: "1 and 3 more makes 4.",
       },
     },
@@ -442,23 +442,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 74,
     challenges: {
       A: {
-        prompt: "2 + 2 = ? Build a bass drum row with the total number of quarter notes.",
-        targets: [{ instrument: "kick", count: 4 }],
+        prompt: "2 + 2 = ? Build a snare drum row with the total number of quarter notes.",
+        targets: [{ instrument: "snare", count: 4 }],
         explanation: "2 + 2 = 4.",
       },
       B: {
-        prompt: "1 + 3 = ? Build a snare drum row with the total number of quarter notes.",
-        targets: [{ instrument: "snare", count: 4 }],
+        prompt: "1 + 3 = ? Build a hi-hat row with the total number of quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
         explanation: "1 + 3 = 4.",
       },
       C: {
-        prompt: "3 + 2 = ? Build a hi-hat row with the total number of quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 5 }],
+        prompt: "3 + 2 = ? Build a bass drum row with the total number of quarter notes.",
+        targets: [{ instrument: "kick", count: 5 }],
         explanation: "3 + 2 = 5.",
       },
       D: {
-        prompt: "0 + 4 = ? Build a bass drum row with the total number of quarter notes.",
-        targets: [{ instrument: "kick", count: 4 }],
+        prompt: "0 + 4 = ? Build a snare drum row with the total number of quarter notes.",
+        targets: [{ instrument: "snare", count: 4 }],
         explanation: "0 + 4 = 4 — adding 0 changes nothing.",
       },
     },
@@ -473,8 +473,8 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 74,
     challenges: {
       A: {
-        prompt: "4 - 1 = ? Build a snare drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "snare", count: 3 }],
+        prompt: "4 - 1 = ? Build a hi-hat row with what's left, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 3 }],
         explanation: "4 - 1 = 3.",
       },
       B: {
@@ -483,13 +483,13 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5 - 2 = 3.",
       },
       C: {
-        prompt: "3 - 1 = ? Build a hi-hat row with what's left, in quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 2 }],
+        prompt: "3 - 1 = ? Build a snare drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "snare", count: 2 }],
         explanation: "3 - 1 = 2.",
       },
       D: {
-        prompt: "5 - 4 = ? Build a snare drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "snare", count: 1 }],
+        prompt: "5 - 4 = ? Build a hi-hat row with what's left, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 1 }],
         explanation: "5 - 4 = 1.",
       },
     },
@@ -578,23 +578,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 74,
     challenges: {
       A: {
-        prompt: "A drummer plays 5 quarter notes, then stops 3 of them. How many quarter notes are left? Build a bass drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "kick", count: 2 }],
+        prompt: "A drummer plays 5 quarter notes, then stops 3 of them. How many quarter notes are left? Build a snare drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "snare", count: 2 }],
         explanation: "5 - 3 = 2.",
       },
       B: {
-        prompt: "A drummer plays 4 quarter notes, then stops 2 of them. How many quarter notes are left? Build a snare drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "snare", count: 2 }],
+        prompt: "A drummer plays 4 quarter notes, then stops 2 of them. How many quarter notes are left? Build a hi-hat row with what's left, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 2 }],
         explanation: "4 - 2 = 2.",
       },
       C: {
-        prompt: "A drummer plays 5 quarter notes, then stops 1 of them. How many quarter notes are left? Build a hi-hat row with what's left, in quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 4 }],
+        prompt: "A drummer plays 5 quarter notes, then stops 1 of them. How many quarter notes are left? Build a bass drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "kick", count: 4 }],
         explanation: "5 - 1 = 4.",
       },
       D: {
-        prompt: "A drummer plays 3 quarter notes, then stops 2 of them. How many quarter notes are left? Build a bass drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "kick", count: 1 }],
+        prompt: "A drummer plays 3 quarter notes, then stops 2 of them. How many quarter notes are left? Build a snare drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "snare", count: 1 }],
         explanation: "3 - 2 = 1.",
       },
     },
@@ -642,8 +642,8 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 76,
     challenges: {
       A: {
-        prompt: "8 - 5 = ? Build a snare drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "snare", count: 3 }],
+        prompt: "8 - 5 = ? Build a hi-hat row with what's left, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 3 }],
         explanation: "8 - 5 = 3.",
       },
       B: {
@@ -652,13 +652,13 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "9 - 4 = 5.",
       },
       C: {
-        prompt: "7 - 3 = ? Build a hi-hat row with what's left, in quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 4 }],
+        prompt: "7 - 3 = ? Build a snare drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "snare", count: 4 }],
         explanation: "7 - 3 = 4.",
       },
       D: {
-        prompt: "10 - 6 = ? Build a snare drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "snare", count: 4 }],
+        prompt: "10 - 6 = ? Build a hi-hat row with what's left, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
         explanation: "10 - 6 = 4.",
       },
     },
@@ -741,13 +741,13 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "9 - 6 = 3.",
       },
       B: {
-        prompt: "8 - 3 = ? Build a bass drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "kick", count: 5 }],
+        prompt: "8 - 3 = ? Build a hi-hat row with what's left, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 5 }],
         explanation: "8 - 3 = 5.",
       },
       C: {
-        prompt: "10 - 7 = ? Build a hi-hat row with what's left, in quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 3 }],
+        prompt: "10 - 7 = ? Build a bass drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "kick", count: 3 }],
         explanation: "10 - 7 = 3.",
       },
       D: {
@@ -845,23 +845,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 78,
     challenges: {
       A: {
-        prompt: "Count by 10s: 10, 20, __, 40, 50. The missing number is how many tens? Build a bass drum row with that many quarter notes.",
-        targets: [{ instrument: "kick", count: 3 }],
+        prompt: "Count by 10s: 10, 20, __, 40, 50. The missing number is how many tens? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 3 }],
         explanation: "10, 20, 30, 40, 50 — the missing number is 30, which is 3 tens.",
       },
       B: {
-        prompt: "Count by 10s: 10, __, 30, 40. The missing number is how many tens? Build a snare drum row with that many quarter notes.",
-        targets: [{ instrument: "snare", count: 2 }],
+        prompt: "Count by 10s: 10, __, 30, 40. The missing number is how many tens? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 2 }],
         explanation: "10, 20, 30, 40 — the missing number is 20, which is 2 tens.",
       },
       C: {
-        prompt: "Count by 10s: 20, 30, 40, __, 60. The missing number is how many tens? Build a hi-hat row with that many quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 5 }],
+        prompt: "Count by 10s: 20, 30, 40, __, 60. The missing number is how many tens? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 5 }],
         explanation: "20, 30, 40, 50, 60 — the missing number is 50, which is 5 tens.",
       },
       D: {
-        prompt: "Count by 10s: __, 20, 30. The missing number is how many tens? Build a bass drum row with that many quarter notes.",
-        targets: [{ instrument: "kick", count: 1 }],
+        prompt: "Count by 10s: __, 20, 30. The missing number is how many tens? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 1 }],
         explanation: "10, 20, 30 — the missing number is 10, which is 1 ten.",
       },
     },
@@ -1039,13 +1039,13 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 78,
     challenges: {
       A: {
-        prompt: "9 - 4 = ? Build a snare drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "snare", count: 5 }],
+        prompt: "9 - 4 = ? Build a bass drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "kick", count: 5 }],
         explanation: "9 - 4 = 5.",
       },
       B: {
-        prompt: "8 - 6 = ? Build a bass drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "kick", count: 2 }],
+        prompt: "8 - 6 = ? Build a snare drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "snare", count: 2 }],
         explanation: "8 - 6 = 2.",
       },
       C: {
@@ -1054,8 +1054,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "10 - 3 = 7.",
       },
       D: {
-        prompt: "7 - 5 = ? Build a snare drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "snare", count: 2 }],
+        prompt: "7 - 5 = ? Build a bass drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "kick", count: 2 }],
         explanation: "7 - 5 = 2.",
       },
     },
@@ -1070,23 +1070,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 78,
     challenges: {
       A: {
-        prompt: "Count by 10s: 10, 20, 30, __, 50, 60, 70. The missing number is how many tens? Build a bass drum row with that many quarter notes.",
-        targets: [{ instrument: "kick", count: 4 }],
+        prompt: "Count by 10s: 10, 20, 30, __, 50, 60, 70. The missing number is how many tens? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 4 }],
         explanation: "10, 20, 30, 40, 50, 60, 70 — the missing number is 40, which is 4 tens.",
       },
       B: {
-        prompt: "Count by 10s: 20, 30, __, 50, 60. The missing number is how many tens? Build a snare drum row with that many quarter notes.",
-        targets: [{ instrument: "snare", count: 4 }],
+        prompt: "Count by 10s: 20, 30, __, 50, 60. The missing number is how many tens? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
         explanation: "20, 30, 40, 50, 60 — the missing number is 40, which is 4 tens.",
       },
       C: {
-        prompt: "Count by 10s: 50, 60, 70, __, 90, 100. The missing number is how many tens? Build a hi-hat row with that many quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 8 }],
+        prompt: "Count by 10s: 50, 60, 70, __, 90, 100. The missing number is how many tens? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 8 }],
         explanation: "50, 60, 70, 80, 90, 100 — the missing number is 80, which is 8 tens.",
       },
       D: {
-        prompt: "Count by 10s: __, 20, 30, 40. The missing number is how many tens? Build a bass drum row with that many quarter notes.",
-        targets: [{ instrument: "kick", count: 1 }],
+        prompt: "Count by 10s: __, 20, 30, 40. The missing number is how many tens? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 1 }],
         explanation: "10, 20, 30, 40 — the missing number is 10, which is 1 ten.",
       },
     },
@@ -1136,23 +1136,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 80,
     challenges: {
       A: {
-        prompt: "14 - 7 = ? Build a bass drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "kick", count: 7 }],
+        prompt: "14 - 7 = ? Build a hi-hat row with what's left, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 7 }],
         explanation: "14 - 7 = 7.",
       },
       B: {
-        prompt: "16 - 9 = ? Build a snare drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "snare", count: 7 }],
+        prompt: "16 - 9 = ? Build a bass drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "kick", count: 7 }],
         explanation: "16 - 9 = 7.",
       },
       C: {
-        prompt: "13 - 5 = ? Build a hi-hat row with what's left, in quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 8 }],
+        prompt: "13 - 5 = ? Build a snare drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "snare", count: 8 }],
         explanation: "13 - 5 = 8.",
       },
       D: {
-        prompt: "15 - 8 = ? Build a bass drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "kick", count: 7 }],
+        prompt: "15 - 8 = ? Build a hi-hat row with what's left, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 7 }],
         explanation: "15 - 8 = 7.",
       },
     },
@@ -1319,23 +1319,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 84,
     challenges: {
       A: {
-        prompt: "Compare 47 and 52. 52 has 5 tens, 47 has 4 tens. Build a bass drum row with MORE than 4 quarter notes, so your number's tens would beat 47's.",
-        targets: [{ instrument: "kick", count: 4, comparison: "gt" }],
+        prompt: "Compare 47 and 52. 52 has 5 tens, 47 has 4 tens. Build a snare drum row with MORE than 4 quarter notes, so your number's tens would beat 47's.",
+        targets: [{ instrument: "snare", count: 4, comparison: "gt" }],
         explanation: "52 has more tens than 47 (5 vs. 4), so 52 is greater. 5 or more quarter notes here beats 47.",
       },
       B: {
-        prompt: "Compare 63 and 58. 63 has 6 tens, 58 has 5 tens. Build a snare drum row with MORE than 5 quarter notes, so your number's tens would beat 58's.",
-        targets: [{ instrument: "snare", count: 5, comparison: "gt" }],
+        prompt: "Compare 63 and 58. 63 has 6 tens, 58 has 5 tens. Build a hi-hat row with MORE than 5 quarter notes, so your number's tens would beat 58's.",
+        targets: [{ instrument: "hihatClosed", count: 5, comparison: "gt" }],
         explanation: "63 has more tens than 58 (6 vs. 5), so 63 is greater. 6 or more quarter notes here beats 58.",
       },
       C: {
-        prompt: "Compare 24 and 31. 31 has 3 tens, 24 has 2 tens. Build a hi-hat row with FEWER than 3 quarter notes, so your number's tens would lose to 31's.",
-        targets: [{ instrument: "hihatClosed", count: 3, comparison: "lt" }],
+        prompt: "Compare 24 and 31. 31 has 3 tens, 24 has 2 tens. Build a bass drum row with FEWER than 3 quarter notes, so your number's tens would lose to 31's.",
+        targets: [{ instrument: "kick", count: 3, comparison: "lt" }],
         explanation: "24 has fewer tens than 31 (2 vs. 3), so 24 is less. 1 or 2 quarter notes here loses to 31.",
       },
       D: {
-        prompt: "Compare 89 and 76. 89 has 8 tens, 76 has 7 tens. Build a bass drum row with MORE than 7 quarter notes, so your number's tens would beat 76's.",
-        targets: [{ instrument: "kick", count: 7, comparison: "gt" }],
+        prompt: "Compare 89 and 76. 89 has 8 tens, 76 has 7 tens. Build a snare drum row with MORE than 7 quarter notes, so your number's tens would beat 76's.",
+        targets: [{ instrument: "snare", count: 7, comparison: "gt" }],
         explanation: "89 has more tens than 76 (8 vs. 7), so 89 is greater. 8 or more quarter notes here beats 76.",
       },
     },
@@ -1620,23 +1620,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 86,
     challenges: {
       A: {
-        prompt: "17 - 9 = ? (Hint: 17 - 7 gets you down to 10, then subtract what's left of the 9.) Build a bass drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "kick", count: 8 }],
+        prompt: "17 - 9 = ? (Hint: 17 - 7 gets you down to 10, then subtract what's left of the 9.) Build a hi-hat row with what's left, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 8 }],
         explanation: "17-9 = 17-7-2 = 10-2 = 8 — bridging down through 10 works for subtraction too.",
       },
       B: {
-        prompt: "15 - 7 = ? (Hint: 15 - 5 gets you down to 10, then subtract what's left of the 7.) Build a snare drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "snare", count: 8 }],
+        prompt: "15 - 7 = ? (Hint: 15 - 5 gets you down to 10, then subtract what's left of the 7.) Build a bass drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "kick", count: 8 }],
         explanation: "15-7 = 15-5-2 = 10-2 = 8.",
       },
       C: {
-        prompt: "13 - 6 = ? (Hint: 13 - 3 gets you down to 10, then subtract what's left of the 6.) Build a hi-hat row with what's left, in quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 7 }],
+        prompt: "13 - 6 = ? (Hint: 13 - 3 gets you down to 10, then subtract what's left of the 6.) Build a snare drum row with what's left, in quarter notes.",
+        targets: [{ instrument: "snare", count: 7 }],
         explanation: "13-6 = 13-3-3 = 10-3 = 7.",
       },
       D: {
-        prompt: "16 - 8 = ? (Hint: 16 - 6 gets you down to 10, then subtract what's left of the 8.) Build a bass drum row with what's left, in quarter notes.",
-        targets: [{ instrument: "kick", count: 8 }],
+        prompt: "16 - 8 = ? (Hint: 16 - 6 gets you down to 10, then subtract what's left of the 8.) Build a hi-hat row with what's left, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 8 }],
         explanation: "16-8 = 16-6-2 = 10-2 = 8.",
       },
     },
@@ -1730,8 +1730,8 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 88,
     challenges: {
       A: {
-        prompt: "If you cut a pizza into 2 equal pieces, what do we call each piece, and how many pieces are there? Build a hi-hat row with that many quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 2 }],
+        prompt: "If you cut a pizza into 2 equal pieces, what do we call each piece, and how many pieces are there? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 2 }],
         explanation: "Splitting into 2 equal shares makes halves — 2 pieces.",
       },
       B: {
@@ -1740,13 +1740,13 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Halves means 2 equal pieces.",
       },
       C: {
-        prompt: "If you cut a brownie into 2 equal pieces (halves), how many pieces are there? Build a bass drum row with that many quarter notes.",
-        targets: [{ instrument: "kick", count: 2 }],
+        prompt: "If you cut a brownie into 2 equal pieces (halves), how many pieces are there? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 2 }],
         explanation: "Halves means 2 equal pieces.",
       },
       D: {
-        prompt: "If you cut a granola bar into 2 equal pieces (halves), how many pieces are there? Build a hi-hat row with that many quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 2 }],
+        prompt: "If you cut a granola bar into 2 equal pieces (halves), how many pieces are there? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 2 }],
         explanation: "Halves means 2 equal pieces.",
       },
     },
@@ -1871,23 +1871,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 86,
     challenges: {
       A: {
-        prompt: "Count by 5s: 5, 10, 15, __, 25, 30. The missing number is how many fives? Build a bass drum row with that many quarter notes.",
-        targets: [{ instrument: "kick", count: 4 }],
+        prompt: "Count by 5s: 5, 10, 15, __, 25, 30. The missing number is how many fives? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 4 }],
         explanation: "5, 10, 15, 20, 25, 30 — the missing number is 20, which is 4 fives.",
       },
       B: {
-        prompt: "Count by 5s: 5, 10, __, 20, 25. The missing number is how many fives? Build a snare drum row with that many quarter notes.",
-        targets: [{ instrument: "snare", count: 3 }],
+        prompt: "Count by 5s: 5, 10, __, 20, 25. The missing number is how many fives? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 3 }],
         explanation: "5, 10, 15, 20, 25 — the missing number is 15, which is 3 fives.",
       },
       C: {
-        prompt: "Count by 5s: 15, 20, 25, __, 35. The missing number is how many fives? Build a hi-hat row with that many quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 6 }],
+        prompt: "Count by 5s: 15, 20, 25, __, 35. The missing number is how many fives? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
         explanation: "15, 20, 25, 30, 35 — the missing number is 30, which is 6 fives.",
       },
       D: {
-        prompt: "Count by 5s: __, 10, 15, 20. The missing number is how many fives? Build a bass drum row with that many quarter notes.",
-        targets: [{ instrument: "kick", count: 1 }],
+        prompt: "Count by 5s: __, 10, 15, 20. The missing number is how many fives? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 1 }],
         explanation: "5, 10, 15, 20 — the missing number is 5, which is 1 five.",
       },
     },
@@ -2211,23 +2211,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 88,
     challenges: {
       A: {
-        prompt: "Compare 342 and 324. Both have 3 hundreds, so the tens decide: 342 has 4 tens, 324 has 2 tens. Build a bass drum row with MORE than 2 quarter notes, so your number's tens would beat 324's.",
-        targets: [{ instrument: "kick", count: 2, comparison: "gt" }],
+        prompt: "Compare 342 and 324. Both have 3 hundreds, so the tens decide: 342 has 4 tens, 324 has 2 tens. Build a hi-hat row with MORE than 2 quarter notes, so your number's tens would beat 324's.",
+        targets: [{ instrument: "hihatClosed", count: 2, comparison: "gt" }],
         explanation: "342 has more tens than 324 (4 vs. 2), so 342 is greater.",
       },
       B: {
-        prompt: "Compare 521 and 567. Both have 5 hundreds, so the tens decide: 567 has 6 tens, 521 has 2 tens. Build a snare drum row with FEWER than 6 quarter notes, so your number's tens would lose to 567's.",
-        targets: [{ instrument: "snare", count: 6, comparison: "lt" }],
+        prompt: "Compare 521 and 567. Both have 5 hundreds, so the tens decide: 567 has 6 tens, 521 has 2 tens. Build a bass drum row with FEWER than 6 quarter notes, so your number's tens would lose to 567's.",
+        targets: [{ instrument: "kick", count: 6, comparison: "lt" }],
         explanation: "521 has fewer tens than 567 (2 vs. 6), so 521 is less.",
       },
       C: {
-        prompt: "Compare 418 and 463. Both have 4 hundreds, so the tens decide: 463 has 6 tens, 418 has 1 ten. Build a hi-hat row with MORE than 1 quarter note, so your number's tens would beat 418's.",
-        targets: [{ instrument: "hihatClosed", count: 1, comparison: "gt" }],
+        prompt: "Compare 418 and 463. Both have 4 hundreds, so the tens decide: 463 has 6 tens, 418 has 1 ten. Build a snare drum row with MORE than 1 quarter note, so your number's tens would beat 418's.",
+        targets: [{ instrument: "snare", count: 1, comparison: "gt" }],
         explanation: "463 has more tens than 418 (6 vs. 1), so 463 is greater.",
       },
       D: {
-        prompt: "Compare 732 and 719. Both have 7 hundreds, so the tens decide: 732 has 3 tens, 719 has 1 ten. Build a bass drum row with FEWER than 3 quarter notes, so your number's tens would lose to 732's.",
-        targets: [{ instrument: "kick", count: 3, comparison: "lt" }],
+        prompt: "Compare 732 and 719. Both have 7 hundreds, so the tens decide: 732 has 3 tens, 719 has 1 ten. Build a hi-hat row with FEWER than 3 quarter notes, so your number's tens would lose to 732's.",
+        targets: [{ instrument: "hihatClosed", count: 3, comparison: "lt" }],
         explanation: "719 has fewer tens than 732 (1 vs. 3), so 719 is less.",
       },
     },
@@ -2729,23 +2729,23 @@ export const MATH_LESSONS: MathLesson[] = [
     bpm: 90,
     challenges: {
       A: {
-        prompt: "If you divide a rectangle into 3 equal parts, what do we call each part, and how many parts are there? Build a hi-hat row with that many quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 3 }],
+        prompt: "If you divide a rectangle into 3 equal parts, what do we call each part, and how many parts are there? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 3 }],
         explanation: "Splitting into 3 equal shares makes thirds — 3 pieces.",
       },
       B: {
-        prompt: "If you divide a chocolate bar into 3 equal parts (thirds), how many parts are there? Build a bass drum row with that many quarter notes.",
-        targets: [{ instrument: "kick", count: 3 }],
+        prompt: "If you divide a chocolate bar into 3 equal parts (thirds), how many parts are there? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 3 }],
         explanation: "Thirds means 3 equal parts.",
       },
       C: {
-        prompt: "If you divide a garden bed into 3 equal parts (thirds), how many parts are there? Build a snare drum row with that many quarter notes.",
-        targets: [{ instrument: "snare", count: 3 }],
+        prompt: "If you divide a garden bed into 3 equal parts (thirds), how many parts are there? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 3 }],
         explanation: "Thirds means 3 equal parts.",
       },
       D: {
-        prompt: "If you divide a ribbon into 3 equal parts (thirds), how many parts are there? Build a hi-hat row with that many quarter notes.",
-        targets: [{ instrument: "hihatClosed", count: 3 }],
+        prompt: "If you divide a ribbon into 3 equal parts (thirds), how many parts are there? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 3 }],
         explanation: "Thirds means 3 equal parts.",
       },
     },

@@ -130,10 +130,13 @@ export function Editor({
   // Set when editing a private saved song — routes autosave to
   // /api/my-songs/[id] instead of /api/boards/[slug].
   savedSong?: { id: string; title: string };
-  // Drum School's prev/next lesson links, set only by /school/[slug] — null
-  // for either end means there's nothing to link to (Lesson 1's "Previous",
-  // the last lesson's "Next").
-  lessonNav?: { prevHref: string | null; nextHref: string | null };
+  // Drum School's and RockBlocks Math's prev/next lesson links — null for
+  // either end means there's nothing to link to (Lesson 1's "Previous", the
+  // last lesson's "Next"). `indexHref` is an optional third link back up to
+  // the course's own index page (e.g. /math, to see every lesson and your
+  // progress) — set by RockBlocks Math, not Drum School, which has no
+  // per-course progress page to send students back to.
+  lessonNav?: { prevHref: string | null; nextHref: string | null; indexHref?: string; indexLabel?: string };
   // Fired with the full live slot snapshot (every slot as currently on
   // screen — same shape currentSlotsSnapshot below builds for Save a Copy)
   // and which slot is currently active, whenever the pattern, active slot,
@@ -985,6 +988,14 @@ export function Editor({
           ) : null}
           {lessonNav && (
             <div className="mt-2 flex items-center gap-2 text-xs">
+              {lessonNav.indexHref && (
+                <Link
+                  href={lessonNav.indexHref}
+                  className="rounded-md border border-white/15 bg-white/5 px-2.5 py-1 text-white/70 transition hover:border-yellow-400 hover:text-yellow-400"
+                >
+                  {lessonNav.indexLabel ?? "All Lessons"}
+                </Link>
+              )}
               {lessonNav.prevHref ? (
                 <Link
                   href={lessonNav.prevHref}

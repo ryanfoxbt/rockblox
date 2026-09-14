@@ -154,7 +154,6 @@ export function MathLessonWorkspace({
     setStatus(allMet ? "correct" : "incorrect");
     if (allMet) {
       progress.markSolved(lesson.slug, activeSlot);
-      setConfettiBurst((n) => n + 1);
       setNextLessonReady(false);
       setPlayOnceSignal((n) => n + 1);
       // The question modal stays closed for now — Editor's sheet music view
@@ -186,12 +185,15 @@ export function MathLessonWorkspace({
         lessonNav={{
           prevHref: prev ? `/math/${prev.slug}` : null,
           nextHref: next ? `/math/${next.slug}` : null,
+          indexHref: "/math",
+          indexLabel: "↑ All Lessons",
         }}
         onSnapshotChange={handleSnapshotChange}
         playOnceSignal={playOnceSignal}
         onPlayOnceEnd={() => {
           setNextLessonReady(true);
           setModalOpen(true);
+          setConfettiBurst((n) => n + 1);
         }}
       />
 
