@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getDb } from "@/db";
 import { mathLessons } from "@/db/schema";
 import { SLOT_LETTERS } from "@/lib/board";
+import { gradeLabel } from "@/lib/mathSchool";
 import { buildShareMetadata } from "@/lib/shareMetadata";
 import { breadcrumbJsonLd, mathLessonJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
@@ -32,7 +33,7 @@ export async function generateMetadata({
   if (!lesson) return {};
 
   return buildShareMetadata({
-    title: `Grade ${lesson.grade} Lesson ${lesson.lessonNumber}: ${lesson.title} — RockBlocks Math`,
+    title: `${gradeLabel(lesson.grade)} Lesson ${lesson.lessonNumber}: ${lesson.title} — RockBlocks Math`,
     description: `${lesson.mathSkill}. ${lesson.teaches} Part of RockBlocks Math, a free grade-aligned math curriculum taught through drumming — free at rockblocks.app.`,
     path: `/math/${slug}`,
   });
@@ -99,7 +100,7 @@ export default async function MathLessonPage({
         data={breadcrumbJsonLd([
           { name: "Home", url: "/" },
           { name: "RockBlocks Math", url: "/math" },
-          { name: `Grade ${lesson.grade} Lesson ${lesson.lessonNumber}: ${lesson.title}`, url: `/math/${lesson.slug}` },
+          { name: `${gradeLabel(lesson.grade)} Lesson ${lesson.lessonNumber}: ${lesson.title}`, url: `/math/${lesson.slug}` },
         ])}
       />
       <MathLessonWorkspace

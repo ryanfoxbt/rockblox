@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getDb } from "@/db";
 import { mathLessons } from "@/db/schema";
 import { SLOT_LETTERS } from "@/lib/board";
+import { gradeLabel } from "@/lib/mathSchool";
 import { buildShareMetadata } from "@/lib/shareMetadata";
 import { StackBuilder } from "@/components/StackBuilder";
 
@@ -27,7 +28,7 @@ export async function generateMetadata({
   if (!lesson) return {};
 
   return buildShareMetadata({
-    title: `Grade ${lesson.grade} Lesson ${lesson.lessonNumber}: ${lesson.title} — RockBlocks Math`,
+    title: `${gradeLabel(lesson.grade)} Lesson ${lesson.lessonNumber}: ${lesson.title} — RockBlocks Math`,
     description: `${lesson.teaches} Arranged into a full song on RockBlocks Math — free at rockblocks.app.`,
     path: `/math/${slug}/stack`,
   });
@@ -58,7 +59,7 @@ export default async function MathLessonStackPage({
         stack: lesson.stack ?? null,
         readOnly: true,
         basePath: `/math/${lesson.slug}`,
-        subtitle: `Grade ${lesson.grade} Lesson ${lesson.lessonNumber}: ${lesson.title} — ${lesson.teaches}`,
+        subtitle: `${gradeLabel(lesson.grade)} Lesson ${lesson.lessonNumber}: ${lesson.title} — ${lesson.teaches}`,
       }}
       returnSlot={returnSlot}
     />

@@ -98,9 +98,9 @@ export function MathLessonCreator({ existing }: { existing: { grade: number; les
             <span className="text-white/50">Grade</span>
             <input
               type="number"
-              min={1}
+              min={0}
               value={grade}
-              onChange={(e) => changeGrade(Math.max(1, Number(e.target.value) || 1))}
+              onChange={(e) => changeGrade(Math.max(0, Number(e.target.value) || 0))}
               className={numberFieldClass}
             />
           </label>
@@ -127,7 +127,8 @@ export function MathLessonCreator({ existing }: { existing: { grade: number; les
           </label>
         </div>
         <p className="text-xs text-white/40">
-          Grade, lesson number, and tempo can&rsquo;t be changed once created — everything else can.
+          Grade, lesson number, and tempo can&rsquo;t be changed once created — everything else can. Use grade 0 for
+          Kindergarten.
         </p>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-white/50">Title</span>

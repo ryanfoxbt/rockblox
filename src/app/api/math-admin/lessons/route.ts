@@ -5,7 +5,7 @@ import { mathLessons } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isMathAdmin } from "@/lib/auth/mathAdmin";
 import { isValidChallenges, mathLessonSlug } from "@/lib/mathLessonValidation";
-import { standardMathStack, starterSlotForChallenge } from "@/lib/mathSchool";
+import { gradeLabel, standardMathStack, starterSlotForChallenge } from "@/lib/mathSchool";
 
 // GET /api/math-admin/lessons — every lesson (published or not), trimmed to
 // what the admin list view needs. See [slug]/route.ts for the full editable
@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
 
   const { grade, lessonNumber, title, mathSkill, teaches, bpm, challenges } = body;
 
-  if (typeof grade !== "number" || !Number.isInteger(grade) || grade < 1) {
-    return NextResponse.json({ error: "grade must be a positive whole number" }, { status: 400 });
+  if (typeof grade !== "number" || !Number.isInteger(grade) || grade < 0) {
+    return NextResponse.json({ error: "grade must be zero (Kindergarten) or a positive whole number" }, { status: 400 });
   }
   if (typeof lessonNumber !== "number" || !Number.isInteger(lessonNumber) || lessonNumber < 1) {
     return NextResponse.json({ error: "lessonNumber must be a positive whole number" }, { status: 400 });
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     .limit(1);
   if (numberTaken) {
     return NextResponse.json(
-      { error: `Grade ${grade} already has a Lesson ${lessonNumber} ("${numberTaken.slug}") — pick a different lesson number.` },
+      { error: `${gradeLabel(grade)} already has a Lesson ${lessonNumber} ("${numberTaken.slug}") — pick a different lesson number.` },
       { status: 409 }
     );
   }

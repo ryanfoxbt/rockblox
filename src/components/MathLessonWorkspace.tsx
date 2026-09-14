@@ -5,7 +5,7 @@ import { Editor } from "./Editor";
 import { Confetti } from "./Confetti";
 import { MathLessonAbout } from "./MathLessonAbout";
 import type { BoardSlotData, ExtendedSlotLetter, SlotLetter, SlotMap } from "@/lib/board";
-import type { MathChallenge } from "@/lib/mathSchool";
+import { gradeLabel, type MathChallenge } from "@/lib/mathSchool";
 import { getTileById } from "@/lib/rhythm";
 import type { StoredLine } from "@/lib/song";
 import type { StackArrangement } from "@/lib/stack";
@@ -155,7 +155,7 @@ export function MathLessonWorkspace({
           stack: lesson.stack,
           readOnly: true,
           basePath: `/math/${lesson.slug}`,
-          subtitle: `Grade ${lesson.grade} Lesson ${lesson.lessonNumber}: ${lesson.title} — ${lesson.mathSkill}`,
+          subtitle: `${gradeLabel(lesson.grade)} Lesson ${lesson.lessonNumber}: ${lesson.title} — ${lesson.mathSkill}`,
         }}
         initialSlot={initialSlot}
         initialGridBeats={8}

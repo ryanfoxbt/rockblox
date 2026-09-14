@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { AdminAnalytics, DailyPoint, LessonCompletionRow } from "@/lib/analytics";
+import { gradeLabel } from "@/lib/mathSchool";
 
 // Dark-surface-validated categorical hues (see the dataviz palette) — kept
 // off yellow since that's this site's own accent color everywhere else, and
@@ -213,13 +214,13 @@ function LessonFunnel({ grade, lessons }: { grade: number; lessons: LessonComple
 
   return (
     <div className="rounded-md border border-white/10 bg-white/5 p-4">
-      <h2 className="text-sm font-semibold text-white/80">Grade {grade}: question completions by lesson</h2>
+      <h2 className="text-sm font-semibold text-white/80">{gradeLabel(grade)}: question completions by lesson</h2>
       <p className="mt-1 text-xs text-white/40">
         Each lesson has 4 questions (slots A–D). A steep drop partway through the sequence usually marks where kids
         give up.
       </p>
       <div className="mt-3 overflow-x-auto">
-        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="max-w-full" role="img" aria-label={`Question completions per Grade ${grade} lesson`}>
+        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="max-w-full" role="img" aria-label={`Question completions per ${gradeLabel(grade)} lesson`}>
           {lessons.map((l, i) => {
             const barH = l.completions === 0 ? 0 : Math.max(2, (l.completions / max) * plotH);
             const x = gap + i * (barW + gap);

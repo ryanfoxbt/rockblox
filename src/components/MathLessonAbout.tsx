@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { gradeLabel } from "@/lib/mathSchool";
 
 interface NeighborLesson {
   slug: string;
@@ -43,11 +44,11 @@ export function MathLessonAbout({
           <Link href="/math" className="transition hover:text-yellow-400">
             RockBlocks Math
           </Link>{" "}
-          / <span className="text-white/60">Grade {lesson.grade} Lesson {lesson.lessonNumber}</span>
+          / <span className="text-white/60">{gradeLabel(lesson.grade)} Lesson {lesson.lessonNumber}</span>
         </nav>
 
         <h1 id="math-lesson-about" className="text-2xl font-black tracking-tight sm:text-3xl">
-          Grade {lesson.grade}, Lesson {lesson.lessonNumber}: {lesson.title}
+          {gradeLabel(lesson.grade)}, Lesson {lesson.lessonNumber}: {lesson.title}
         </h1>
 
         <p className="text-sm leading-relaxed text-white/70 sm:text-base">
@@ -61,7 +62,7 @@ export function MathLessonAbout({
         <p className="text-sm leading-relaxed text-white/70 sm:text-base">
           This is lesson {lesson.lessonNumber} of {total} in{" "}
           <Link href="/math" className="text-yellow-400 transition hover:text-yellow-300">
-            RockBlocks Math, Grade {lesson.grade}
+            RockBlocks Math, {gradeLabel(lesson.grade)}
           </Link>
           , a free course where every lesson turns a math idea into something you can count, hear, and play.{" "}
           {prev ? (
@@ -73,7 +74,7 @@ export function MathLessonAbout({
               covered {inline(prev.mathSkill)}.
             </>
           ) : (
-            <>It is the first lesson in Grade {lesson.grade}, so it assumes no prior math or drumming.</>
+            <>It is the first lesson in {gradeLabel(lesson.grade)}, so it assumes no prior math or drumming.</>
           )}{" "}
           {next ? (
             <>
@@ -104,7 +105,7 @@ export function MathLessonAbout({
             </Link>
           )}
           <Link href="/math" className="transition hover:text-yellow-400">
-            All Grade {lesson.grade} lessons
+            All {gradeLabel(lesson.grade)} lessons
           </Link>
           {next && (
             <Link href={`/math/${next.slug}`} className="transition hover:text-yellow-400">

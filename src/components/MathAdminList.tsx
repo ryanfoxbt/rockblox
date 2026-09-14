@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { gradeLabel } from "@/lib/mathSchool";
 
 interface AdminLessonRow {
   slug: string;
@@ -38,36 +39,51 @@ export function MathAdminList({ initialLessons }: { initialLessons: AdminLessonR
     }
   }
 
+  const gradeGroups = new Map<number, AdminLessonRow[]>();
+  for (const lesson of lessons) {
+    const group = gradeGroups.get(lesson.grade) ?? [];
+    group.push(lesson);
+    gradeGroups.set(lesson.grade, group);
+  }
+
   return (
-    <ul className="mt-6 flex flex-col gap-2">
-      {lessons.map((lesson) => (
-        <li key={lesson.slug} className="group flex items-center gap-2 rounded-md border border-white/10 bg-white/5">
-          <Link
-            href={`/math/admin/${lesson.slug}`}
-            className="min-w-0 flex-1 px-4 py-3 transition group-hover:text-yellow-400"
-          >
-            <span className="text-white/30">{lesson.lessonNumber}.</span> <span className="font-semibold">{lesson.title}</span>
-            <span className="block text-xs font-normal text-white/40">{lesson.mathSkill}</span>
-          </Link>
-          <div className="flex shrink-0 items-center gap-3 pr-4">
-            <button
-              type="button"
-              disabled={pending === lesson.slug}
-              onClick={() => togglePublished(lesson.slug, !lesson.isPublished)}
-              className={`rounded-full border px-2 py-0.5 text-xs font-semibold transition disabled:opacity-50 ${
-                lesson.isPublished
-                  ? "border-green-500/40 bg-green-500/10 text-green-300 hover:border-red-400 hover:text-red-300"
-                  : "border-white/10 bg-white/5 text-white/40 hover:border-yellow-400 hover:text-yellow-400"
-              }`}
-            >
-              {lesson.isPublished ? "Published" : "Unpublished"}
-            </button>
-            <Link href={`/math/admin/${lesson.slug}`} className="text-white/30 transition group-hover:text-yellow-400">
-              →
-            </Link>
-          </div>
-        </li>
+    <div className="mt-6 flex flex-col gap-6">
+      {[...gradeGroups.entries()].map(([grade, gradeLessons]) => (
+        <section key={grade}>
+          <h2 className="text-xs font-bold uppercase tracking-wide text-white/40">{gradeLabel(grade)}</h2>
+          <ul className="mt-2 flex flex-col gap-2">
+            {gradeLessons.map((lesson) => (
+              <li key={lesson.slug} className="group flex items-center gap-2 rounded-md border border-white/10 bg-white/5">
+                <Link
+                  href={`/math/admin/${lesson.slug}`}
+                  className="min-w-0 flex-1 px-4 py-3 transition group-hover:text-yellow-400"
+                >
+                  <span className="text-white/30">{lesson.lessonNumber}.</span>{" "}
+                  <span className="font-semibold">{lesson.title}</span>
+                  <span className="block text-xs font-normal text-white/40">{lesson.mathSkill}</span>
+                </Link>
+                <div className="flex shrink-0 items-center gap-3 pr-4">
+                  <button
+                    type="button"
+                    disabled={pending === lesson.slug}
+                    onClick={() => togglePublished(lesson.slug, !lesson.isPublished)}
+                    className={`rounded-full border px-2 py-0.5 text-xs font-semibold transition disabled:opacity-50 ${
+                      lesson.isPublished
+                        ? "border-green-500/40 bg-green-500/10 text-green-300 hover:border-red-400 hover:text-red-300"
+                        : "border-white/10 bg-white/5 text-white/40 hover:border-yellow-400 hover:text-yellow-400"
+                    }`}
+                  >
+                    {lesson.isPublished ? "Published" : "Unpublished"}
+                  </button>
+                  <Link href={`/math/admin/${lesson.slug}`} className="text-white/30 transition group-hover:text-yellow-400">
+                    →
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       ))}
-    </ul>
+    </div>
   );
 }

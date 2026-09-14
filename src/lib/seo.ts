@@ -4,6 +4,8 @@
 // the JSON-LD graphs below, and public/llms.txt — keeping one consistent
 // story everywhere is most of what "GEO" actually asks for.
 
+import { gradeLabel } from "@/lib/mathSchool";
+
 export const SITE_URL = "https://rockblocks.app";
 export const SITE_NAME = "RockBlocks";
 
@@ -534,16 +536,17 @@ export function lessonJsonLd(lesson: {
 
 // /math grade index — a free course, one per grade level.
 export function mathCourseJsonLd(grade: number, lessonCount: number): Json {
+  const label = gradeLabel(grade);
   return {
     "@context": "https://schema.org",
     "@type": "Course",
-    name: `RockBlocks Math — Grade ${grade}`,
+    name: `RockBlocks Math — ${label}`,
     url: `${SITE_URL}/math`,
-    description: `A free Grade ${grade} math curriculum taught through drumming — ${lessonCount} lessons that each pair a math concept with a drum pattern built to correlate with it.`,
+    description: `A free ${label} math curriculum taught through drumming — ${lessonCount} lessons that each pair a math concept with a drum pattern built to correlate with it.`,
     provider: { "@id": `${SITE_URL}/#organization` },
     isAccessibleForFree: true,
     inLanguage: "en",
-    educationalLevel: `Grade ${grade}`,
+    educationalLevel: label,
     hasCourseInstance: {
       "@type": "CourseInstance",
       courseMode: "online",
@@ -567,7 +570,7 @@ export function mathLessonListJsonLd(
       "@type": "ListItem",
       position: i + 1,
       url: `${SITE_URL}/math/${l.slug}`,
-      name: `Grade ${l.grade} Lesson ${l.lessonNumber}: ${l.title}`,
+      name: `${gradeLabel(l.grade)} Lesson ${l.lessonNumber}: ${l.title}`,
     })),
   };
 }
@@ -584,17 +587,17 @@ export function mathLessonJsonLd(lesson: {
   return {
     "@context": "https://schema.org",
     "@type": "LearningResource",
-    name: `Grade ${lesson.grade} Lesson ${lesson.lessonNumber}: ${lesson.title}`,
+    name: `${gradeLabel(lesson.grade)} Lesson ${lesson.lessonNumber}: ${lesson.title}`,
     url: `${SITE_URL}/math/${lesson.slug}`,
     description: lesson.teaches,
     learningResourceType: "Interactive math-and-drumming lesson",
-    educationalLevel: `Grade ${lesson.grade}`,
+    educationalLevel: gradeLabel(lesson.grade),
     teaches: lesson.mathSkill,
     isAccessibleForFree: true,
     inLanguage: "en",
     isPartOf: {
       "@type": "Course",
-      name: `RockBlocks Math — Grade ${lesson.grade}`,
+      name: `RockBlocks Math — ${gradeLabel(lesson.grade)}`,
       url: `${SITE_URL}/math`,
     },
     provider: { "@id": `${SITE_URL}/#organization` },

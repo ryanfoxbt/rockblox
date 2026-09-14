@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMathProgress } from "@/lib/useMathProgress";
 import { MATH_BADGES } from "@/lib/mathBadges";
+import { gradeLabel } from "@/lib/mathSchool";
 
 interface ProgressLesson {
   slug: string;
@@ -38,7 +39,7 @@ export function MathProgressOverview({
 
   return (
     <section className="mt-6">
-      <h2 className="text-lg font-bold tracking-tight text-white/90">{`Grade ${grade}`}</h2>
+      <h2 className="text-lg font-bold tracking-tight text-white/90">{gradeLabel(grade)}</h2>
 
       <div className="mt-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
