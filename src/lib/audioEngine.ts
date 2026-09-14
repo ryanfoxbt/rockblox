@@ -513,6 +513,42 @@ export class RockBloxPlayer {
     }
   }
 
+  // Schedules exactly one pass through the pattern and calls `onEnd` when it
+  // finishes — never a second loop. Unlike stop()-ing a normal play() partway
+  // through the next loop, this can't overshoot: scheduleLoopAndNext's own
+  // lookahead (see LOOKAHEAD_SECONDS) schedules a *second* loop's notes into
+  // the audio graph shortly before the first one ends, and stop() only
+  // cancels the JS scheduling timer, not those already-scheduled sources —
+  // so a stop()-based "play one loop" reliably plays most of a second loop
+  // too. Built for RockBlocks Math's reward playback on a correct answer.
+  async playOnce(onEnd: () => void) {
+    if (this.playing || this.measureBeats < 1) {
+      onEnd();
+      return;
+    }
+    await this.readyPromise;
+    if (this.needsResume()) await this.ctx.resume();
+    this.playing = true;
+    const beatSeconds = 60 / this.bpm;
+    const loopDuration = beatSeconds * this.measureBeats;
+    const loopStart = this.ctx.currentTime + 0.1;
+    this.currentLoopStart = loopStart;
+    this.currentLoopDuration = loopDuration;
+    this.scheduleEvents(loopStart, beatSeconds);
+    if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = "playing";
+    }
+    const waitMs = Math.max(0, (loopStart + loopDuration - this.ctx.currentTime) * 1000);
+    this.timerId = window.setTimeout(() => {
+      this.timerId = null;
+      this.playing = false;
+      if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+        navigator.mediaSession.playbackState = "paused";
+      }
+      onEnd();
+    }, waitMs);
+  }
+
   stop() {
     this.playing = false;
     if (this.timerId !== null) {

@@ -157,10 +157,16 @@ export function MathLessonWorkspace({
       setConfettiBurst((n) => n + 1);
       setNextLessonReady(false);
       setPlayOnceSignal((n) => n + 1);
+      // The question modal stays closed for now — Editor's sheet music view
+      // is about to take over the whole screen for the reward playback, and
+      // the two are both full-width overlays with nothing useful to show
+      // side by side. It reopens (see onPlayOnceEnd below) once that's done,
+      // together with the explanation and the Next Lesson option.
+      setModalOpen(false);
     } else {
       setAttempts((n) => n + 1);
+      setModalOpen(true);
     }
-    setModalOpen(true);
   }
 
   return (
@@ -183,7 +189,10 @@ export function MathLessonWorkspace({
         }}
         onSnapshotChange={handleSnapshotChange}
         playOnceSignal={playOnceSignal}
-        onPlayOnceEnd={() => setNextLessonReady(true)}
+        onPlayOnceEnd={() => {
+          setNextLessonReady(true);
+          setModalOpen(true);
+        }}
       />
 
       {/* Reserves room below the last instrument row so the fixed
@@ -264,15 +273,10 @@ export function MathLessonWorkspace({
             <p className="mt-3 text-sm leading-relaxed text-white/90">{challenge.prompt}</p>
 
             {status === "correct" && (
-              <>
-                <p className="mt-4 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-300">
-                  <span className="font-bold">Yes! </span>
-                  {challenge.explanation}
-                </p>
-                {!nextLessonReady && (
-                  <p className="mt-2 text-xs text-white/40">🎵 Playing your beat back…</p>
-                )}
-              </>
+              <p className="mt-4 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-300">
+                <span className="font-bold">Yes! </span>
+                {challenge.explanation}
+              </p>
             )}
             {status === "incorrect" && !revealExplanation && (
               <p className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">

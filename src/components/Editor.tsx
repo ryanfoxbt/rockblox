@@ -572,8 +572,10 @@ export function Editor({
 
   // See playOnceSignal above — a reward playback triggered by a parent
   // (RockBlocks Math on a correct answer), not by the user pressing Play.
-  // Reuses the same transport as togglePlay, just stopped automatically
-  // after one measure instead of looping until the user stops it.
+  // Opens the sheet music view for the duration so the notation actually
+  // advances with the beat (the whole point of the reward), and uses
+  // playOnce — a real single-pass schedule, not play()-then-stop() — so it
+  // can't overshoot into a second loop (see playOnce's own comment).
   const playOnceBaselineRef = useRef(playOnceSignal);
   useEffect(() => {
     if (playOnceSignal === undefined || playOnceSignal === playOnceBaselineRef.current) return;
@@ -585,20 +587,15 @@ export function Editor({
       const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks, volume: l.volume }));
       playerRef.current.updateSong(lineStates, bpm, measureLength, bassline);
       if (playerRef.current.isPlaying()) playerRef.current.stop();
-      await playerRef.current.play();
+      setShowSheet(true);
+      await playerRef.current.playOnce(() => {
+        if (cancelled) return;
+        setIsPlaying(false);
+        setShowSheet(false);
+        onPlayOnceEnd?.();
+      });
       if (cancelled) return;
       setIsPlaying(true);
-
-      const measureSeconds = measureLength > 0 ? (60 / bpm) * measureLength : 0;
-      window.setTimeout(
-        () => {
-          if (cancelled) return;
-          playerRef.current?.stop();
-          setIsPlaying(false);
-          onPlayOnceEnd?.();
-        },
-        Math.max(200, measureSeconds * 1000)
-      );
     })();
 
     return () => {
