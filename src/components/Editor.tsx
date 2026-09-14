@@ -108,6 +108,8 @@ export function Editor({
   lessonNav,
   onSnapshotChange,
   initialGridBeats,
+  playOnceSignal,
+  onPlayOnceEnd,
 }: {
   initialBpm?: number;
   initialLines?: StoredLine[];
@@ -145,6 +147,15 @@ export function Editor({
   // 4-beat home layout so a bigger answer fits without an extra nudge.
   // Optional; every other caller keeps the normal default.
   initialGridBeats?: number;
+  // Bump this (e.g. a counter incremented on each new value) to play the
+  // active slot's current pattern through once — one measure, no loop —
+  // then stop on its own. Built for RockBlocks Math: a reward playback the
+  // instant a student's answer checks out, distinct from the normal
+  // press-and-hold Play transport. Ignored while undefined.
+  playOnceSignal?: number;
+  // Fired once that one-shot playback finishes on its own (never on a
+  // manual stop) — e.g. to reveal a "Next Lesson" prompt right after.
+  onPlayOnceEnd?: () => void;
 }) {
   // The homepage with nothing claimed yet: the only editor mode with no
   // board and no server-persisted pattern behind it, so it's the one case
@@ -558,6 +569,43 @@ export function Editor({
       setIsPlaying(true);
     }
   }
+
+  // See playOnceSignal above — a reward playback triggered by a parent
+  // (RockBlocks Math on a correct answer), not by the user pressing Play.
+  // Reuses the same transport as togglePlay, just stopped automatically
+  // after one measure instead of looping until the user stops it.
+  const playOnceBaselineRef = useRef(playOnceSignal);
+  useEffect(() => {
+    if (playOnceSignal === undefined || playOnceSignal === playOnceBaselineRef.current) return;
+    playOnceBaselineRef.current = playOnceSignal;
+    let cancelled = false;
+
+    (async () => {
+      if (!playerRef.current) playerRef.current = new RockBloxPlayer(kit);
+      const lineStates: LineState[] = lines.map((l) => ({ instrument: l.instrument, blocks: l.blocks, volume: l.volume }));
+      playerRef.current.updateSong(lineStates, bpm, measureLength, bassline);
+      if (playerRef.current.isPlaying()) playerRef.current.stop();
+      await playerRef.current.play();
+      if (cancelled) return;
+      setIsPlaying(true);
+
+      const measureSeconds = measureLength > 0 ? (60 / bpm) * measureLength : 0;
+      window.setTimeout(
+        () => {
+          if (cancelled) return;
+          playerRef.current?.stop();
+          setIsPlaying(false);
+          onPlayOnceEnd?.();
+        },
+        Math.max(200, measureSeconds * 1000)
+      );
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playOnceSignal]);
 
   // Fractal Art has no idea the main transport is playing — it's a pure
   // visualization computed from `lines`/`bpm`, not wired to playerRef the

@@ -7,10 +7,17 @@ import { SLOT_LETTERS, type SlotLetter } from "@/lib/board";
 import type { BeatChallengeTarget, MathChallenge } from "@/lib/mathSchool";
 import { INSTRUMENTS } from "@/lib/instruments";
 
+function isValidInstrumentId(value: unknown): boolean {
+  return typeof value === "string" && INSTRUMENTS.some((i) => i.id === value);
+}
+
 export function isValidTarget(t: unknown): t is BeatChallengeTarget {
   if (!t || typeof t !== "object") return false;
   const o = t as Record<string, unknown>;
-  if (typeof o.instrument !== "string" || !INSTRUMENTS.some((i) => i.id === o.instrument)) return false;
+  const instrumentOk = Array.isArray(o.instrument)
+    ? o.instrument.length > 0 && o.instrument.every(isValidInstrumentId)
+    : isValidInstrumentId(o.instrument);
+  if (!instrumentOk) return false;
   if (typeof o.count !== "number" || !Number.isInteger(o.count) || o.count < 1) return false;
   if (o.comparison !== undefined && o.comparison !== "eq" && o.comparison !== "gt" && o.comparison !== "lt") return false;
   return true;

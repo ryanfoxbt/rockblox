@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Editor } from "./Editor";
 import { Confetti } from "./Confetti";
 import { MathLessonAbout } from "./MathLessonAbout";
@@ -10,14 +11,12 @@ import { getTileById } from "@/lib/rhythm";
 import type { StoredLine } from "@/lib/song";
 import type { StackArrangement } from "@/lib/stack";
 import { useMathProgress } from "@/lib/useMathProgress";
-import { playSuccessSound } from "@/lib/successSound";
-import { DEFAULT_KIT } from "@/lib/drumKits";
 
 // Counts real hits (not rests) a target instrument has in a slot's lines —
 // a tile can itself hold more than one hit (an eighth pair, a triplet run),
 // so this is the total sound count, not the block count, matching how every
-// challenge prompt talks about "hits." Sums across every line using that
-// instrument in case the student added more than one.
+// challenge prompt talks about "quarter notes." Sums across every line
+// using that instrument in case the student added more than one.
 function countHitsForInstrument(lines: StoredLine[], instrument: string): number {
   let total = 0;
   for (const line of lines) {
@@ -32,6 +31,15 @@ function countHitsForInstrument(lines: StoredLine[], instrument: string): number
     }
   }
   return total;
+}
+
+// A target's instrument is either one row, or — when a total is too big for
+// one 8-block row of quarter notes — a small set of rows the student can
+// split it across however they like. Either way, this is the one number
+// that gets compared against the target's count.
+function countTargetHits(lines: StoredLine[], target: MathChallenge["targets"][number]): number {
+  const instruments = Array.isArray(target.instrument) ? target.instrument : [target.instrument];
+  return instruments.reduce((sum, instrument) => sum + countHitsForInstrument(lines, instrument), 0);
 }
 
 function targetMet(count: number, target: MathChallenge["targets"][number]): boolean {
@@ -106,6 +114,14 @@ export function MathLessonWorkspace({
   const [status, setStatus] = useState<Status>("unanswered");
   const [attempts, setAttempts] = useState(0);
   const [confettiBurst, setConfettiBurst] = useState(0);
+  // Bumped on every correct answer to trigger Editor's one-shot playback of
+  // the beat the student just built (see playOnceSignal there) — the actual
+  // reward, replacing a generic success chime with hearing their own
+  // answer. nextLessonReady flips on once that playback finishes, which is
+  // when the "Next Lesson" option appears — never before, so it's not
+  // competing with the beat for the student's attention.
+  const [playOnceSignal, setPlayOnceSignal] = useState(0);
+  const [nextLessonReady, setNextLessonReady] = useState(false);
 
   const progress = useMathProgress(allLessonSlugs);
 
@@ -115,6 +131,7 @@ export function MathLessonWorkspace({
       if (slot === prevSlot) return prevSlot;
       setStatus("unanswered");
       setAttempts(0);
+      setNextLessonReady(false);
       return slot;
     });
   }
@@ -133,12 +150,13 @@ export function MathLessonWorkspace({
 
   function check() {
     const answerLines = snapshot?.[activeSlot]?.lines ?? [];
-    const allMet = challenge.targets.every((t) => targetMet(countHitsForInstrument(answerLines, t.instrument), t));
+    const allMet = challenge.targets.every((t) => targetMet(countTargetHits(answerLines, t), t));
     setStatus(allMet ? "correct" : "incorrect");
     if (allMet) {
       progress.markSolved(lesson.slug, activeSlot);
       setConfettiBurst((n) => n + 1);
-      playSuccessSound(snapshot?.[activeSlot]?.kit ?? DEFAULT_KIT);
+      setNextLessonReady(false);
+      setPlayOnceSignal((n) => n + 1);
     } else {
       setAttempts((n) => n + 1);
     }
@@ -164,6 +182,8 @@ export function MathLessonWorkspace({
           nextHref: next ? `/math/${next.slug}` : null,
         }}
         onSnapshotChange={handleSnapshotChange}
+        playOnceSignal={playOnceSignal}
+        onPlayOnceEnd={() => setNextLessonReady(true)}
       />
 
       {/* Reserves room below the last instrument row so the fixed
@@ -244,14 +264,20 @@ export function MathLessonWorkspace({
             <p className="mt-3 text-sm leading-relaxed text-white/90">{challenge.prompt}</p>
 
             {status === "correct" && (
-              <p className="mt-4 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-300">
-                <span className="font-bold">Yes! </span>
-                {challenge.explanation}
-              </p>
+              <>
+                <p className="mt-4 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-300">
+                  <span className="font-bold">Yes! </span>
+                  {challenge.explanation}
+                </p>
+                {!nextLessonReady && (
+                  <p className="mt-2 text-xs text-white/40">🎵 Playing your beat back…</p>
+                )}
+              </>
             )}
             {status === "incorrect" && !revealExplanation && (
               <p className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-                Not quite — close this, count the hits you&rsquo;ve placed in Slot {activeSlot}, and try again.
+                Not quite — close this, count the quarter notes you&rsquo;ve placed in Slot {activeSlot}, and try
+                again.
               </p>
             )}
             {status === "incorrect" && revealExplanation && (
@@ -261,7 +287,7 @@ export function MathLessonWorkspace({
               </p>
             )}
 
-            <div className="mt-5 flex items-center gap-3">
+            <div className="mt-5 flex flex-wrap items-center gap-3">
               {status !== "correct" && (
                 <button
                   type="button"
@@ -270,6 +296,14 @@ export function MathLessonWorkspace({
                 >
                   Check Answer
                 </button>
+              )}
+              {status === "correct" && nextLessonReady && next && (
+                <Link
+                  href={`/math/${next.slug}`}
+                  className="rounded-md bg-yellow-400 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-yellow-300"
+                >
+                  Next Lesson →
+                </Link>
               )}
               <button
                 type="button"

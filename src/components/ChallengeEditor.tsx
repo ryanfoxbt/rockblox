@@ -5,12 +5,19 @@ import type { BeatChallengeTarget, MathChallenge } from "@/lib/mathSchool";
 import { getInstrument, INSTRUMENTS, type InstrumentId } from "@/lib/instruments";
 
 // The grid a lesson opens on (MathLessonWorkspace passes initialGridBeats=8,
-// and MAX_BEATS itself is 8 — see src/lib/song.ts) — a target above this
-// can still technically be built, but only by packing more than one hit
-// into a block (eighth-note pairs, etc.), which isn't obvious at this grade.
-// Surfaced here so whoever's editing catches it before publishing, rather
+// and MAX_BEATS itself is 8 — see src/lib/song.ts). Every prompt tells
+// students to answer in quarter notes (one per block) so counting stays
+// unambiguous, which caps a single-instrument target at 8 — above that, the
+// only way to satisfy the target is to spread it across more than one
+// instrument (an array in `instrument`, see BeatChallengeTarget), which
+// raises the real cap to 8 per instrument in the target. Surfaced here so
+// whoever's editing catches an impossible target before publishing, rather
 // than a student hitting a wall mid-lesson.
 export const MAX_GRID_BEATS = 8;
+
+function instrumentsFor(target: BeatChallengeTarget): InstrumentId[] {
+  return Array.isArray(target.instrument) ? target.instrument : [target.instrument];
+}
 
 export const COMPARISON_OPTIONS: { value: "eq" | "gt" | "lt"; label: string }[] = [
   { value: "eq", label: "exactly" },
@@ -66,63 +73,79 @@ export function ChallengeEditor({
       </label>
 
       <div className="mt-3 flex flex-col gap-2">
-        <span className="text-sm text-white/50">Answer — build this many hits to pass</span>
-        {challenge.targets.map((target, index) => (
-          <div key={index} className="flex flex-col gap-2 rounded-xl bg-white/5 p-3 md:flex-row md:flex-wrap md:items-center">
-            <div className="flex flex-1 flex-wrap items-center gap-2">
-              <span className={`h-3 w-3 shrink-0 rounded-full ${getInstrument(target.instrument).color}`} aria-hidden />
-              <select
-                value={target.instrument}
-                onChange={(e) => onUpdateTarget(index, { instrument: e.target.value as InstrumentId })}
-                className={selectClass}
-              >
-                {INSTRUMENTS.map((inst) => (
-                  <option key={inst.id} value={inst.id}>
-                    {inst.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={target.comparison ?? "eq"}
-                onChange={(e) =>
-                  onUpdateTarget(index, {
-                    comparison: e.target.value === "eq" ? undefined : (e.target.value as "gt" | "lt"),
-                  })
-                }
-                className={selectClass}
-              >
-                {COMPARISON_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                min={1}
-                value={target.count}
-                onChange={(e) => onUpdateTarget(index, { count: Math.max(1, Number(e.target.value) || 1) })}
-                className={numberFieldClass}
-              />
-              <span className="text-xs text-white/40">hits</span>
-              {challenge.targets.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => onRemoveTarget(index)}
-                  className="ml-auto shrink-0 text-xs text-red-400 transition hover:text-red-300"
+        <span className="text-sm text-white/50">Answer — build this many quarter notes to pass</span>
+        {challenge.targets.map((target, index) => {
+          const instruments = instrumentsFor(target);
+          const isSpread = instruments.length > 1;
+          const cap = MAX_GRID_BEATS * instruments.length;
+          return (
+            <div key={index} className="flex flex-col gap-2 rounded-xl bg-white/5 p-3 md:flex-row md:flex-wrap md:items-center">
+              <div className="flex flex-1 flex-wrap items-center gap-2">
+                {isSpread ? (
+                  <span className="flex items-center gap-1 rounded-md border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white/70">
+                    {instruments.map((id) => (
+                      <span key={id} className={`h-2.5 w-2.5 shrink-0 rounded-full ${getInstrument(id).color}`} aria-hidden />
+                    ))}
+                    Spread across {instruments.map((id) => getInstrument(id).name).join(", ")}
+                  </span>
+                ) : (
+                  <>
+                    <span className={`h-3 w-3 shrink-0 rounded-full ${getInstrument(instruments[0]).color}`} aria-hidden />
+                    <select
+                      value={instruments[0]}
+                      onChange={(e) => onUpdateTarget(index, { instrument: e.target.value as InstrumentId })}
+                      className={selectClass}
+                    >
+                      {INSTRUMENTS.map((inst) => (
+                        <option key={inst.id} value={inst.id}>
+                          {inst.name}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
+                <select
+                  value={target.comparison ?? "eq"}
+                  onChange={(e) =>
+                    onUpdateTarget(index, {
+                      comparison: e.target.value === "eq" ? undefined : (e.target.value as "gt" | "lt"),
+                    })
+                  }
+                  className={selectClass}
                 >
-                  Remove
-                </button>
+                  {COMPARISON_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min={1}
+                  value={target.count}
+                  onChange={(e) => onUpdateTarget(index, { count: Math.max(1, Number(e.target.value) || 1) })}
+                  className={numberFieldClass}
+                />
+                <span className="text-xs text-white/40">quarter notes</span>
+                {challenge.targets.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveTarget(index)}
+                    className="ml-auto shrink-0 text-xs text-red-400 transition hover:text-red-300"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              {target.count > cap && (
+                <span className="text-xs text-amber-400">
+                  ⚠ {target.count} is more than {isSpread ? `these ${instruments.length} rows can hold (${cap})` : `one ${MAX_GRID_BEATS}-block row can hold`}{" "}
+                  in quarter notes — split it across more instruments, or lower the target.
+                </span>
               )}
             </div>
-            {target.count > MAX_GRID_BEATS && (
-              <span className="text-xs text-amber-400">
-                ⚠ {target.count} is more than the {MAX_GRID_BEATS}-block grid — building it needs multiple hits
-                packed into some blocks (e.g. eighth-note pairs), which may not be obvious at this grade.
-              </span>
-            )}
-          </div>
-        ))}
+          );
+        })}
         <button type="button" onClick={onAddTarget} className="self-start text-xs text-white/40 transition hover:text-yellow-400">
           + Add another instrument target
         </button>
