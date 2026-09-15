@@ -13,6 +13,7 @@ import { measureSplit } from "@/lib/song";
 import {
   aspectSize,
   easeInOut,
+  getMp4TrackDurations,
   introSecondsFor,
   loopsForDuration,
   pickRecordingFormat,
@@ -328,6 +329,9 @@ export function FractalVideoExportView({
   const stoppingRef = useRef(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
+  // Backstop for the stop trigger — see startRecording for why this can't
+  // just be tick()'s own rAF-driven check.
+  const stopTimerRef = useRef<number | null>(null);
   const paramsRef = useRef<DrawParams>({
     background,
     style,
@@ -711,6 +715,7 @@ export function FractalVideoExportView({
     rafRef.current = requestAnimationFrame(tick);
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      if (stopTimerRef.current !== null) window.clearTimeout(stopTimerRef.current);
       audioCtxRef.current?.close().catch(() => {});
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -772,6 +777,10 @@ export function FractalVideoExportView({
         // data had been collected instead of a clear failure.
         recordingRef.current = false;
         stoppingRef.current = false;
+        if (stopTimerRef.current !== null) {
+          window.clearTimeout(stopTimerRef.current);
+          stopTimerRef.current = null;
+        }
         videoStream.getVideoTracks().forEach((t) => t.stop());
         // Calling stop() on a source that's already ended (naturally,
         // or from a prior stop()) shouldn't throw per spec, but if some
@@ -796,6 +805,10 @@ export function FractalVideoExportView({
         setErrorMessage(message ? `Recording failed: ${message}` : "Recording failed partway through.");
       };
       recorder.onstop = async () => {
+        if (stopTimerRef.current !== null) {
+          window.clearTimeout(stopTimerRef.current);
+          stopTimerRef.current = null;
+        }
         videoStream.getVideoTracks().forEach((t) => t.stop());
         // Calling stop() on a source that's already ended (naturally,
         // or from a prior stop()) shouldn't throw per spec, but if some
@@ -861,6 +874,26 @@ export function FractalVideoExportView({
           const prepared = await prepareVideoForUpload(blob, (fraction) => setProgress(fraction));
           finalBlob = prepared.blob;
           fixed = prepared.fixed;
+
+          // The re-encode above locks frame *rate*, not overall *length* —
+          // if canvas frames stalled mid-take (same captureStream-vs-
+          // compositing cause as the empty-recording case above, just
+          // partial rather than total) the video track can come out
+          // dramatically shorter than the audio track it was recorded
+          // alongside. That clip has plenty of bytes, so the size check
+          // above doesn't catch it, but it freezes on its last frame while
+          // the audio keeps playing once uploaded — worse than an obvious
+          // failure because it still looks "done" here.
+          const { videoSeconds, audioSeconds } = getMp4TrackDurations(await finalBlob.arrayBuffer());
+          const expected = Math.min(paramsRef.current.totalSeconds, audioSeconds ?? paramsRef.current.totalSeconds);
+          if (videoSeconds !== null && videoSeconds < expected - 1.5) {
+            setPhase("error");
+            setErrorMessage(
+              "The video and audio came out of sync — this usually happens if the browser tab lost focus " +
+                "while recording. Keep this tab visible and in the foreground for the whole clip, then try again."
+            );
+            return;
+          }
         }
 
         const url = URL.createObjectURL(finalBlob);
@@ -894,6 +927,21 @@ export function FractalVideoExportView({
       // either way, timeslice or not. See remuxVideo.ts for the real fix.)
       recorder.start(250);
       source.start(audioCtx.currentTime);
+      // A backstop for the stop trigger, independent of tick()'s own
+      // rAF-driven check (see the elapsed >= totalSeconds branch in tick())
+      // — if the tab loses foreground compositing priority mid-take, rAF
+      // itself can stall for seconds at a stretch. The AudioContext clock
+      // (and therefore the recorded audio) keeps advancing regardless, so a
+      // stall there would otherwise let the audio run arbitrarily long past
+      // the intended clip length while video frames simply stop arriving.
+      // A plain timer isn't tied to the same compositing throttling rAF is,
+      // so it bounds how far a stalled take can run on.
+      stopTimerRef.current = window.setTimeout(() => {
+        if (!stoppingRef.current) {
+          stoppingRef.current = true;
+          recorderRef.current?.stop();
+        }
+      }, Math.round(totalSeconds * 1000));
     } catch (err) {
       recordingRef.current = false;
       setPhase("error");

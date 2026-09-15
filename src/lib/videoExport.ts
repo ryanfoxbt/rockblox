@@ -81,3 +81,102 @@ export type VideoAspect = "vertical" | "square";
 export function aspectSize(aspect: VideoAspect): { width: number; height: number } {
   return aspect === "vertical" ? { width: 720, height: 1280 } : { width: 720, height: 720 };
 }
+
+// Minimal MP4 box walker — just enough to read the mvhd/mdia duration
+// fields, not a general parser. Used to sanity-check the *finished* export
+// (post-ffmpeg remux, so a classic single moov+mdat rather than a
+// fragmented one) before handing it to the user: canvas.captureStream's
+// frames tie into actual browser compositing, not just script execution
+// (see FractalVideoExportView's recorder.onerror comment), so if the tab
+// loses foreground compositing priority mid-take, MediaRecorder's video
+// track can end up dramatically shorter than the audio track it was
+// recorded alongside — the CFR re-encode in remuxVideo.ts locks frame
+// *rate*, not overall *length*, so a short take stays short. A clip like
+// that has plenty of bytes (so the existing empty-recording check misses
+// it) but freezes on its last frame while the audio keeps playing once
+// uploaded.
+export interface Mp4TrackDurations {
+  videoSeconds: number | null;
+  audioSeconds: number | null;
+}
+
+interface Mp4Box {
+  type: string;
+  contentStart: number;
+  contentEnd: number;
+}
+
+function readBoxes(dv: DataView, start: number, end: number): Mp4Box[] {
+  const boxes: Mp4Box[] = [];
+  let pos = start;
+  while (pos + 8 <= end) {
+    let size = dv.getUint32(pos);
+    const type = String.fromCharCode(
+      dv.getUint8(pos + 4),
+      dv.getUint8(pos + 5),
+      dv.getUint8(pos + 6),
+      dv.getUint8(pos + 7)
+    );
+    let headerSize = 8;
+    if (size === 1) {
+      if (pos + 16 > end) break;
+      size = Number(dv.getBigUint64(pos + 8));
+      headerSize = 16;
+    }
+    if (size === 0 || pos + size > end) size = end - pos;
+    if (size < headerSize) break;
+    boxes.push({ type, contentStart: pos + headerSize, contentEnd: pos + size });
+    pos += size;
+  }
+  return boxes;
+}
+
+function findBox(boxes: Mp4Box[], type: string): Mp4Box | undefined {
+  return boxes.find((b) => b.type === type);
+}
+
+function readFullBoxDurationSeconds(dv: DataView, contentStart: number): number | null {
+  try {
+    const version = dv.getUint8(contentStart);
+    const timescale = version === 1 ? dv.getUint32(contentStart + 20) : dv.getUint32(contentStart + 12);
+    const duration =
+      version === 1 ? Number(dv.getBigUint64(contentStart + 24)) : dv.getUint32(contentStart + 16);
+    if (timescale === 0) return null;
+    return duration / timescale;
+  } catch {
+    return null;
+  }
+}
+
+export function getMp4TrackDurations(buf: ArrayBuffer): Mp4TrackDurations {
+  const result: Mp4TrackDurations = { videoSeconds: null, audioSeconds: null };
+  try {
+    const dv = new DataView(buf);
+    const moov = findBox(readBoxes(dv, 0, buf.byteLength), "moov");
+    if (!moov) return result;
+    const moovChildren = readBoxes(dv, moov.contentStart, moov.contentEnd);
+    for (const trak of moovChildren.filter((b) => b.type === "trak")) {
+      const mdia = findBox(readBoxes(dv, trak.contentStart, trak.contentEnd), "mdia");
+      if (!mdia) continue;
+      const mdiaChildren = readBoxes(dv, mdia.contentStart, mdia.contentEnd);
+      const hdlr = findBox(mdiaChildren, "hdlr");
+      const mdhd = findBox(mdiaChildren, "mdhd");
+      if (!hdlr || !mdhd) continue;
+      const handlerType = String.fromCharCode(
+        dv.getUint8(hdlr.contentStart + 8),
+        dv.getUint8(hdlr.contentStart + 9),
+        dv.getUint8(hdlr.contentStart + 10),
+        dv.getUint8(hdlr.contentStart + 11)
+      );
+      const seconds = readFullBoxDurationSeconds(dv, mdhd.contentStart);
+      if (seconds === null) continue;
+      if (handlerType === "vide") result.videoSeconds = seconds;
+      else if (handlerType === "soun") result.audioSeconds = seconds;
+    }
+  } catch {
+    // Malformed/unexpected structure — treated as "couldn't verify" by the
+    // caller rather than thrown, since this is only a best-effort check
+    // layered on top of an export that otherwise already succeeded.
+  }
+  return result;
+}
