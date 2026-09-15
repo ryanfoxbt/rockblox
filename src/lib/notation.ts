@@ -426,6 +426,17 @@ function drawMeasure(
   stave.draw();
 
   formatter.formatToStave([voice], stave);
+  // A beam only extends its notes' stems to match its own slope inside
+  // postFormat() — which VF.Beam otherwise defers until draw() is first
+  // called. Left alone, that means voice.draw() below (which positions each
+  // note's accent/articulation off that same stem height) runs *before* a
+  // slanted beam's stems have actually been lengthened, so an accent on a
+  // note partway through the slope gets placed using its shorter pre-beam
+  // stem — landing the accent mark inside the beam instead of clear above
+  // it. Forcing postFormat() here, before the voice (and its articulations)
+  // are drawn, makes sure the stem heights articulations measure against are
+  // already final.
+  beams.forEach((b) => b.postFormat());
   voice.draw(context, stave);
   beams.forEach((b) => b.setContext(context).draw());
   tuplets.forEach((t) => t.setContext(context).draw());
