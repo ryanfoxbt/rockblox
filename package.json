@@ -10,7 +10,8 @@
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
     "seed-songs": "dotenv -e .env.local -- tsx scripts/seedSongs.mts",
     "seed-lessons": "dotenv -e .env.local -- tsx scripts/seedLessons.mts",
-    "seed-math-lessons": "dotenv -e .env.local -- tsx scripts/seedMathLessons.mts"
+    "seed-math-lessons": "dotenv -e .env.local -- tsx scripts/seedMathLessons.mts",
+    "seed-rock-words": "dotenv -e .env.local -- tsx scripts/seedRockWords.mts"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",

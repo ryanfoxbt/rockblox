@@ -130,6 +130,9 @@ export default function FractalArtPage() {
           <Link href="/ai-music" className="transition hover:text-yellow-400">
             AI music
           </Link>
+          <Link href="/rockwords" className="transition hover:text-yellow-400">
+            RockWords
+          </Link>
           <Link href="/about" className="transition hover:text-yellow-400">
             About
           </Link>

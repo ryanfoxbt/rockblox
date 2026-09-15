@@ -163,6 +163,47 @@ export const mathLessons = pgTable("math_lessons", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// A curated word + clue for RockWords, a Wordle-style word game scoped by US
+// grade level (see src/lib/rockWords.ts for the grade config and game
+// engine, src/lib/rockWordsBeat.ts for how a played round turns into a real
+// RockBlocks pattern). Unlike songs/lessons/mathLessons there's no
+// hand-built pattern to store here — the beat is generated entirely from how
+// a round is played, never from the word itself. `word` is lowercase and
+// must match its grade's configured word length (3 for Kindergarten today).
+export const rockWordsWords = pgTable(
+  "rock_words_words",
+  {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    grade: integer("grade").notNull(),
+    word: text("word").notNull(),
+    clue: text("clue").notNull(),
+    // Whether the clue is already showing when a round starts, vs. requiring
+    // a tap on "Clue" to reveal it (always available regardless, at any
+    // point in the round — this only controls the starting state). Off by
+    // default and admin-editable per word.
+    clueShownByDefault: boolean("clue_shown_by_default").notNull().default(false),
+    // Same staging convention as mathLessons.isPublished — lets the admin
+    // save a draft word without it entering the live rotation yet.
+    isPublished: boolean("is_published").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("rock_words_words_grade_word_idx").on(table.grade, table.word),
+    index("rock_words_words_grade_idx").on(table.grade),
+  ]
+);
+
+// A single-row settings table for RockWords — today just how many total
+// guesses the game allows (4, 6, or 8; see MAX_ROWS_OPTIONS in
+// lib/rockWords.ts), game-wide rather than per-grade or per-word.
+// Deliberately a real row (id fixed at 1) rather than a generic key-value
+// table, since there's exactly one setting so far and a dedicated column is
+// simpler to read/write/validate than a JSON blob would be.
+export const rockWordsSettings = pgTable("rock_words_settings", {
+  id: integer("id").primaryKey(),
+  maxRows: integer("max_rows").notNull().default(8),
+});
+
 // One solved question in RockBlocks Math (a lesson slug + slot letter),
 // permanently recorded for a signed-in user — the "saved for good" half of
 // progress tracking. An anonymous visitor's progress lives only in

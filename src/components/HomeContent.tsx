@@ -146,6 +146,9 @@ export function HomeContent() {
           <Link href="/fractal-art" className="transition hover:text-yellow-400">
             Fractal Art video
           </Link>
+          <Link href="/rockwords" className="transition hover:text-yellow-400">
+            RockWords
+          </Link>
           <Link href="/about" className="transition hover:text-yellow-400">
             About
           </Link>
