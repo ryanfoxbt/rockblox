@@ -112,6 +112,16 @@ export function hintsAllowed(wordLength: number): number {
   return Math.min(3, Math.ceil((wordLength - 6) / 2));
 }
 
+// Whether a round's win counts as "efficient" enough to earn the beat's
+// crash-cymbal ending (see generateRockWordsBeat) rather than just the usual
+// hi-hat — winning within the first half of the guesses actually available
+// this grade, rounded up so a 1-guess grade (never happens today, but keeps
+// this honest) still allows that one guess to count. A win still builds and
+// saves a complete beat either way; this only decides which cymbal closes it.
+export function isEfficientWin(guessCount: number, maxRows: MaxRows): boolean {
+  return guessCount <= Math.ceil(maxRows / 2);
+}
+
 export type LetterStatus = "hit" | "present" | "miss";
 
 const VOWELS = new Set(["a", "e", "i", "o", "u"]);

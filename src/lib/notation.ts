@@ -139,6 +139,10 @@ const MIN_BAR_WIDTH = 170;
 interface OnsetHit {
   instrument: InstrumentId;
   accent?: HitAccent;
+  // Tick this specific hit's own written duration ends at — only consulted
+  // for the beat's final onset (see its use below), to know how far that
+  // onset actually rings rather than assuming it rings to the barline.
+  endTick: number;
 }
 
 // A slot within a beat: either a chord of simultaneous instrument hits, or a
@@ -246,13 +250,12 @@ function prepareMeasure(
         const ticks = NOTE_TICKS[hit.note];
         if (hit.type === "note") {
           anyRealNote = true;
+          const onset: OnsetHit = { instrument: line.instrument, accent: hit.accent, endTick: cursor + ticks };
           const existing = onsetsByTick.get(cursor);
           if (existing) {
-            if (!existing.some((o) => o.instrument === line.instrument)) {
-              existing.push({ instrument: line.instrument, accent: hit.accent });
-            }
+            if (!existing.some((o) => o.instrument === line.instrument)) existing.push(onset);
           } else {
-            onsetsByTick.set(cursor, [{ instrument: line.instrument, accent: hit.accent }]);
+            onsetsByTick.set(cursor, [onset]);
           }
         }
         cursor += ticks;
@@ -279,8 +282,22 @@ function prepareMeasure(
         segments.push({ ticks: onsetTicks[0], instruments: null });
       }
       onsetTicks.forEach((tick, i) => {
-        const end = i + 1 < onsetTicks.length ? onsetTicks[i + 1] : TICKS_PER_BEAT;
-        segments.push({ ticks: end - tick, instruments: onsetsByTick.get(tick)! });
+        const instruments = onsetsByTick.get(tick)!;
+        const isLast = i + 1 === onsetTicks.length;
+        // Every onset before the last is bounded by whatever plays next, so
+        // its printed duration is however long that gap actually is. The
+        // last onset has nothing after it to bound it that way — falling
+        // back to "rings to the barline" would silently swallow a trailing
+        // rest that every line agrees on (e.g. RockWords' 6th sixteenth-
+        // triplet slot when only 5 letters land in a beat), stretching this
+        // note into a length no line actually wrote and, with it, corrupting
+        // the triplet-bracket count below. Its own instruments' actual
+        // written durations are the honest bound instead.
+        const end = isLast ? Math.min(TICKS_PER_BEAT, Math.max(...instruments.map((o) => o.endTick))) : onsetTicks[i + 1];
+        segments.push({ ticks: end - tick, instruments });
+        if (isLast && end < TICKS_PER_BEAT) {
+          segments.push({ ticks: TICKS_PER_BEAT - end, instruments: null });
+        }
       });
     }
 

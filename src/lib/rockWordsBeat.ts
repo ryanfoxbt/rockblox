@@ -36,8 +36,10 @@
 // Tom, back vowels (a/o/u) -> Low Tom, mixed/tied -> Mid Tom — a different
 // drum, still one hand, decided per beat rather than per whole row so a
 // long word's two beats can each have their own color. The hi-hat keeps
-// time on every beat except the very last one of the round, which swaps to
-// a crash instead when that final guess actually wins.
+// time on every beat, including the round's last one — unless that final
+// guess wins *and* does it within the first half of the guesses this grade
+// allows (see isEfficientWin), in which case that last beat swaps to a crash
+// instead. An ordinary win still closes on the hi-hat like any other beat.
 //
 // Pure and deterministic — the same rows always produce the same beat, and
 // it never depends on the target word itself, only on what was actually
@@ -52,7 +54,7 @@
 import { NoteName, RhythmHit, RhythmTile, tileFromHits } from "./rhythm";
 import { InstrumentId } from "./instruments";
 import { DEFAULT_VOLUME, LineData, MAX_BEATS } from "./song";
-import { beatsPerRow, isVowel, isWinningGuess, LetterStatus, RockWordsRound } from "./rockWords";
+import { beatsPerRow, isEfficientWin, isVowel, isWinningGuess, LetterStatus, MaxRows, RockWordsRound } from "./rockWords";
 
 const KICK: InstrumentId = "kick";
 const HAND_A_DEFAULT: InstrumentId = "hihatClosed";
@@ -175,13 +177,18 @@ interface BeatChunk {
   isWinningBeat: boolean;
 }
 
-function flattenIntoBeatChunks(rows: RockWordsRound[]): BeatChunk[] {
+function flattenIntoBeatChunks(rows: RockWordsRound[], maxRows: MaxRows): BeatChunk[] {
   const chunks: BeatChunk[] = [];
   let column = 0;
   rows.forEach((row, rowIndex) => {
     const letters = row.guess.toLowerCase().split("");
     const sizes = splitWordIntoBeats(letters.length);
-    const isRowWin = rowIndex === rows.length - 1 && isWinningGuess(row.statuses);
+    // Only an efficient win (see isEfficientWin) earns the crash — an
+    // ordinary win still closes the pattern on the hi-hat like every other
+    // beat, so the crash stays a marker of a genuinely good round instead of
+    // firing identically every single time.
+    const isRowWin =
+      rowIndex === rows.length - 1 && isWinningGuess(row.statuses) && isEfficientWin(rows.length, maxRows);
     let offset = 0;
     sizes.forEach((size, chunkIndex) => {
       chunks.push({
@@ -197,7 +204,7 @@ function flattenIntoBeatChunks(rows: RockWordsRound[]): BeatChunk[] {
   return chunks;
 }
 
-export function generateRockWordsBeat(rows: RockWordsRound[]): LineData[] {
+export function generateRockWordsBeat(rows: RockWordsRound[], maxRows: MaxRows): LineData[] {
   const kickBlocks = emptyBlocks();
   const hihatBlocks = emptyBlocks();
   const crashBlocks = emptyBlocks();
@@ -206,7 +213,7 @@ export function generateRockWordsBeat(rows: RockWordsRound[]): LineData[] {
   const midTomBlocks = emptyBlocks();
   const highTomBlocks = emptyBlocks();
 
-  for (const chunk of flattenIntoBeatChunks(rows)) {
+  for (const chunk of flattenIntoBeatChunks(rows, maxRows)) {
     const { column } = chunk;
     // Guards against ever writing past a pattern's own MAX_BEATS ceiling —
     // shouldn't happen given effectiveMaxRows already keeps total beats
@@ -296,8 +303,8 @@ export const ROCKWORDS_BEAT_RULES: RockWordsBeatRule[] = [
     detail: "Whichever beat has a vowel in it (right or wrong) plays that beat's hand part on a tom instead of the snare — front vowels (e/i) → High Tom, back vowels (a/o/u) → Low Tom, mixed or tied → Mid Tom. Decided per beat, not per whole row, so a long word's two beats can each have their own color. Still one hand, just a different drum.",
   },
   {
-    title: "The hi-hat holds time; a crash marks the win",
-    detail: "The hi-hat plays every beat except the very last one of the round, which swaps to a crash cymbal instead when that final guess actually wins — again a substitution, not an addition.",
+    title: "The hi-hat holds time; a crash marks a genuinely efficient win",
+    detail: "The hi-hat plays every beat of the round, including its last one — unless that final guess wins *and* it happened within the first half of the guesses this grade allows (round up), in which case the very last beat swaps to a crash cymbal instead. An ordinary win still closes on the hi-hat like any other beat, so the crash stays a marker of a fast solve rather than firing identically on every single win.",
   },
   {
     title: "Never depends on the answer",

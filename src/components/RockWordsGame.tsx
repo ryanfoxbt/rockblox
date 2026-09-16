@@ -273,7 +273,7 @@ function RoundPlay({
   // own comment), so the measure is exactly as long as how many guesses
   // have actually been played — not the word length, and not the game's
   // guess limit until every allowed guess has actually been used.
-  const beatLines = useMemo(() => generateRockWordsBeat(guesses), [guesses]);
+  const beatLines = useMemo(() => generateRockWordsBeat(guesses, maxRows), [guesses, maxRows]);
 
   const playBeatSoFar = useCallback(() => {
     if (beatLines.length === 0) return;
