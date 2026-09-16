@@ -20,6 +20,11 @@ export function isValidTarget(t: unknown): t is BeatChallengeTarget {
   if (!instrumentOk) return false;
   if (typeof o.count !== "number" || !Number.isInteger(o.count) || o.count < 1) return false;
   if (o.comparison !== undefined && o.comparison !== "eq" && o.comparison !== "gt" && o.comparison !== "lt") return false;
+  if (o.blocksUsed !== undefined) {
+    if (typeof o.blocksUsed !== "number" || !Number.isInteger(o.blocksUsed) || o.blocksUsed < 1 || o.blocksUsed > 8) {
+      return false;
+    }
+  }
   return true;
 }
 

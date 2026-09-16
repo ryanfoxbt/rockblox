@@ -42,20 +42,52 @@ function countTargetHits(lines: StoredLine[], target: MathChallenge["targets"][n
   return instruments.reduce((sum, instrument) => sum + countHitsForInstrument(lines, instrument), 0);
 }
 
-function targetMet(count: number, target: MathChallenge["targets"][number]): boolean {
+// Companion to countHitsForInstrument for `blocksUsed` targets — a block
+// counts as "used" once it holds at least one real hit, regardless of how
+// many notes that one block's own tile packs in (an eighth pair and a
+// sixteenth-triplet run are both "one block used").
+function countBlocksUsedForInstrument(lines: StoredLine[], instrument: string): number {
+  let used = 0;
+  for (const line of lines) {
+    if (line.instrument !== instrument) continue;
+    for (const id of line.blocks) {
+      if (!id) continue;
+      const tile = getTileById(id);
+      if (tile?.hits.some((h) => h.type === "note")) used++;
+    }
+  }
+  return used;
+}
+
+function countTargetBlocksUsed(lines: StoredLine[], target: MathChallenge["targets"][number]): number {
+  const instruments = Array.isArray(target.instrument) ? target.instrument : [target.instrument];
+  return instruments.reduce((sum, instrument) => sum + countBlocksUsedForInstrument(lines, instrument), 0);
+}
+
+function targetMet(lines: StoredLine[], target: MathChallenge["targets"][number]): boolean {
+  const count = countTargetHits(lines, target);
   // An untouched, empty row always reads as 0 hits — never let that count
   // as a correct answer, even for a "fewer than N" target where 0 would
   // technically satisfy the inequality. Every real answer requires
   // actually building something.
   if (count === 0) return false;
-  switch (target.comparison) {
-    case "gt":
-      return count > target.count;
-    case "lt":
-      return count < target.count;
-    default:
-      return count === target.count;
+  const countOk = (() => {
+    switch (target.comparison) {
+      case "gt":
+        return count > target.count;
+      case "lt":
+        return count < target.count;
+      default:
+        return count === target.count;
+    }
+  })();
+  if (!countOk) return false;
+  // blocksUsed asks for an exact block count regardless of comparison mode
+  // — "gt"/"lt" targets never set it (see BeatChallengeTarget's comment).
+  if (target.blocksUsed !== undefined) {
+    return countTargetBlocksUsed(lines, target) === target.blocksUsed;
   }
+  return true;
 }
 
 function isSlotLetter(slot: ExtendedSlotLetter): slot is SlotLetter {
@@ -150,7 +182,7 @@ export function MathLessonWorkspace({
 
   function check() {
     const answerLines = snapshot?.[activeSlot]?.lines ?? [];
-    const allMet = challenge.targets.every((t) => targetMet(countTargetHits(answerLines, t), t));
+    const allMet = challenge.targets.every((t) => targetMet(answerLines, t));
     setStatus(allMet ? "correct" : "incorrect");
     if (allMet) {
       progress.markSolved(lesson.slug, activeSlot);
