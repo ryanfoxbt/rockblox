@@ -100,7 +100,7 @@ export interface MathGrade {
   label: string;
 }
 
-// Kindergarten through Grade 6 exist today — index/list pages derive their
+// Kindergarten through Grade 8 exist today — index/list pages derive their
 // grade sections from this, not a hardcoded grade string. Kindergarten is
 // grade 0 (so it sorts first via asc(grade) everywhere) but is never shown
 // as "Grade 0" — see gradeLabel below, which every page uses instead of
@@ -113,6 +113,8 @@ export const MATH_GRADES: MathGrade[] = [
   { grade: 4, label: "Grade 4" },
   { grade: 5, label: "Grade 5" },
   { grade: 6, label: "Grade 6" },
+  { grade: 7, label: "Grade 7" },
+  { grade: 8, label: "Grade 8" },
 ];
 
 // The human-facing name for a grade level — "Kindergarten" for grade 0,
@@ -6062,6 +6064,1521 @@ export const MATH_LESSONS: MathLesson[] = [
         prompt: "Find the range of 25, 5, 18. Build a drum beat with that many notes in all.",
         targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
         explanation: "Range = 25 - 5 = 20.",
+      },
+    },
+  },
+  // ============================================================
+  // GRADE 7 — proportional relationships open the fall (unit rates with
+  // complex fractions, the constant of proportionality, percent change),
+  // then negative-number operations across the whole number system carry
+  // through early winter, expressions and multi-step/both-sides equations
+  // fill late winter, and geometry (scale drawings, circles, angle pairs,
+  // composite area) with probability closes out the spring — the real
+  // Common Core Grade 7 progression. Multiplication and proportional
+  // scaling keep leaning on the blocks mechanic (y = kx as blocksUsed x
+  // groups of k, simple interest as blocksUsed years of P×r, integer
+  // multiplication as blocksUsed groups of a factor, a scale drawing's
+  // inches as blocksUsed groups of the map scale) — the same "a block IS a
+  // group" idea Grade 6 established, now over signed numbers and rates.
+  // ============================================================
+  {
+    slug: "math-g7-l01-unit-rates-with-fractions",
+    grade: 7,
+    lessonNumber: 1,
+    title: "Unit Rates with Fractions",
+    mathSkill: "Unit Rates with Complex Fractions (7.RP.A.1)",
+    teaches: "Every slot gives a distance traveled in a fraction of an hour — divide the fraction by the fraction to get the unit rate, then build that many notes anywhere in the kit.",
+    bpm: 118,
+    challenges: {
+      A: {
+        prompt: "A runner covers 3/4 mile in 1/4 hour. What is the unit rate, in miles per hour? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "(3/4) ÷ (1/4) = 3 miles per hour.",
+      },
+      B: {
+        prompt: "A cyclist covers 5/6 mile in 1/6 hour. What is the unit rate, in miles per hour? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "(5/6) ÷ (1/6) = 5 miles per hour.",
+      },
+      C: {
+        prompt: "A walker covers 7/8 mile in 1/8 hour. What is the unit rate, in miles per hour? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "(7/8) ÷ (1/8) = 7 miles per hour.",
+      },
+      D: {
+        prompt: "A swimmer covers 4/5 mile in 1/5 hour. What is the unit rate, in miles per hour? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "(4/5) ÷ (1/5) = 4 miles per hour.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l02-constant-of-proportionality",
+    grade: 7,
+    lessonNumber: 2,
+    title: "Constant of Proportionality",
+    mathSkill: "Constant of Proportionality (7.RP.A.2b)",
+    teaches: "Every slot gives a matched x and y from a proportional relationship — divide y by x to find the constant of proportionality k, then build that many notes anywhere in the kit.",
+    bpm: 118,
+    challenges: {
+      A: {
+        prompt: "In a proportional relationship, y = 24 when x = 6. What is the constant of proportionality (y ÷ x)? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "24 ÷ 6 = 4.",
+      },
+      B: {
+        prompt: "In a proportional relationship, y = 45 when x = 9. What is the constant of proportionality (y ÷ x)? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "45 ÷ 9 = 5.",
+      },
+      C: {
+        prompt: "In a proportional relationship, y = 56 when x = 7. What is the constant of proportionality (y ÷ x)? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "56 ÷ 7 = 8.",
+      },
+      D: {
+        prompt: "In a proportional relationship, y = 36 when x = 4. What is the constant of proportionality (y ÷ x)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "36 ÷ 4 = 9.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l03-using-y-equals-kx",
+    grade: 7,
+    lessonNumber: 3,
+    title: "Using y = kx",
+    mathSkill: "Represent Proportional Relationships with Equations (7.RP.A.2c)",
+    teaches: "Every slot gives y = kx and a value for x — the x-value is how many BLOCKS you use, and k is about how many notes go in each block; build the total across exactly that many blocks.",
+    bpm: 118,
+    challenges: {
+      A: {
+        prompt: "y = 3x. What is y when x = 7? Build a drum beat using exactly 7 blocks that add up to 21 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21, blocksUsed: 7 }],
+        explanation: "y = 3(7) = 21 — 7 blocks holding 21 notes in all.",
+      },
+      B: {
+        prompt: "y = 5x. What is y when x = 8? Build a drum beat using exactly 8 blocks that add up to 40 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 40, blocksUsed: 8 }],
+        explanation: "y = 5(8) = 40 — 8 blocks holding 40 notes in all.",
+      },
+      C: {
+        prompt: "y = 4x. What is y when x = 6? Build a drum beat using exactly 6 blocks that add up to 24 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24, blocksUsed: 6 }],
+        explanation: "y = 4(6) = 24 — 6 blocks holding 24 notes in all.",
+      },
+      D: {
+        prompt: "y = 6x. What is y when x = 5? Build a drum beat using exactly 5 blocks that add up to 30 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30, blocksUsed: 5 }],
+        explanation: "y = 6(5) = 30 — 5 blocks holding 30 notes in all.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l04-percent-increase",
+    grade: 7,
+    lessonNumber: 4,
+    title: "Percent Increase",
+    mathSkill: "Percent Increase (7.RP.A.3)",
+    teaches: "Every slot gives a starting price and a percent it increases by — find the increase, add it to the start, and build the new price anywhere in the kit.",
+    bpm: 118,
+    challenges: {
+      A: {
+        prompt: "A $40 item's price increases by 25%. What is the new price? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 50 }],
+        explanation: "40 + (0.25 × 40) = 40 + 10 = $50.",
+      },
+      B: {
+        prompt: "A $50 item's price increases by 10%. What is the new price? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 55 }],
+        explanation: "50 + (0.10 × 50) = 50 + 5 = $55.",
+      },
+      C: {
+        prompt: "A $60 item's price increases by 5%. What is the new price? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 63 }],
+        explanation: "60 + (0.05 × 60) = 60 + 3 = $63.",
+      },
+      D: {
+        prompt: "A $30 item's price increases by 50%. What is the new price? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 45 }],
+        explanation: "30 + (0.50 × 30) = 30 + 15 = $45.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l05-percent-decrease",
+    grade: 7,
+    lessonNumber: 5,
+    title: "Percent Decrease",
+    mathSkill: "Percent Decrease (7.RP.A.3)",
+    teaches: "Every slot gives a starting price and a discount percent — find the discount, subtract it from the start, and build the sale price anywhere in the kit.",
+    bpm: 118,
+    challenges: {
+      A: {
+        prompt: "An $80 item is discounted 25%. What is the sale price? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 60 }],
+        explanation: "80 - (0.25 × 80) = 80 - 20 = $60.",
+      },
+      B: {
+        prompt: "A $50 item is discounted 10%. What is the sale price? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 45 }],
+        explanation: "50 - (0.10 × 50) = 50 - 5 = $45.",
+      },
+      C: {
+        prompt: "A $40 item is discounted 15%. What is the sale price? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 34 }],
+        explanation: "40 - (0.15 × 40) = 40 - 6 = $34.",
+      },
+      D: {
+        prompt: "A $60 item is discounted 20%. What is the sale price? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 48 }],
+        explanation: "60 - (0.20 × 60) = 60 - 12 = $48.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l06-simple-interest",
+    grade: 7,
+    lessonNumber: 6,
+    title: "Simple Interest",
+    mathSkill: "Simple Interest (7.RP.A.3)",
+    teaches: "Every slot gives a principal, a rate, and a number of years — the years are how many BLOCKS you use, and one year's interest is about how many notes go in each block; build the total interest across exactly that many blocks.",
+    bpm: 118,
+    challenges: {
+      A: {
+        prompt: "$100 earns 5% simple interest per year for 2 years. Build a drum beat using exactly 2 blocks that add up to 10 notes in all — the total interest earned.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10, blocksUsed: 2 }],
+        explanation: "$100 × 5% = $5 per year × 2 years = $10 — 2 blocks holding 10 notes in all.",
+      },
+      B: {
+        prompt: "$150 earns 4% simple interest per year for 3 years. Build a drum beat using exactly 3 blocks that add up to 18 notes in all — the total interest earned.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 18, blocksUsed: 3 }],
+        explanation: "$150 × 4% = $6 per year × 3 years = $18.",
+      },
+      C: {
+        prompt: "$300 earns 1% simple interest per year for 5 years. Build a drum beat using exactly 5 blocks that add up to 15 notes in all — the total interest earned.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15, blocksUsed: 5 }],
+        explanation: "$300 × 1% = $3 per year × 5 years = $15.",
+      },
+      D: {
+        prompt: "$200 earns 2% simple interest per year for 6 years. Build a drum beat using exactly 6 blocks that add up to 24 notes in all — the total interest earned.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24, blocksUsed: 6 }],
+        explanation: "$200 × 2% = $4 per year × 6 years = $24.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l07-adding-integers",
+    grade: 7,
+    lessonNumber: 7,
+    title: "Adding Integers",
+    mathSkill: "Add Integers (7.NS.A.1b)",
+    teaches: "Every slot adds two signed numbers on a number line that dips below zero — work out where you land, then build that landing value's distance from zero anywhere in the kit.",
+    bpm: 118,
+    challenges: {
+      A: {
+        prompt: "-8 + 15 = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "-8 + 15 = 7.",
+      },
+      B: {
+        prompt: "-12 + 20 = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "-12 + 20 = 8.",
+      },
+      C: {
+        prompt: "-6 + (-9) = ? Build a drum beat with the distance of the answer from zero, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "-6 + (-9) = -15, which is 15 away from zero.",
+      },
+      D: {
+        prompt: "9 + (-30) = ? Build a drum beat with the distance of the answer from zero, in notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21 }],
+        explanation: "9 + (-30) = -21, which is 21 away from zero.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l08-subtracting-integers",
+    grade: 7,
+    lessonNumber: 8,
+    title: "Subtracting Integers",
+    mathSkill: "Subtract Integers (7.NS.A.1c)",
+    teaches: "Every slot subtracts a signed number — turn it into adding the opposite, then build the landing value's distance from zero anywhere in the kit.",
+    bpm: 118,
+    challenges: {
+      A: {
+        prompt: "5 - (-8) = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "5 - (-8) = 5 + 8 = 13.",
+      },
+      B: {
+        prompt: "-4 - 6 = ? Build a drum beat with the distance of the answer from zero, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "-4 - 6 = -10, which is 10 away from zero.",
+      },
+      C: {
+        prompt: "-3 - (-10) = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "-3 - (-10) = -3 + 10 = 7.",
+      },
+      D: {
+        prompt: "12 - 20 = ? Build a drum beat with the distance of the answer from zero, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "12 - 20 = -8, which is 8 away from zero.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l09-multiplying-integers",
+    grade: 7,
+    lessonNumber: 9,
+    title: "Multiplying Integers",
+    mathSkill: "Multiply Integers (7.NS.A.2a)",
+    teaches: "Every slot multiplies two signed numbers — one factor is how many BLOCKS you use, and the other is about how many notes go in each block; build the product's distance from zero across exactly that many blocks.",
+    bpm: 120,
+    challenges: {
+      A: {
+        prompt: "-4 × 6 = ? Build a drum beat using exactly 6 blocks that add up to 24 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24, blocksUsed: 6 }],
+        explanation: "-4 × 6 = -24, a distance of 24 from zero — 6 blocks holding 24 notes in all.",
+      },
+      B: {
+        prompt: "-5 × (-4) = ? Build a drum beat using exactly 4 blocks that add up to 20 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20, blocksUsed: 4 }],
+        explanation: "-5 × (-4) = 20 — 4 blocks holding 20 notes in all.",
+      },
+      C: {
+        prompt: "6 × (-5) = ? Build a drum beat using exactly 5 blocks that add up to 30 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30, blocksUsed: 5 }],
+        explanation: "6 × (-5) = -30, a distance of 30 from zero — 5 blocks holding 30 notes in all.",
+      },
+      D: {
+        prompt: "-6 × (-6) = ? Build a drum beat using exactly 6 blocks that add up to 36 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 36, blocksUsed: 6 }],
+        explanation: "-6 × (-6) = 36 — 6 blocks holding 36 notes in all.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l10-dividing-integers",
+    grade: 7,
+    lessonNumber: 10,
+    title: "Dividing Integers",
+    mathSkill: "Divide Integers (7.NS.A.2b)",
+    teaches: "Every slot divides two signed numbers — work out the quotient, then build its distance from zero anywhere in the kit.",
+    bpm: 120,
+    challenges: {
+      A: {
+        prompt: "-24 ÷ 6 = ? Build a drum beat with the distance of the answer from zero, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "-24 ÷ 6 = -4, which is 4 away from zero.",
+      },
+      B: {
+        prompt: "36 ÷ (-4) = ? Build a drum beat with the distance of the answer from zero, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "36 ÷ (-4) = -9, which is 9 away from zero.",
+      },
+      C: {
+        prompt: "-45 ÷ (-9) = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "-45 ÷ (-9) = 5.",
+      },
+      D: {
+        prompt: "56 ÷ (-7) = ? Build a drum beat with the distance of the answer from zero, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "56 ÷ (-7) = -8, which is 8 away from zero.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l11-operations-with-rational-numbers",
+    grade: 7,
+    lessonNumber: 11,
+    title: "Operations with Rational Numbers",
+    mathSkill: "Add and Subtract Rational Numbers (7.NS.A.1d)",
+    teaches: "Every slot adds or subtracts decimals or fractions, some negative — work it out, then build the result's distance from zero anywhere in the kit.",
+    bpm: 120,
+    challenges: {
+      A: {
+        prompt: "2.25 + 1.75 = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "2.25 + 1.75 = 4.",
+      },
+      B: {
+        prompt: "-2.5 + 9.5 = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "-2.5 + 9.5 = 7.",
+      },
+      C: {
+        prompt: "7/2 + 5/2 = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "7/2 + 5/2 = 12/2 = 6.",
+      },
+      D: {
+        prompt: "-6.5 - 1.5 = ? Build a drum beat with the distance of the answer from zero, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "-6.5 - 1.5 = -8, which is 8 away from zero.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l12-multi-step-rational-number-problems",
+    grade: 7,
+    lessonNumber: 12,
+    title: "Multi-Step Rational Number Problems",
+    mathSkill: "Solve Multi-Step Real-World Problems (7.NS.A.3)",
+    teaches: "Every slot chains two or three signed-number moves in a real situation — work through them in order, then build the final value's distance from zero anywhere in the kit.",
+    bpm: 120,
+    challenges: {
+      A: {
+        prompt: "A submarine descends 15 feet, rises 6 feet, then descends 4 more feet. How far below where it started is it now? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "-15 + 6 - 4 = -13, so it's 13 feet below the start.",
+      },
+      B: {
+        prompt: "A hiker's elevation changes by +8 feet, then -20 feet, then +5 feet. What is the net change's distance from zero? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "8 - 20 + 5 = -7, a net change of 7 feet.",
+      },
+      C: {
+        prompt: "The temperature starts at 10°, drops 15°, then rises 3°. What is the final temperature's distance from zero? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 2 }],
+        explanation: "10 - 15 + 3 = -2, a distance of 2 from zero.",
+      },
+      D: {
+        prompt: "A bank balance changes by -$50, then +$30, then -$10. What is the net change's distance from zero? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "-50 + 30 - 10 = -30, a net change of $30.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l13-combining-like-terms",
+    grade: 7,
+    lessonNumber: 13,
+    title: "Combining Like Terms",
+    mathSkill: "Simplify Expressions by Combining Like Terms (7.EE.A.1)",
+    teaches: "Every slot simplifies an expression with repeated x-terms, then plugs in a value for x — combine the terms first, substitute, and build the result anywhere in the kit.",
+    bpm: 120,
+    challenges: {
+      A: {
+        prompt: "Simplify 4x + 3x - 2x, then evaluate it when x = 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
+        explanation: "4x + 3x - 2x = 5x, and 5(4) = 20.",
+      },
+      B: {
+        prompt: "Simplify 7x - 2x + x, then evaluate it when x = 5. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "7x - 2x + x = 6x, and 6(5) = 30.",
+      },
+      C: {
+        prompt: "Simplify 3x + 5x - 4x, then evaluate it when x = 6. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "3x + 5x - 4x = 4x, and 4(6) = 24.",
+      },
+      D: {
+        prompt: "Simplify 9x - 3x + 2x, then evaluate it when x = 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "9x - 3x + 2x = 8x, and 8(4) = 32.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l14-the-distributive-property",
+    grade: 7,
+    lessonNumber: 14,
+    title: "The Distributive Property",
+    mathSkill: "Expand Expressions with the Distributive Property (7.EE.A.1)",
+    teaches: "Every slot gives an expression like a(x + b) or a(x - b) and a value for x — distribute (or just work inside the parentheses first), then build the result anywhere in the kit.",
+    bpm: 120,
+    challenges: {
+      A: {
+        prompt: "3(x + 4), where x = 5. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 27 }],
+        explanation: "3(5 + 4) = 3(9) = 27.",
+      },
+      B: {
+        prompt: "2(x - 3), where x = 8. Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "2(8 - 3) = 2(5) = 10.",
+      },
+      C: {
+        prompt: "4(x + 2), where x = 6. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "4(6 + 2) = 4(8) = 32.",
+      },
+      D: {
+        prompt: "5(x - 1), where x = 7. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "5(7 - 1) = 5(6) = 30.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l15-two-step-equations",
+    grade: 7,
+    lessonNumber: 15,
+    title: "Two-Step Equations",
+    mathSkill: "Solve Two-Step Equations (7.EE.B.4a)",
+    teaches: "Every slot hides x behind a multiplication and an addition or subtraction — undo them in reverse order, then build x anywhere in the kit.",
+    bpm: 120,
+    challenges: {
+      A: {
+        prompt: "2x + 5 = 17. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "2x + 5 = 17, so 2x = 12, and x = 6.",
+      },
+      B: {
+        prompt: "3x - 4 = 11. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "3x - 4 = 11, so 3x = 15, and x = 5.",
+      },
+      C: {
+        prompt: "4x + 7 = 39. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "4x + 7 = 39, so 4x = 32, and x = 8.",
+      },
+      D: {
+        prompt: "5x - 3 = 32. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "5x - 3 = 32, so 5x = 35, and x = 7.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l16-equations-with-variables-on-both-sides",
+    grade: 7,
+    lessonNumber: 16,
+    title: "Equations with Variables on Both Sides",
+    mathSkill: "Solve Multi-Step Equations (7.EE.B.4a)",
+    teaches: "Every slot has x-terms on both sides of the equation — gather them onto one side, undo what's left, and build x anywhere in the kit.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "3x + 4 = x + 16. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "3x + 4 = x + 16 → 2x = 12 → x = 6.",
+      },
+      B: {
+        prompt: "5x - 2 = 2x + 13. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "5x - 2 = 2x + 13 → 3x = 15 → x = 5.",
+      },
+      C: {
+        prompt: "4x + 6 = x + 27. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "4x + 6 = x + 27 → 3x = 21 → x = 7.",
+      },
+      D: {
+        prompt: "6x - 5 = 2x + 27. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "6x - 5 = 2x + 27 → 4x = 32 → x = 8.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l17-inequalities",
+    grade: 7,
+    lessonNumber: 17,
+    title: "Inequalities",
+    mathSkill: "Solve One-Step and Two-Step Inequalities (7.EE.B.4b)",
+    teaches: "Every slot solves an inequality, then asks for the smallest or largest whole number that still makes it true — solve it like an equation, then build that boundary value anywhere in the kit.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "x + 5 > 12. What is the smallest whole number that makes this true? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "x + 5 > 12 → x > 7, so the smallest whole number is 8.",
+      },
+      B: {
+        prompt: "2x < 24. What is the largest whole number that makes this true? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 11 }],
+        explanation: "2x < 24 → x < 12, so the largest whole number is 11.",
+      },
+      C: {
+        prompt: "x - 3 ≥ 10. What is the smallest whole number that makes this true? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "x - 3 ≥ 10 → x ≥ 13, so the smallest whole number is 13.",
+      },
+      D: {
+        prompt: "3x ≤ 27. What is the largest whole number that makes this true? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "3x ≤ 27 → x ≤ 9, so the largest whole number is 9.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l18-scale-drawings",
+    grade: 7,
+    lessonNumber: 18,
+    title: "Scale Drawings",
+    mathSkill: "Scale Drawings (7.G.A.1)",
+    teaches: "Every slot gives a map scale and a distance measured on the map — the map inches are how many BLOCKS you use, and the scale itself is about how many notes go in each block; build the real-world distance across exactly that many blocks.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "A map's scale is 1 inch = 5 miles. Two cities are 6 inches apart on the map. Build a drum beat using exactly 6 blocks that add up to 30 notes in all — the real distance in miles.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30, blocksUsed: 6 }],
+        explanation: "6 inches × 5 miles/inch = 30 miles — 6 blocks holding 30 notes in all.",
+      },
+      B: {
+        prompt: "A map's scale is 1 inch = 4 miles. Two towns are 8 inches apart on the map. Build a drum beat using exactly 8 blocks that add up to 32 notes in all — the real distance in miles.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32, blocksUsed: 8 }],
+        explanation: "8 inches × 4 miles/inch = 32 miles.",
+      },
+      C: {
+        prompt: "A map's scale is 1 inch = 6 miles. Two parks are 5 inches apart on the map. Build a drum beat using exactly 5 blocks that add up to 30 notes in all — the real distance in miles.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30, blocksUsed: 5 }],
+        explanation: "5 inches × 6 miles/inch = 30 miles.",
+      },
+      D: {
+        prompt: "A map's scale is 1 inch = 3 miles. Two lakes are 7 inches apart on the map. Build a drum beat using exactly 7 blocks that add up to 21 notes in all — the real distance in miles.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21, blocksUsed: 7 }],
+        explanation: "7 inches × 3 miles/inch = 21 miles.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l19-circumference-of-a-circle",
+    grade: 7,
+    lessonNumber: 19,
+    title: "Circumference of a Circle",
+    mathSkill: "Circumference of a Circle (7.G.B.4)",
+    teaches: "Every slot gives a circle's radius or diameter — use π ≈ 22/7 to find the circumference, then build the result anywhere in the kit.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "A circle has a diameter of 7 units. Using π ≈ 22/7, what is its circumference? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 22 }],
+        explanation: "C = πd = (22/7)(7) = 22.",
+      },
+      B: {
+        prompt: "A circle has a diameter of 14 units. Using π ≈ 22/7, what is its circumference? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 44 }],
+        explanation: "C = πd = (22/7)(14) = 44.",
+      },
+      C: {
+        prompt: "A circle has a radius of 10.5 units. Using π ≈ 22/7, what is its circumference? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 66 }],
+        explanation: "C = 2πr = 2(22/7)(10.5) = 66.",
+      },
+      D: {
+        prompt: "A circle has a diameter of 3.5 units. Using π ≈ 22/7, what is its circumference? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 11 }],
+        explanation: "C = πd = (22/7)(3.5) = 11.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l20-area-of-a-circle",
+    grade: 7,
+    lessonNumber: 20,
+    title: "Area of a Circle",
+    mathSkill: "Area of a Circle (7.G.B.4)",
+    teaches: "Every slot gives a circle's radius — use π ≈ 3 to find the area, then build the result anywhere in the kit. These are the biggest totals yet; expect to fill most of the kit with fast subdivisions.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "A circle has a radius of 4 units. Using π ≈ 3, what is its area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 48 }],
+        explanation: "A = πr² ≈ 3(4²) = 3(16) = 48.",
+      },
+      B: {
+        prompt: "A circle has a radius of 3 units. Using π ≈ 3, what is its area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 27 }],
+        explanation: "A = πr² ≈ 3(3²) = 3(9) = 27.",
+      },
+      C: {
+        prompt: "A circle has a radius of 5 units. Using π ≈ 3, what is its area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 75 }],
+        explanation: "A = πr² ≈ 3(5²) = 3(25) = 75.",
+      },
+      D: {
+        prompt: "A circle has a radius of 2 units. Using π ≈ 3, what is its area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "A = πr² ≈ 3(2²) = 3(4) = 12.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l21-complementary-and-supplementary-angles",
+    grade: 7,
+    lessonNumber: 21,
+    title: "Complementary and Supplementary Angles",
+    mathSkill: "Angle Relationships (7.G.B.5)",
+    teaches: "Every slot gives one angle in a complementary (sums to 90°) or supplementary (sums to 180°) pair — subtract to find the missing angle, then build it anywhere in the kit.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "Two angles are complementary. One measures 35°. What is the other? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 55 }],
+        explanation: "90 - 35 = 55°.",
+      },
+      B: {
+        prompt: "Two angles are supplementary. One measures 110°. What is the other? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 70 }],
+        explanation: "180 - 110 = 70°.",
+      },
+      C: {
+        prompt: "Two angles are complementary. One measures 62°. What is the other? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 28 }],
+        explanation: "90 - 62 = 28°.",
+      },
+      D: {
+        prompt: "Two angles are supplementary. One measures 145°. What is the other? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35 }],
+        explanation: "180 - 145 = 35°.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l22-area-of-composite-figures",
+    grade: 7,
+    lessonNumber: 22,
+    title: "Area of Composite Figures",
+    mathSkill: "Area of Two-Dimensional Composite Figures (7.G.B.6)",
+    teaches: "Every slot gives a figure made of two simpler shapes stuck together — find each piece's area and add them up, then build the total anywhere in the kit.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "A figure is a 4×5 rectangle with a 3×3 square attached. What is its total area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 29 }],
+        explanation: "(4×5) + (3×3) = 20 + 9 = 29.",
+      },
+      B: {
+        prompt: "A figure is a 6×4 rectangle with a triangle (base 4, height 3) attached. What is its total area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "(6×4) + (1/2 × 4 × 3) = 24 + 6 = 30.",
+      },
+      C: {
+        prompt: "A figure is a 5×5 square with a 2×3 rectangle attached. What is its total area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 31 }],
+        explanation: "(5×5) + (2×3) = 25 + 6 = 31.",
+      },
+      D: {
+        prompt: "A figure is an 8×3 rectangle with a triangle (base 6, height 4) attached. What is its total area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 36 }],
+        explanation: "(8×3) + (1/2 × 6 × 4) = 24 + 12 = 36.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l23-probability-of-simple-events",
+    grade: 7,
+    lessonNumber: 23,
+    title: "Probability and Expected Frequency",
+    mathSkill: "Probability of Simple Events (7.SP.C.6)",
+    teaches: "Every slot gives a chance of an outcome and a number of trials — multiply the probability by the number of trials to predict how often it happens, then build that many notes anywhere in the kit.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "A spinner has 8 equal sections, 3 of them red. If you spin it 40 times, how many times do you expect red? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "(3/8) × 40 = 15.",
+      },
+      B: {
+        prompt: "A bag has 5 blue and 3 green marbles (8 total). If you draw one, look, and replace it 24 times, how many times do you expect green? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "(3/8) × 24 = 9.",
+      },
+      C: {
+        prompt: "A fair die is rolled 42 times. How many times do you expect an even number (a 1/2 chance)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21 }],
+        explanation: "(1/2) × 42 = 21.",
+      },
+      D: {
+        prompt: "A fair coin is flipped 50 times. How many times do you expect heads? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 25 }],
+        explanation: "(1/2) × 50 = 25.",
+      },
+    },
+  },
+  {
+    slug: "math-g7-l24-multi-step-percent-problems",
+    grade: 7,
+    lessonNumber: 24,
+    title: "Multi-Step Percent Problems",
+    mathSkill: "Solve Multi-Step Percent Problems: Tax and Tip (7.RP.A.3)",
+    teaches: "Every slot gives a price with a tax percent and a tip percent, both on the original price — find each amount, add them to the price, and build the total anywhere in the kit, the last lesson of the year.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "A $50 meal has an 8% tax and a 20% tip, both figured on the $50. What is the total? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 64 }],
+        explanation: "50 + (0.08 × 50) + (0.20 × 50) = 50 + 4 + 10 = $64.",
+      },
+      B: {
+        prompt: "A $40 meal has a 5% tax and a 15% tip, both figured on the $40. What is the total? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 48 }],
+        explanation: "40 + (0.05 × 40) + (0.15 × 40) = 40 + 2 + 6 = $48.",
+      },
+      C: {
+        prompt: "A $60 meal has a 10% tax and a 20% tip, both figured on the $60. What is the total? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 78 }],
+        explanation: "60 + (0.10 × 60) + (0.20 × 60) = 60 + 6 + 12 = $78.",
+      },
+      D: {
+        prompt: "A $30 meal has a 10% tax and a 20% tip, both figured on the $30. What is the total? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 39 }],
+        explanation: "30 + (0.10 × 30) + (0.20 × 30) = 30 + 3 + 6 = $39.",
+      },
+    },
+  },
+  // ============================================================
+  // GRADE 8 — exponents and radicals (integer exponent rules, square and
+  // cube roots, scientific notation) open the fall, slope and linear
+  // equations (including variables on both sides and systems of two
+  // equations) carry through winter, functions and the Pythagorean
+  // theorem fill late winter, and volume of curved solids with
+  // transformations, similarity, and bivariate data close out the spring
+  // — the real Common Core Grade 8 progression. Volume keeps the blocks
+  // mechanic alive (a cylinder's height as blocksUsed layers of a
+  // cross-sectional area, a cone the same way with π ≈ 3 collapsing the
+  // formula to r²h) even as most of the year's answers come from a single
+  // clean formula rather than a block-groups structure.
+  // ============================================================
+  {
+    slug: "math-g8-l01-integer-exponents",
+    grade: 8,
+    lessonNumber: 1,
+    title: "Integer Exponents",
+    mathSkill: "Laws of Exponents (8.EE.A.1)",
+    teaches: "Every slot applies a law of exponents — multiply same-base powers by adding exponents, divide by subtracting, or raise a power to a power by multiplying — then build the result anywhere in the kit.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "2³ × 2² = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "2³ × 2² = 2⁵ = 32.",
+      },
+      B: {
+        prompt: "3⁴ ÷ 3² = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "3⁴ ÷ 3² = 3² = 9.",
+      },
+      C: {
+        prompt: "(2²)³ = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 64 }],
+        explanation: "(2²)³ = 2⁶ = 64.",
+      },
+      D: {
+        prompt: "5³ ÷ 5¹ = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 25 }],
+        explanation: "5³ ÷ 5¹ = 5² = 25.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l02-square-roots",
+    grade: 8,
+    lessonNumber: 2,
+    title: "Square Roots",
+    mathSkill: "Square Roots of Perfect Squares (8.EE.A.2)",
+    teaches: "Every slot asks for a perfect square's square root — find the number that multiplies by itself to make it, then build that many notes anywhere in the kit.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "√64 = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "8 × 8 = 64, so √64 = 8.",
+      },
+      B: {
+        prompt: "√121 = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 11 }],
+        explanation: "11 × 11 = 121, so √121 = 11.",
+      },
+      C: {
+        prompt: "√144 = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "12 × 12 = 144, so √144 = 12.",
+      },
+      D: {
+        prompt: "√225 = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "15 × 15 = 225, so √225 = 15.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l03-cube-roots",
+    grade: 8,
+    lessonNumber: 3,
+    title: "Cube Roots",
+    mathSkill: "Cube Roots of Perfect Cubes (8.EE.A.2)",
+    teaches: "Every slot asks for a perfect cube's cube root — find the number that multiplies by itself three times to make it, then build that many quarter notes.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "∛27 = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "3 × 3 × 3 = 27, so ∛27 = 3.",
+      },
+      B: {
+        prompt: "∛125 = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "5 × 5 × 5 = 125, so ∛125 = 5.",
+      },
+      C: {
+        prompt: "∛216 = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "6 × 6 × 6 = 216, so ∛216 = 6.",
+      },
+      D: {
+        prompt: "∛64 = ? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "4 × 4 × 4 = 64, so ∛64 = 4.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l04-comparing-numbers-in-scientific-notation",
+    grade: 8,
+    lessonNumber: 4,
+    title: "Comparing Numbers in Scientific Notation",
+    mathSkill: "Compare Very Large and Very Small Numbers (8.EE.A.3)",
+    teaches: "Every slot gives two numbers in scientific notation — figure out how many times bigger the first is than the second, then build that many notes anywhere in the kit.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "How many times bigger is 6×10³ than 2×10³? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "(6×10³) ÷ (2×10³) = 3.",
+      },
+      B: {
+        prompt: "How many times bigger is 8×10⁵ than 4×10⁵? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 2 }],
+        explanation: "(8×10⁵) ÷ (4×10⁵) = 2.",
+      },
+      C: {
+        prompt: "How many times bigger is 1×10⁶ than 2×10⁵? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "(1×10⁶) ÷ (2×10⁵) = 5.",
+      },
+      D: {
+        prompt: "How many times bigger is 6×10⁷ than 2×10⁶? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "(6×10⁷) ÷ (2×10⁶) = 30.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l05-operations-with-scientific-notation",
+    grade: 8,
+    lessonNumber: 5,
+    title: "Operations with Scientific Notation",
+    mathSkill: "Add, Subtract, and Multiply Numbers in Scientific Notation (8.EE.A.4)",
+    teaches: "Every slot combines two numbers in scientific notation — work out just the coefficient (the number in front of the power of ten), then build that many notes anywhere in the kit.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "(2×10³) + (3×10³) = ? What is the coefficient of the result (the number before ×10³)? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "2 + 3 = 5, so the sum is 5×10³.",
+      },
+      B: {
+        prompt: "(6×10²) - (2×10²) = ? What is the coefficient of the result? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "6 - 2 = 4, so the difference is 4×10².",
+      },
+      C: {
+        prompt: "(2×10³) × (3×10¹) = ? What is the coefficient of the result? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "2 × 3 = 6, so the product's coefficient is 6.",
+      },
+      D: {
+        prompt: "(3×10²) × (3×10¹) = ? What is the coefficient of the result? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "3 × 3 = 9, so the product's coefficient is 9.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l06-slope-of-a-proportional-relationship",
+    grade: 8,
+    lessonNumber: 6,
+    title: "Slope of a Proportional Relationship",
+    mathSkill: "Graph Proportional Relationships and Interpret the Slope (8.EE.B.5)",
+    teaches: "Every slot gives a line through the origin and one other point — divide rise by run to find the slope, then build that many notes anywhere in the kit.",
+    bpm: 122,
+    challenges: {
+      A: {
+        prompt: "A line passes through (0, 0) and (4, 12). What is its slope? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "slope = 12/4 = 3.",
+      },
+      B: {
+        prompt: "A line passes through (0, 0) and (5, 20). What is its slope? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "slope = 20/5 = 4.",
+      },
+      C: {
+        prompt: "A line passes through (0, 0) and (8, 40). What is its slope? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "slope = 40/8 = 5.",
+      },
+      D: {
+        prompt: "A line passes through (0, 0) and (10, 60). What is its slope? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "slope = 60/10 = 6.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l07-slope-from-two-points",
+    grade: 8,
+    lessonNumber: 7,
+    title: "Slope from Two Points",
+    mathSkill: "Find the Slope Between Two Points (8.EE.B.6)",
+    teaches: "Every slot gives two points not on the origin — divide the change in y by the change in x, then build the slope anywhere in the kit.",
+    bpm: 124,
+    challenges: {
+      A: {
+        prompt: "Find the slope between (1, 2) and (4, 11). Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "slope = (11 - 2)/(4 - 1) = 9/3 = 3.",
+      },
+      B: {
+        prompt: "Find the slope between (2, 5) and (6, 21). Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "slope = (21 - 5)/(6 - 2) = 16/4 = 4.",
+      },
+      C: {
+        prompt: "Find the slope between (0, 3) and (5, 28). Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "slope = (28 - 3)/(5 - 0) = 25/5 = 5.",
+      },
+      D: {
+        prompt: "Find the slope between (1, 1) and (7, 37). Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "slope = (37 - 1)/(7 - 1) = 36/6 = 6.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l08-two-step-linear-equations",
+    grade: 8,
+    lessonNumber: 8,
+    title: "Two-Step Linear Equations",
+    mathSkill: "Solve Linear Equations in One Variable (8.EE.C.7)",
+    teaches: "Every slot hides x behind a multiplication and an addition or subtraction — undo them in reverse order, then build x anywhere in the kit.",
+    bpm: 124,
+    challenges: {
+      A: {
+        prompt: "4x - 7 = 21. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "4x - 7 = 21 → 4x = 28 → x = 7.",
+      },
+      B: {
+        prompt: "3x + 8 = 32. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "3x + 8 = 32 → 3x = 24 → x = 8.",
+      },
+      C: {
+        prompt: "6x - 5 = 25. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "6x - 5 = 25 → 6x = 30 → x = 5.",
+      },
+      D: {
+        prompt: "5x + 9 = 39. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "5x + 9 = 39 → 5x = 30 → x = 6.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l09-equations-with-variables-on-both-sides",
+    grade: 8,
+    lessonNumber: 9,
+    title: "Equations with Variables on Both Sides",
+    mathSkill: "Solve Linear Equations with Variables on Both Sides (8.EE.C.7b)",
+    teaches: "Every slot has x-terms on both sides of the equation — gather them onto one side, undo what's left, and build x anywhere in the kit.",
+    bpm: 124,
+    challenges: {
+      A: {
+        prompt: "5x + 3 = 2x + 18. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "5x + 3 = 2x + 18 → 3x = 15 → x = 5.",
+      },
+      B: {
+        prompt: "7x - 4 = 3x + 24. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "7x - 4 = 3x + 24 → 4x = 28 → x = 7.",
+      },
+      C: {
+        prompt: "8x + 2 = 3x + 42. What is x? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "8x + 2 = 3x + 42 → 5x = 40 → x = 8.",
+      },
+      D: {
+        prompt: "6x - 9 = x + 21. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "6x - 9 = x + 21 → 5x = 30 → x = 6.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l10-systems-of-equations",
+    grade: 8,
+    lessonNumber: 10,
+    title: "Systems of Equations",
+    mathSkill: "Solve Systems of Two Linear Equations by Substitution (8.EE.C.8b)",
+    teaches: "Every slot gives two equations for the same y — set them equal to each other and solve for x, then build x anywhere in the kit.",
+    bpm: 124,
+    challenges: {
+      A: {
+        prompt: "y = x + 3 and y = 2x. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "x + 3 = 2x → 3 = x, so x = 3.",
+      },
+      B: {
+        prompt: "y = 2x + 1 and y = 3x - 4. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "2x + 1 = 3x - 4 → 5 = x, so x = 5.",
+      },
+      C: {
+        prompt: "y = x + 2 and y = 3x - 6. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "x + 2 = 3x - 6 → 8 = 2x → x = 4.",
+      },
+      D: {
+        prompt: "y = x + 1 and y = 2x - 5. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "x + 1 = 2x - 5 → 6 = x, so x = 6.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l11-evaluating-functions",
+    grade: 8,
+    lessonNumber: 11,
+    title: "Evaluating Functions",
+    mathSkill: "Evaluate Functions (8.F.A.1)",
+    teaches: "Every slot gives a function rule and an input — substitute the input in and work it out, then build the output anywhere in the kit.",
+    bpm: 124,
+    challenges: {
+      A: {
+        prompt: "f(x) = 2x + 3. What is f(5)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "f(5) = 2(5) + 3 = 13.",
+      },
+      B: {
+        prompt: "f(x) = 3x - 4. What is f(6)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 14 }],
+        explanation: "f(6) = 3(6) - 4 = 14.",
+      },
+      C: {
+        prompt: "f(x) = x² + 1. What is f(4)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 17 }],
+        explanation: "f(4) = 4² + 1 = 17.",
+      },
+      D: {
+        prompt: "f(x) = 4x - 2. What is f(7)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 26 }],
+        explanation: "f(7) = 4(7) - 2 = 26.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l12-rate-of-change",
+    grade: 8,
+    lessonNumber: 12,
+    title: "Rate of Change",
+    mathSkill: "Compare and Interpret Rate of Change (8.F.B.4)",
+    teaches: "Every slot gives two input-output pairs from a function — divide the change in output by the change in input to find the rate of change, then build it anywhere in the kit.",
+    bpm: 124,
+    challenges: {
+      A: {
+        prompt: "A function goes from f(2) = 8 to f(6) = 20. What is its rate of change? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "(20 - 8)/(6 - 2) = 12/4 = 3.",
+      },
+      B: {
+        prompt: "A function goes from f(1) = 5 to f(4) = 17. What is its rate of change? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "(17 - 5)/(4 - 1) = 12/3 = 4.",
+      },
+      C: {
+        prompt: "A function goes from f(0) = 2 to f(5) = 27. What is its rate of change? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "(27 - 2)/(5 - 0) = 25/5 = 5.",
+      },
+      D: {
+        prompt: "A function goes from f(3) = 10 to f(9) = 46. What is its rate of change? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "(46 - 10)/(9 - 3) = 36/6 = 6.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l13-pythagorean-theorem-hypotenuse",
+    grade: 8,
+    lessonNumber: 13,
+    title: "Pythagorean Theorem: Finding the Hypotenuse",
+    mathSkill: "The Pythagorean Theorem (8.G.B.7)",
+    teaches: "Every slot gives a right triangle's two legs — square them, add, and take the square root to find the hypotenuse, then build it anywhere in the kit.",
+    bpm: 124,
+    challenges: {
+      A: {
+        prompt: "A right triangle has legs 3 and 4. What is its hypotenuse? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "√(3² + 4²) = √25 = 5.",
+      },
+      B: {
+        prompt: "A right triangle has legs 6 and 8. What is its hypotenuse? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "√(6² + 8²) = √100 = 10.",
+      },
+      C: {
+        prompt: "A right triangle has legs 5 and 12. What is its hypotenuse? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "√(5² + 12²) = √169 = 13.",
+      },
+      D: {
+        prompt: "A right triangle has legs 9 and 12. What is its hypotenuse? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "√(9² + 12²) = √225 = 15.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l14-pythagorean-theorem-a-leg",
+    grade: 8,
+    lessonNumber: 14,
+    title: "Pythagorean Theorem: Finding a Leg",
+    mathSkill: "The Pythagorean Theorem (8.G.B.7)",
+    teaches: "Every slot gives a right triangle's hypotenuse and one leg — square them, subtract, and take the square root to find the missing leg, then build it anywhere in the kit.",
+    bpm: 124,
+    challenges: {
+      A: {
+        prompt: "A right triangle has a hypotenuse of 10 and one leg of 6. What is the other leg? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "√(10² - 6²) = √64 = 8.",
+      },
+      B: {
+        prompt: "A right triangle has a hypotenuse of 13 and one leg of 5. What is the other leg? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "√(13² - 5²) = √144 = 12.",
+      },
+      C: {
+        prompt: "A right triangle has a hypotenuse of 17 and one leg of 8. What is the other leg? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "√(17² - 8²) = √225 = 15.",
+      },
+      D: {
+        prompt: "A right triangle has a hypotenuse of 25 and one leg of 7. What is the other leg? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "√(25² - 7²) = √576 = 24.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l15-distance-between-two-points",
+    grade: 8,
+    lessonNumber: 15,
+    title: "Distance Between Two Points",
+    mathSkill: "Apply the Pythagorean Theorem to Find Distance (8.G.B.8)",
+    teaches: "Every slot gives two points on a grid — build the right triangle between them (the horizontal and vertical legs) and use the Pythagorean theorem to find the distance, then build it anywhere in the kit.",
+    bpm: 124,
+    challenges: {
+      A: {
+        prompt: "What is the distance between (0, 0) and (3, 4)? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "√(3² + 4²) = √25 = 5.",
+      },
+      B: {
+        prompt: "What is the distance between (0, 0) and (6, 8)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "√(6² + 8²) = √100 = 10.",
+      },
+      C: {
+        prompt: "What is the distance between (1, 1) and (13, 6)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "The legs are 12 and 5: √(12² + 5²) = √169 = 13.",
+      },
+      D: {
+        prompt: "What is the distance between (0, 0) and (9, 12)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "√(9² + 12²) = √225 = 15.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l16-volume-of-cylinders",
+    grade: 8,
+    lessonNumber: 16,
+    title: "Volume of Cylinders",
+    mathSkill: "Volume of a Cylinder (8.G.C.9)",
+    teaches: "Every slot gives a cylinder with radius 1 (so, using π ≈ 3, each layer's circular base holds 3 notes) and a height — the height is how many BLOCKS you use; build the total volume across exactly that many blocks.",
+    bpm: 124,
+    challenges: {
+      A: {
+        prompt: "A cylinder has radius 1 and height 5. Using π ≈ 3, build a drum beat using exactly 5 blocks that add up to 15 notes in all — its volume.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15, blocksUsed: 5 }],
+        explanation: "V = πr²h ≈ 3(1²)(5) = 15 — 5 blocks holding 15 notes in all.",
+      },
+      B: {
+        prompt: "A cylinder has radius 1 and height 8. Using π ≈ 3, build a drum beat using exactly 8 blocks that add up to 24 notes in all — its volume.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24, blocksUsed: 8 }],
+        explanation: "V = πr²h ≈ 3(1²)(8) = 24.",
+      },
+      C: {
+        prompt: "A cylinder has radius 1 and height 6. Using π ≈ 3, build a drum beat using exactly 6 blocks that add up to 18 notes in all — its volume.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 18, blocksUsed: 6 }],
+        explanation: "V = πr²h ≈ 3(1²)(6) = 18.",
+      },
+      D: {
+        prompt: "A cylinder has radius 1 and height 7. Using π ≈ 3, build a drum beat using exactly 7 blocks that add up to 21 notes in all — its volume.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21, blocksUsed: 7 }],
+        explanation: "V = πr²h ≈ 3(1²)(7) = 21.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l17-volume-of-cones",
+    grade: 8,
+    lessonNumber: 17,
+    title: "Volume of Cones",
+    mathSkill: "Volume of a Cone (8.G.C.9)",
+    teaches: "Every slot gives a cone's radius and height — using π ≈ 3, the 1/3 and the π cancel out, leaving volume = r² × h. The height is how many BLOCKS you use; build the total across exactly that many blocks.",
+    bpm: 126,
+    challenges: {
+      A: {
+        prompt: "A cone has radius 2 and height 3. Using π ≈ 3, build a drum beat using exactly 3 blocks that add up to 12 notes in all — its volume.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12, blocksUsed: 3 }],
+        explanation: "V = (1/3)πr²h ≈ (1/3)(3)(2²)(3) = (2²)(3) = 12 — 3 blocks holding 12 notes in all.",
+      },
+      B: {
+        prompt: "A cone has radius 1 and height 8. Using π ≈ 3, build a drum beat using exactly 8 blocks that add up to 8 notes in all — its volume.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8, blocksUsed: 8 }],
+        explanation: "V = (1/3)πr²h ≈ (1²)(8) = 8.",
+      },
+      C: {
+        prompt: "A cone has radius 2 and height 6. Using π ≈ 3, build a drum beat using exactly 6 blocks that add up to 24 notes in all — its volume.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24, blocksUsed: 6 }],
+        explanation: "V = (1/3)πr²h ≈ (2²)(6) = 24.",
+      },
+      D: {
+        prompt: "A cone has radius 2 and height 7. Using π ≈ 3, build a drum beat using exactly 7 blocks that add up to 28 notes in all — its volume.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 28, blocksUsed: 7 }],
+        explanation: "V = (1/3)πr²h ≈ (2²)(7) = 28.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l18-volume-of-spheres",
+    grade: 8,
+    lessonNumber: 18,
+    title: "Volume of Spheres",
+    mathSkill: "Volume of a Sphere (8.G.C.9)",
+    teaches: "Every slot gives a sphere's radius or diameter — using π ≈ 3, volume = 4r³. Work it out, then build the result anywhere in the kit.",
+    bpm: 126,
+    challenges: {
+      A: {
+        prompt: "A sphere has radius 1. Using π ≈ 3, what is its volume? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "V = (4/3)πr³ ≈ (4/3)(3)(1³) = 4.",
+      },
+      B: {
+        prompt: "A sphere has radius 2. Using π ≈ 3, what is its volume? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "V = (4/3)πr³ ≈ (4/3)(3)(2³) = 4(8) = 32.",
+      },
+      C: {
+        prompt: "A sphere has a diameter of 2 (radius 1). Using π ≈ 3, what is its volume? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "radius = 1, so V ≈ 4(1³) = 4.",
+      },
+      D: {
+        prompt: "Sphere A has radius 1 (volume 4). Sphere B has radius 2 (volume 32). How many times bigger is Sphere B's volume? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "32 ÷ 4 = 8.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l19-translations",
+    grade: 8,
+    lessonNumber: 19,
+    title: "Translations",
+    mathSkill: "Translations on the Coordinate Plane (8.G.A.1)",
+    teaches: "Every slot moves a point left/right and up/down — apply the shift to the coordinate asked for, then build that many notes anywhere in the kit.",
+    bpm: 126,
+    challenges: {
+      A: {
+        prompt: "Point (3, 5) is translated 4 units right. What is its new x-coordinate? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "3 + 4 = 7.",
+      },
+      B: {
+        prompt: "Point (2, 6) is translated 3 units down. What is its new y-coordinate? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "6 - 3 = 3.",
+      },
+      C: {
+        prompt: "Point (1, 1) is translated 8 units right. What is its new x-coordinate? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "1 + 8 = 9.",
+      },
+      D: {
+        prompt: "Point (10, 10) is translated 6 units left. What is its new x-coordinate? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "10 - 6 = 4.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l20-reflections-and-rotations",
+    grade: 8,
+    lessonNumber: 20,
+    title: "Reflections and Rotations",
+    mathSkill: "Reflections and Rotations on the Coordinate Plane (8.G.A.3)",
+    teaches: "Every slot reflects or rotates a point — a reflection flips the sign of one coordinate, a 180° rotation flips both — then build the new coordinate's distance from zero anywhere in the kit.",
+    bpm: 126,
+    challenges: {
+      A: {
+        prompt: "Point (4, 7) is reflected over the x-axis. What is the distance of its new y-coordinate from zero? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "Reflecting over the x-axis flips y to -7, a distance of 7 from zero.",
+      },
+      B: {
+        prompt: "Point (5, 3) is reflected over the y-axis. What is the distance of its new x-coordinate from zero? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "Reflecting over the y-axis flips x to -5, a distance of 5 from zero.",
+      },
+      C: {
+        prompt: "Point (6, 2) is rotated 180° about the origin. What is the distance of its new x-coordinate from zero? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "A 180° rotation flips both coordinates to (-6, -2); the new x is 6 away from zero.",
+      },
+      D: {
+        prompt: "Point (9, 4) is reflected over the x-axis. What is the distance of its new y-coordinate from zero? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "Reflecting over the x-axis flips y to -4, a distance of 4 from zero.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l21-similar-figures-and-scale-factor",
+    grade: 8,
+    lessonNumber: 21,
+    title: "Similar Figures and Scale Factor",
+    mathSkill: "Similarity and Scale Factor (8.G.A.4)",
+    teaches: "Every slot gives corresponding sides from two similar figures — divide the larger by the smaller to find the scale factor, then build that many notes anywhere in the kit.",
+    bpm: 126,
+    challenges: {
+      A: {
+        prompt: "Two similar triangles: the smaller triangle has a side of 4, and the corresponding side on the larger triangle is 12. What is the scale factor? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "12 ÷ 4 = 3.",
+      },
+      B: {
+        prompt: "Two similar rectangles: the smaller has a side of 3, and the corresponding side on the larger is 15. What is the scale factor? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "15 ÷ 3 = 5.",
+      },
+      C: {
+        prompt: "Two similar triangles: the smaller has a side of 6, and the corresponding side on the larger is 24. What is the scale factor? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "24 ÷ 6 = 4.",
+      },
+      D: {
+        prompt: "Two similar rectangles: the smaller has a side of 5, and the corresponding side on the larger is 30. What is the scale factor? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "30 ÷ 5 = 6.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l22-angle-relationships-in-triangles-and-parallel-lines",
+    grade: 8,
+    lessonNumber: 22,
+    title: "Angle Relationships in Triangles and Parallel Lines",
+    mathSkill: "Angle Relationships from Triangle Sums and Parallel Lines Cut by a Transversal (8.G.A.5)",
+    teaches: "Every slot uses either the triangle angle sum (180°) or a rule for angles formed by a transversal crossing parallel lines — work out the missing angle, then build it anywhere in the kit.",
+    bpm: 126,
+    challenges: {
+      A: {
+        prompt: "A triangle has angles of 50° and 60°. What is the third angle? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 70 }],
+        explanation: "180 - 50 - 60 = 70°.",
+      },
+      B: {
+        prompt: "A triangle has angles of 70° and 45°. What is the third angle? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 65 }],
+        explanation: "180 - 70 - 45 = 65°.",
+      },
+      C: {
+        prompt: "Two parallel lines are cut by a transversal. One alternate interior angle measures 55°. What is the other one (alternate interior angles are always equal)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 55 }],
+        explanation: "Alternate interior angles are congruent, so the other angle is also 55°.",
+      },
+      D: {
+        prompt: "Two parallel lines are cut by a transversal. One co-interior (same-side interior) angle measures 100°. What is the other one (co-interior angles are always supplementary)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 80 }],
+        explanation: "Co-interior angles sum to 180°, so the other angle is 180 - 100 = 80°.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l23-scatter-plots-and-lines-of-best-fit",
+    grade: 8,
+    lessonNumber: 23,
+    title: "Scatter Plots and Lines of Best Fit",
+    mathSkill: "Use a Line of Best Fit to Make Predictions (8.SP.A.2/A.3)",
+    teaches: "Every slot gives a line of best fit's equation and an x-value — plug it in and work it out, then build the predicted y-value anywhere in the kit.",
+    bpm: 126,
+    challenges: {
+      A: {
+        prompt: "A line of best fit is y = 2x + 3. What is the predicted y when x = 10? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 23 }],
+        explanation: "y = 2(10) + 3 = 23.",
+      },
+      B: {
+        prompt: "A line of best fit is y = 3x + 1. What is the predicted y when x = 8? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 25 }],
+        explanation: "y = 3(8) + 1 = 25.",
+      },
+      C: {
+        prompt: "A line of best fit is y = 4x - 2. What is the predicted y when x = 7? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 26 }],
+        explanation: "y = 4(7) - 2 = 26.",
+      },
+      D: {
+        prompt: "A line of best fit is y = 5x + 4. What is the predicted y when x = 5? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 29 }],
+        explanation: "y = 5(5) + 4 = 29.",
+      },
+    },
+  },
+  {
+    slug: "math-g8-l24-two-way-tables",
+    grade: 8,
+    lessonNumber: 24,
+    title: "Two-Way Tables",
+    mathSkill: "Construct and Interpret Two-Way Tables (8.SP.A.4)",
+    teaches: "Every slot gives a category's total and how many of those also fall in a second category — subtract to find how many are in the first category only, then build that many notes anywhere in the kit, the last lesson of the year.",
+    bpm: 126,
+    challenges: {
+      A: {
+        prompt: "In a survey, 45 students like sports, and 20 of those also like music. How many like sports but NOT music? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 25 }],
+        explanation: "45 - 20 = 25.",
+      },
+      B: {
+        prompt: "In a survey, 60 students like art, and 15 of those also like drama. How many like art but NOT drama? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 45 }],
+        explanation: "60 - 15 = 45.",
+      },
+      C: {
+        prompt: "In a survey, 90 students like science, and 30 of those also like coding. How many like science but NOT coding? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 60 }],
+        explanation: "90 - 30 = 60.",
+      },
+      D: {
+        prompt: "In a survey, 50 students like reading, and 18 of those also like writing. How many like reading but NOT writing? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "50 - 18 = 32.",
       },
     },
   },
