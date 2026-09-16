@@ -76,7 +76,7 @@ export interface MathGrade {
   label: string;
 }
 
-// Kindergarten through Grade 2 exist today — index/list pages derive their
+// Kindergarten through Grade 4 exist today — index/list pages derive their
 // grade sections from this, not a hardcoded grade string. Kindergarten is
 // grade 0 (so it sorts first via asc(grade) everywhere) but is never shown
 // as "Grade 0" — see gradeLabel below, which every page uses instead of
@@ -85,6 +85,8 @@ export const MATH_GRADES: MathGrade[] = [
   { grade: 0, label: "Kindergarten" },
   { grade: 1, label: "Grade 1" },
   { grade: 2, label: "Grade 2" },
+  { grade: 3, label: "Grade 3" },
+  { grade: 4, label: "Grade 4" },
 ];
 
 // The human-facing name for a grade level — "Kindergarten" for grade 0,
@@ -2794,6 +2796,1728 @@ export const MATH_LESSONS: MathLesson[] = [
           { instrument: "hihatClosed", count: 4 },
         ],
         explanation: "Basketball had the most votes (8); basketball beat tennis by 8 - 4 = 4.",
+      },
+    },
+  },
+
+  // ============================================================
+  // GRADE 3 — multiplication and division take over as the year's backbone
+  // (equal groups and facts in the fall, fact families and rounding into
+  // winter, fractions in early spring, time/area/perimeter/measurement/data
+  // through mid and late spring), the real Common Core Grade 3 progression.
+  // Answers lean harder into sounding like an actual groove than earlier
+  // grades did: wherever a problem naturally splits into two or three real
+  // parts (a sum's hundreds/tens/ones, a fact family's two factors, a
+  // graph's separate categories), each part gets its own instrument instead
+  // of one row of isolated hits — kick holding the steady pulse, snare
+  // answering it, hi-hat filling in when a third part is needed. Still just
+  // one idea and one clear instrument for single-fact lessons, the same
+  // "simple where the skill itself is simple" rule every earlier grade
+  // followed.
+  // ============================================================
+  {
+    slug: "math-g3-l01-multiplication-as-equal-groups",
+    grade: 3,
+    lessonNumber: 1,
+    title: "Multiplication as Equal Groups",
+    mathSkill: "Multiplication as Equal Groups (3.OA.A.1)",
+    teaches: "Every slot shows equal groups — multiply how many groups by how many are in each group, then build the total as a steady pulse on one instrument, like a groove locking into place.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "3 groups of 2 apples each. How many apples in all? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "3 groups of 2 is 3 × 2 = 6.",
+      },
+      B: {
+        prompt: "4 groups of 2 stars each. How many stars in all? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 8 }],
+        explanation: "4 groups of 2 is 4 × 2 = 8.",
+      },
+      C: {
+        prompt: "2 groups of 3 drums each. How many drums in all? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 6 }],
+        explanation: "2 groups of 3 is 2 × 3 = 6.",
+      },
+      D: {
+        prompt: "2 groups of 4 blocks each. How many blocks in all? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 8 }],
+        explanation: "2 groups of 4 is 2 × 4 = 8.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l02-multiplication-facts",
+    grade: 3,
+    lessonNumber: 2,
+    title: "Multiplication Facts",
+    mathSkill: "Multiplication Facts (3.OA.C.7)",
+    teaches: "Every slot is a multiplication fact — most fit in one row, but the biggest one here is too big for a single row, so it spreads across two, kick holding a steady pulse and hi-hat answering on top.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "4 × 2 = ? Build a bass drum row with the total number of quarter notes.",
+        targets: [{ instrument: "kick", count: 8 }],
+        explanation: "4 × 2 = 8.",
+      },
+      B: {
+        prompt: "3 × 2 = ? Build a snare drum row with the total number of quarter notes.",
+        targets: [{ instrument: "snare", count: 6 }],
+        explanation: "3 × 2 = 6.",
+      },
+      C: {
+        prompt:
+          "5 × 3 = ? Build a drum beat with the total number of quarter notes, spread across the hi-hat and bass rows.",
+        targets: [{ instrument: ["hihatClosed", "kick"], count: 15 }],
+        explanation: "5 × 3 = 15.",
+      },
+      D: {
+        prompt: "2 × 4 = ? Build a hi-hat row with the total number of quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 8 }],
+        explanation: "2 × 4 = 8.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l03-division-as-equal-groups",
+    grade: 3,
+    lessonNumber: 3,
+    title: "Division as Equal Groups",
+    mathSkill: "Division as Equal Groups (3.OA.A.2)",
+    teaches: "Every slot splits a total into equal groups — divide to find how many are in each group, then build that many quarter notes, one steady hit per group member.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "12 cookies split evenly into 3 bags. How many cookies in each bag? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "12 ÷ 3 = 4.",
+      },
+      B: {
+        prompt: "15 stickers split evenly among 5 friends. How many stickers does each friend get? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 3 }],
+        explanation: "15 ÷ 5 = 3.",
+      },
+      C: {
+        prompt: "16 pencils split evenly into 4 cups. How many pencils in each cup? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
+        explanation: "16 ÷ 4 = 4.",
+      },
+      D: {
+        prompt: "18 grapes split evenly into 3 bowls. How many grapes in each bowl? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "18 ÷ 3 = 6.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l04-multiplication-and-division-fact-families",
+    grade: 3,
+    lessonNumber: 4,
+    title: "Multiplication & Division Fact Families",
+    mathSkill: "Related Facts (3.OA.B.6)",
+    teaches: "Every slot gives a multiplication fact, then asks for its related division fact — build the two factors on two different instruments, a steady pulse for one and an answering hit for the other, the two parts that make up the product.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "If 4 × 3 = 12, what is 12 ÷ 3? Build a bass drum row with 4 quarter notes and a snare drum row with 3 quarter notes — the two factors of the 4, 3, 12 fact family.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 3 },
+        ],
+        explanation: "12 ÷ 3 = 4 — the same three numbers work for multiplication and division (4×3=12, 3×4=12, 12÷3=4, 12÷4=3).",
+      },
+      B: {
+        prompt: "If 5 × 2 = 10, what is 10 ÷ 2? Build a bass drum row with 5 quarter notes and a snare drum row with 2 quarter notes.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 2 },
+        ],
+        explanation: "10 ÷ 2 = 5.",
+      },
+      C: {
+        prompt: "If 6 × 3 = 18, what is 18 ÷ 3? Build a hi-hat row with 6 quarter notes and a bass drum row with 3 quarter notes.",
+        targets: [
+          { instrument: "hihatClosed", count: 6 },
+          { instrument: "kick", count: 3 },
+        ],
+        explanation: "18 ÷ 3 = 6.",
+      },
+      D: {
+        prompt: "If 7 × 2 = 14, what is 14 ÷ 2? Build a bass drum row with 7 quarter notes and a snare drum row with 2 quarter notes.",
+        targets: [
+          { instrument: "kick", count: 7 },
+          { instrument: "snare", count: 2 },
+        ],
+        explanation: "14 ÷ 2 = 7.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l05-rounding-to-the-nearest-ten",
+    grade: 3,
+    lessonNumber: 5,
+    title: "Rounding to the Nearest Ten",
+    mathSkill: "Rounding to the Nearest 10 (3.NBT.A.1)",
+    teaches: "Every slot rounds a number to the nearest ten — since a rounded number is too big to count one at a time, build how many TENS it is instead.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "Round 34 to the nearest ten. How many tens is that? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 3 }],
+        explanation: "34 rounds to 30, which is 3 tens.",
+      },
+      B: {
+        prompt: "Round 68 to the nearest ten. How many tens is that? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 7 }],
+        explanation: "68 rounds to 70, which is 7 tens.",
+      },
+      C: {
+        prompt: "Round 22 to the nearest ten. How many tens is that? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 2 }],
+        explanation: "22 rounds to 20, which is 2 tens.",
+      },
+      D: {
+        prompt: "Round 55 to the nearest ten. How many tens is that? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "55 rounds to 60 (round up at the halfway point), which is 6 tens.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l06-rounding-to-the-nearest-hundred",
+    grade: 3,
+    lessonNumber: 6,
+    title: "Rounding to the Nearest Hundred",
+    mathSkill: "Rounding to the Nearest 100 (3.NBT.A.1)",
+    teaches: "Every slot rounds a number to the nearest hundred — build how many HUNDREDS that rounded number is.",
+    bpm: 90,
+    challenges: {
+      A: {
+        prompt: "Round 340 to the nearest hundred. How many hundreds is that? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 3 }],
+        explanation: "340 rounds to 300, which is 3 hundreds.",
+      },
+      B: {
+        prompt: "Round 680 to the nearest hundred. How many hundreds is that? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 7 }],
+        explanation: "680 rounds to 700, which is 7 hundreds.",
+      },
+      C: {
+        prompt: "Round 150 to the nearest hundred. How many hundreds is that? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 2 }],
+        explanation: "150 rounds to 200 (round up at the halfway point), which is 2 hundreds.",
+      },
+      D: {
+        prompt: "Round 420 to the nearest hundred. How many hundreds is that? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "420 rounds to 400, which is 4 hundreds.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l07-adding-within-1000",
+    grade: 3,
+    lessonNumber: 7,
+    title: "Adding Within 1,000",
+    mathSkill: "Add Within 1,000 (3.NBT.A.2)",
+    teaches: "Every slot adds two numbers within 1,000 — since the sum is too big to build directly, build its hundreds, tens, and ones on three different instruments: kick holding the pulse, snare answering, hi-hat keeping steady time underneath.",
+    bpm: 92,
+    challenges: {
+      A: {
+        prompt: "213 + 154 = ? Build a bass drum row of quarter notes for the hundreds, a snare row for the tens, and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 6 },
+          { instrument: "hihatClosed", count: 7 },
+        ],
+        explanation: "213 + 154 = 367 = 3 hundreds + 6 tens + 7 ones.",
+      },
+      B: {
+        prompt: "341 + 232 = ? Build a bass drum row of quarter notes for the hundreds, a snare row for the tens, and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 7 },
+          { instrument: "hihatClosed", count: 3 },
+        ],
+        explanation: "341 + 232 = 573 = 5 hundreds + 7 tens + 3 ones.",
+      },
+      C: {
+        prompt: "125 + 143 = ? Build a bass drum row of quarter notes for the hundreds, a snare row for the tens, and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 2 },
+          { instrument: "snare", count: 6 },
+          { instrument: "hihatClosed", count: 8 },
+        ],
+        explanation: "125 + 143 = 268 = 2 hundreds + 6 tens + 8 ones.",
+      },
+      D: {
+        prompt: "431 + 124 = ? Build a bass drum row of quarter notes for the hundreds, a snare row for the tens, and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 5 },
+          { instrument: "hihatClosed", count: 5 },
+        ],
+        explanation: "431 + 124 = 555 = 5 hundreds + 5 tens + 5 ones.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l08-subtracting-within-1000",
+    grade: 3,
+    lessonNumber: 8,
+    title: "Subtracting Within 1,000",
+    mathSkill: "Subtract Within 1,000 (3.NBT.A.2)",
+    teaches: "Every slot subtracts within 1,000 — build the difference's hundreds, tens, and ones on three different instruments.",
+    bpm: 92,
+    challenges: {
+      A: {
+        prompt: "578 - 245 = ? Build a bass drum row of quarter notes for the hundreds, a snare row for the tens, and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 3 },
+          { instrument: "hihatClosed", count: 3 },
+        ],
+        explanation: "578 - 245 = 333 = 3 hundreds + 3 tens + 3 ones.",
+      },
+      B: {
+        prompt: "864 - 522 = ? Build a bass drum row of quarter notes for the hundreds, a snare row for the tens, and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 4 },
+          { instrument: "hihatClosed", count: 2 },
+        ],
+        explanation: "864 - 522 = 342 = 3 hundreds + 4 tens + 2 ones.",
+      },
+      C: {
+        prompt: "786 - 432 = ? Build a bass drum row of quarter notes for the hundreds, a snare row for the tens, and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 5 },
+          { instrument: "hihatClosed", count: 4 },
+        ],
+        explanation: "786 - 432 = 354 = 3 hundreds + 5 tens + 4 ones.",
+      },
+      D: {
+        prompt: "927 - 504 = ? Build a bass drum row of quarter notes for the hundreds, a snare row for the tens, and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 2 },
+          { instrument: "hihatClosed", count: 3 },
+        ],
+        explanation: "927 - 504 = 423 = 4 hundreds + 2 tens + 3 ones.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l09-multiplying-by-multiples-of-ten",
+    grade: 3,
+    lessonNumber: 9,
+    title: "Multiplying by Multiples of Ten",
+    mathSkill: "Multiply by Multiples of 10 (3.NBT.A.3)",
+    teaches: "Every slot multiplies a single digit by a multiple of ten — multiply the digits first, then remember the answer is that many TENS, and build how many tens it is.",
+    bpm: 92,
+    challenges: {
+      A: {
+        prompt: "3 × 20 = ? Build a bass drum row with how many TENS are in the answer.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "3 × 20 = 3 × 2 tens = 6 tens (60).",
+      },
+      B: {
+        prompt: "4 × 20 = ? Build a snare drum row with how many TENS are in the answer.",
+        targets: [{ instrument: "snare", count: 8 }],
+        explanation: "4 × 20 = 4 × 2 tens = 8 tens (80).",
+      },
+      C: {
+        prompt: "2 × 30 = ? Build a hi-hat row with how many TENS are in the answer.",
+        targets: [{ instrument: "hihatClosed", count: 6 }],
+        explanation: "2 × 30 = 2 × 3 tens = 6 tens (60).",
+      },
+      D: {
+        prompt: "4 × 10 = ? Build a bass drum row with how many TENS are in the answer.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "4 × 10 = 4 tens (40).",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l10-two-step-word-problems",
+    grade: 3,
+    lessonNumber: 10,
+    title: "Two-Step Word Problems",
+    mathSkill: "Two-Step Word Problems (3.OA.D.8)",
+    teaches: "Every slot takes two steps to solve — do the first operation, then use that answer for the second, and build the final total.",
+    bpm: 92,
+    challenges: {
+      A: {
+        prompt: "Maya has 3 bags of 4 marbles each. She gives away 5 marbles. How many marbles does she have left? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 7 }],
+        explanation: "3 × 4 = 12, then 12 - 5 = 7.",
+      },
+      B: {
+        prompt:
+          "A shelf has 4 rows of 3 books each. 2 more books are added. How many books in all? Build a drum beat with that many quarter notes, spread across the snare and hi-hat rows.",
+        targets: [{ instrument: ["snare", "hihatClosed"], count: 14 }],
+        explanation: "4 × 3 = 12, then 12 + 2 = 14.",
+      },
+      C: {
+        prompt: "Tom buys 2 packs of 4 pencils each. He loses 3 pencils. How many pencils does he have left? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 5 }],
+        explanation: "2 × 4 = 8, then 8 - 3 = 5.",
+      },
+      D: {
+        prompt:
+          "A garden has 3 rows of 4 flowers each. 3 more flowers are planted. How many flowers in all? Build a drum beat with that many quarter notes, spread across the bass and snare rows.",
+        targets: [{ instrument: ["kick", "snare"], count: 15 }],
+        explanation: "3 × 4 = 12, then 12 + 3 = 15.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l11-properties-of-multiplication",
+    grade: 3,
+    lessonNumber: 11,
+    title: "Properties of Multiplication",
+    mathSkill: "Properties of Multiplication (3.OA.B.5)",
+    teaches: "Every slot shows the same two numbers multiplied in a different order — multiplication gives the same answer either way (the commutative property), so build the shared product in one row.",
+    bpm: 92,
+    challenges: {
+      A: {
+        prompt: "2 × 4 and 4 × 2 — both equal how many? Build a bass drum row with that shared answer, in quarter notes.",
+        targets: [{ instrument: "kick", count: 8 }],
+        explanation: "2×4=8 and 4×2=8 — multiplication order doesn't change the answer (the commutative property).",
+      },
+      B: {
+        prompt: "3 × 2 and 2 × 3 — both equal how many? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 6 }],
+        explanation: "3×2=6 and 2×3=6.",
+      },
+      C: {
+        prompt: "4 × 2 and 2 × 4 — both equal how many? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 8 }],
+        explanation: "4×2=8 and 2×4=8.",
+      },
+      D: {
+        prompt: "1 × 6 and 6 × 1 — both equal how many? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "1×6=6 and 6×1=6.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l12-unit-fractions",
+    grade: 3,
+    lessonNumber: 12,
+    title: "Unit Fractions",
+    mathSkill: "Unit Fractions (3.NF.A.1)",
+    teaches: "Every slot shows a shape split into equal parts — the denominator is how many equal parts make the whole; build that many quarter notes, one for each part.",
+    bpm: 94,
+    challenges: {
+      A: {
+        prompt: "A pizza is cut into 4 equal slices. How many equal parts make the whole pizza? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "The denominator, 4, is how many equal parts make the whole.",
+      },
+      B: {
+        prompt: "A candy bar is split into 6 equal pieces. How many equal parts make the whole bar? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 6 }],
+        explanation: "The denominator, 6, is how many equal parts make the whole.",
+      },
+      C: {
+        prompt: "A pan of brownies is cut into 8 equal squares. How many equal parts make the whole pan? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 8 }],
+        explanation: "The denominator, 8, is how many equal parts make the whole.",
+      },
+      D: {
+        prompt: "A garden is split into 3 equal sections. How many equal parts make the whole garden? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 3 }],
+        explanation: "The denominator, 3, is how many equal parts make the whole.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l13-fractions-on-a-number-line",
+    grade: 3,
+    lessonNumber: 13,
+    title: "Fractions on a Number Line",
+    mathSkill: "Fractions on a Number Line (3.NF.A.2)",
+    teaches: "Every slot places a fraction on a number line split into equal parts — the numerator is how many of those equal steps you land on; build that many quarter notes.",
+    bpm: 94,
+    challenges: {
+      A: {
+        prompt: "On a number line split into 4 equal parts between 0 and 1, where does 3/4 land? Build a bass drum row with that many quarter notes — the numerator.",
+        targets: [{ instrument: "kick", count: 3 }],
+        explanation: "3/4 lands after 3 of the 4 equal steps.",
+      },
+      B: {
+        prompt: "On a number line split into 6 equal parts between 0 and 1, where does 5/6 land? Build a snare drum row with that many quarter notes — the numerator.",
+        targets: [{ instrument: "snare", count: 5 }],
+        explanation: "5/6 lands after 5 of the 6 equal steps.",
+      },
+      C: {
+        prompt: "On a number line split into 8 equal parts between 0 and 1, where does 7/8 land? Build a hi-hat row with that many quarter notes — the numerator.",
+        targets: [{ instrument: "hihatClosed", count: 7 }],
+        explanation: "7/8 lands after 7 of the 8 equal steps.",
+      },
+      D: {
+        prompt: "On a number line split into 3 equal parts between 0 and 1, where does 2/3 land? Build a bass drum row with that many quarter notes — the numerator.",
+        targets: [{ instrument: "kick", count: 2 }],
+        explanation: "2/3 lands after 2 of the 3 equal steps.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l14-equivalent-fractions",
+    grade: 3,
+    lessonNumber: 14,
+    title: "Equivalent Fractions",
+    mathSkill: "Equivalent Fractions (3.NF.A.3a-b)",
+    teaches: "Every slot shows two fractions that name the same amount — build each one's numerator on its own instrument, kick and snare answering each other, so you can see both point at the same amount.",
+    bpm: 94,
+    challenges: {
+      A: {
+        prompt: "1/2 and 2/4 name the same amount. Build a bass drum row with the numerator of 1/2 and a snare drum row with the numerator of 2/4.",
+        targets: [
+          { instrument: "kick", count: 1 },
+          { instrument: "snare", count: 2 },
+        ],
+        explanation: "1/2 = 2/4 — both name the same amount, just cut into different-sized equal parts.",
+      },
+      B: {
+        prompt: "2/3 and 4/6 name the same amount. Build a bass drum row with the numerator of 2/3 and a snare drum row with the numerator of 4/6.",
+        targets: [
+          { instrument: "kick", count: 2 },
+          { instrument: "snare", count: 4 },
+        ],
+        explanation: "2/3 = 4/6.",
+      },
+      C: {
+        prompt: "1/4 and 2/8 name the same amount. Build a hi-hat row with the numerator of 1/4 and a bass drum row with the numerator of 2/8.",
+        targets: [
+          { instrument: "hihatClosed", count: 1 },
+          { instrument: "kick", count: 2 },
+        ],
+        explanation: "1/4 = 2/8.",
+      },
+      D: {
+        prompt: "3/4 and 6/8 name the same amount. Build a snare drum row with the numerator of 3/4 and a hi-hat row with the numerator of 6/8.",
+        targets: [
+          { instrument: "snare", count: 3 },
+          { instrument: "hihatClosed", count: 6 },
+        ],
+        explanation: "3/4 = 6/8.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l15-comparing-fractions",
+    grade: 3,
+    lessonNumber: 15,
+    title: "Comparing Fractions",
+    mathSkill: "Comparing Fractions (3.NF.A.3d)",
+    teaches: "Every slot compares two fractions that share a numerator or denominator — figure out which is bigger, then build only that fraction's numerator, a steady pulse for the winner.",
+    bpm: 94,
+    challenges: {
+      A: {
+        prompt: "Which is bigger: 3/8 or 5/8? Build a bass drum row with the BIGGER fraction's numerator, in quarter notes.",
+        targets: [{ instrument: "kick", count: 5 }],
+        explanation: "Same denominator, so compare numerators: 5/8 > 3/8.",
+      },
+      B: {
+        prompt: "Which is bigger: 2/3 or 2/5? Build a snare drum row with the BIGGER fraction's numerator, in quarter notes.",
+        targets: [{ instrument: "snare", count: 2 }],
+        explanation: "Same numerator, so compare denominators: fewer, bigger pieces win — 2/3 > 2/5.",
+      },
+      C: {
+        prompt: "Which is bigger: 4/6 or 4/8? Build a hi-hat row with the BIGGER fraction's numerator, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
+        explanation: "Same numerator — 4/6 > 4/8 (sixths are bigger pieces than eighths).",
+      },
+      D: {
+        prompt: "Which is bigger: 3/4 or 1/4? Build a bass drum row with the BIGGER fraction's numerator, in quarter notes.",
+        targets: [{ instrument: "kick", count: 3 }],
+        explanation: "Same denominator — 3/4 > 1/4.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l16-telling-time-to-the-minute",
+    grade: 3,
+    lessonNumber: 16,
+    title: "Telling Time to the Minute",
+    mathSkill: "Telling Time to the Minute (3.MD.A.1)",
+    teaches: "Every slot gives a clock time — build the hour on the kick and the minutes past the hour, in groups of 5, on the hi-hat, one hit per five minutes.",
+    bpm: 94,
+    challenges: {
+      A: {
+        prompt: "The clock shows 3:15. Build a bass drum row with the hour, in quarter notes, and a hi-hat row with the minutes, in groups of 5.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "hihatClosed", count: 3 },
+        ],
+        explanation: "3:15 is 3 o'clock plus 15 minutes, which is 3 groups of 5.",
+      },
+      B: {
+        prompt: "The clock shows 6:30. Build a bass drum row with the hour, in quarter notes, and a hi-hat row with the minutes, in groups of 5.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "hihatClosed", count: 6 },
+        ],
+        explanation: "6:30 is 6 o'clock plus 30 minutes, which is 6 groups of 5.",
+      },
+      C: {
+        prompt: "The clock shows 2:40. Build a bass drum row with the hour, in quarter notes, and a hi-hat row with the minutes, in groups of 5.",
+        targets: [
+          { instrument: "kick", count: 2 },
+          { instrument: "hihatClosed", count: 8 },
+        ],
+        explanation: "2:40 is 2 o'clock plus 40 minutes, which is 8 groups of 5.",
+      },
+      D: {
+        prompt: "The clock shows 5:10. Build a bass drum row with the hour, in quarter notes, and a hi-hat row with the minutes, in groups of 5.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "hihatClosed", count: 2 },
+        ],
+        explanation: "5:10 is 5 o'clock plus 10 minutes, which is 2 groups of 5.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l17-elapsed-time",
+    grade: 3,
+    lessonNumber: 17,
+    title: "Elapsed Time",
+    mathSkill: "Elapsed Time (3.MD.A.1)",
+    teaches: "Every slot gives a start and end time — figure out how many minutes passed, then build that many in groups of 5 on the hi-hat, one hit per five minutes gone by.",
+    bpm: 94,
+    challenges: {
+      A: {
+        prompt: "A movie starts at 2:00 and ends at 2:25. How many minutes long is it? Build a hi-hat row with that many groups of 5.",
+        targets: [{ instrument: "hihatClosed", count: 5 }],
+        explanation: "2:00 to 2:25 is 25 minutes = 5 groups of 5.",
+      },
+      B: {
+        prompt: "Recess starts at 10:00 and ends at 10:15. How many minutes long is it? Build a hi-hat row with that many groups of 5.",
+        targets: [{ instrument: "hihatClosed", count: 3 }],
+        explanation: "10:00 to 10:15 is 15 minutes = 3 groups of 5.",
+      },
+      C: {
+        prompt: "A class starts at 1:00 and ends at 1:40. How many minutes long is it? Build a hi-hat row with that many groups of 5.",
+        targets: [{ instrument: "hihatClosed", count: 8 }],
+        explanation: "1:00 to 1:40 is 40 minutes = 8 groups of 5.",
+      },
+      D: {
+        prompt: "A game starts at 4:00 and ends at 4:20. How many minutes long is it? Build a hi-hat row with that many groups of 5.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
+        explanation: "4:00 to 4:20 is 20 minutes = 4 groups of 5.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l18-area-counting-unit-squares",
+    grade: 3,
+    lessonNumber: 18,
+    title: "Area: Counting Unit Squares",
+    mathSkill: "Area by Counting Unit Squares (3.MD.C.5-6)",
+    teaches: "Every slot shows a rectangle covered edge to edge by unit squares — count them one at a time (its area), and build that many quarter notes.",
+    bpm: 94,
+    challenges: {
+      A: {
+        prompt: "A rectangle is covered by 6 unit squares. What is its area? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "Counting the unit squares one at a time gives an area of 6.",
+      },
+      B: {
+        prompt: "A rectangle is covered by 8 unit squares. What is its area? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 8 }],
+        explanation: "Counting the unit squares one at a time gives an area of 8.",
+      },
+      C: {
+        prompt: "A rectangle is covered by 4 unit squares. What is its area? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
+        explanation: "Counting the unit squares one at a time gives an area of 4.",
+      },
+      D: {
+        prompt: "A rectangle is covered by 7 unit squares. What is its area? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 7 }],
+        explanation: "Counting the unit squares one at a time gives an area of 7.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l19-area-multiplying-side-lengths",
+    grade: 3,
+    lessonNumber: 19,
+    title: "Area: Multiplying Side Lengths",
+    mathSkill: "Area = Length × Width (3.MD.C.7a)",
+    teaches: "Every slot gives a rectangle's two side lengths — multiply them to find its area, then build that many quarter notes.",
+    bpm: 96,
+    challenges: {
+      A: {
+        prompt: "A rectangle is 3 units long and 2 units wide. What is its area? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "Area = length × width = 3 × 2 = 6.",
+      },
+      B: {
+        prompt: "A rectangle is 4 units long and 2 units wide. What is its area? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 8 }],
+        explanation: "Area = 4 × 2 = 8.",
+      },
+      C: {
+        prompt:
+          "A rectangle is 3 units long and 3 units wide. What is its area? Build a drum beat with that many quarter notes, spread across the hi-hat and bass rows.",
+        targets: [{ instrument: ["hihatClosed", "kick"], count: 9 }],
+        explanation: "Area = 3 × 3 = 9.",
+      },
+      D: {
+        prompt: "A rectangle is 4 units long and 1 unit wide. What is its area? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "Area = 4 × 1 = 4.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l20-perimeter",
+    grade: 3,
+    lessonNumber: 20,
+    title: "Perimeter",
+    mathSkill: "Perimeter (3.MD.D.8)",
+    teaches: "Every slot gives a rectangle's side lengths — add all four sides together (its perimeter), then build that many quarter notes, spread across a couple of rows since a perimeter is usually too big for one.",
+    bpm: 96,
+    challenges: {
+      A: {
+        prompt:
+          "A rectangle is 3 units long and 2 units wide. What is its perimeter? Build a drum beat with that many quarter notes, spread across the bass and snare rows.",
+        targets: [{ instrument: ["kick", "snare"], count: 10 }],
+        explanation: "Perimeter = 2 × (3 + 2) = 10.",
+      },
+      B: {
+        prompt:
+          "A rectangle is 4 units long and 2 units wide. What is its perimeter? Build a drum beat with that many quarter notes, spread across the snare and hi-hat rows.",
+        targets: [{ instrument: ["snare", "hihatClosed"], count: 12 }],
+        explanation: "Perimeter = 2 × (4 + 2) = 12.",
+      },
+      C: {
+        prompt:
+          "A rectangle is 3 units long and 3 units wide. What is its perimeter? Build a drum beat with that many quarter notes, spread across the hi-hat and bass rows.",
+        targets: [{ instrument: ["hihatClosed", "kick"], count: 12 }],
+        explanation: "Perimeter = 2 × (3 + 3) = 12.",
+      },
+      D: {
+        prompt:
+          "A rectangle is 4 units long and 3 units wide. What is its perimeter? Build a drum beat with that many quarter notes, spread across the bass and snare rows.",
+        targets: [{ instrument: ["kick", "snare"], count: 14 }],
+        explanation: "Perimeter = 2 × (4 + 3) = 14.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l21-liquid-volume-and-mass",
+    grade: 3,
+    lessonNumber: 21,
+    title: "Liquid Volume and Mass",
+    mathSkill: "Liquid Volume and Mass (3.MD.A.2)",
+    teaches: "Every slot adds or compares liquid volume or mass in whole units — build the total in quarter notes, one per unit.",
+    bpm: 96,
+    challenges: {
+      A: {
+        prompt: "A bottle holds 3 liters. Another holds 4 liters. How many liters in all? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 7 }],
+        explanation: "3 + 4 = 7 liters.",
+      },
+      B: {
+        prompt: "A bag of rice weighs 5 kilograms. Another weighs 2 kilograms. How many kilograms in all? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 7 }],
+        explanation: "5 + 2 = 7 kilograms.",
+      },
+      C: {
+        prompt: "A jug holds 6 liters. 2 liters are poured out. How many liters are left? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
+        explanation: "6 - 2 = 4 liters.",
+      },
+      D: {
+        prompt: "A box weighs 8 kilograms. 3 kilograms are removed. How many kilograms are left? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 5 }],
+        explanation: "8 - 3 = 5 kilograms.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l22-picture-graphs-and-bar-graphs",
+    grade: 3,
+    lessonNumber: 22,
+    title: "Picture Graphs and Bar Graphs",
+    mathSkill: "Represent and Interpret Data (3.MD.B.3)",
+    teaches: "Every slot reads a graph with a couple of categories — build each category's total on its own instrument, a simple groove where every part is a real quantity straight from the graph.",
+    bpm: 96,
+    challenges: {
+      A: {
+        prompt: "A bar graph shows pets owned: Dogs — 5, Cats — 3. Build a bass drum row of quarter notes for dogs and a snare row for cats.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 3 },
+        ],
+        explanation: "Dogs: 5, Cats: 3 — straight from the graph.",
+      },
+      B: {
+        prompt: "A bar graph shows fruit sold: Apples — 6, Bananas — 4. Build a snare drum row for apples and a hi-hat row for bananas.",
+        targets: [
+          { instrument: "snare", count: 6 },
+          { instrument: "hihatClosed", count: 4 },
+        ],
+        explanation: "Apples: 6, Bananas: 4.",
+      },
+      C: {
+        prompt: "A picture graph shows books read: Emma — 4, Jack — 7. Build a hi-hat row for Emma and a bass drum row for Jack.",
+        targets: [
+          { instrument: "hihatClosed", count: 4 },
+          { instrument: "kick", count: 7 },
+        ],
+        explanation: "Emma: 4, Jack: 7.",
+      },
+      D: {
+        prompt: "A bar graph shows weather this week: Sunny — 5, Rainy — 2. Build a bass drum row for sunny days and a snare row for rainy days.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 2 },
+        ],
+        explanation: "Sunny: 5, Rainy: 2.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l23-categorizing-shapes",
+    grade: 3,
+    lessonNumber: 23,
+    title: "Categorizing Shapes",
+    mathSkill: "Categorizing Shapes (3.G.A.1)",
+    teaches: "Every slot names a shape category — count how many sides its members share, then build that many quarter notes.",
+    bpm: 96,
+    challenges: {
+      A: {
+        prompt: "All quadrilaterals share how many sides? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "Every quadrilateral has 4 sides — it's in the name (quad- means four).",
+      },
+      B: {
+        prompt: "All triangles share how many sides? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 3 }],
+        explanation: "Every triangle has 3 sides.",
+      },
+      C: {
+        prompt: "All pentagons share how many sides? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 5 }],
+        explanation: "Every pentagon has 5 sides.",
+      },
+      D: {
+        prompt: "All hexagons share how many sides? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "Every hexagon has 6 sides.",
+      },
+    },
+  },
+  {
+    slug: "math-g3-l24-partitioning-shapes-into-equal-areas",
+    grade: 3,
+    lessonNumber: 24,
+    title: "Partitioning Shapes into Equal Areas",
+    mathSkill: "Partition Shapes into Equal Areas (3.G.A.2)",
+    teaches: "Every slot splits a shape into equal-area parts — build that many quarter notes, one for each equal part, the last groove of the year.",
+    bpm: 96,
+    challenges: {
+      A: {
+        prompt: "A rectangle is split into 4 equal-area parts. Build a bass drum row with that many quarter notes. Each part is what fraction of the whole?",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "4 equal parts — each part is 1/4 of the whole.",
+      },
+      B: {
+        prompt: "A circle is split into 6 equal-area parts. Build a snare drum row with that many quarter notes. Each part is what fraction of the whole?",
+        targets: [{ instrument: "snare", count: 6 }],
+        explanation: "6 equal parts — each part is 1/6 of the whole.",
+      },
+      C: {
+        prompt: "A square is split into 8 equal-area parts. Build a hi-hat row with that many quarter notes. Each part is what fraction of the whole?",
+        targets: [{ instrument: "hihatClosed", count: 8 }],
+        explanation: "8 equal parts — each part is 1/8 of the whole.",
+      },
+      D: {
+        prompt: "A rectangle is split into 3 equal-area parts. Build a bass drum row with that many quarter notes. Each part is what fraction of the whole?",
+        targets: [{ instrument: "kick", count: 3 }],
+        explanation: "3 equal parts — each part is 1/3 of the whole.",
+      },
+    },
+  },
+
+  // ============================================================
+  // GRADE 4 — multi-digit multiplication and division anchor the fall,
+  // factors/multiples/patterns lead into winter, fractions and decimals
+  // fill early-to-mid spring, and measurement/geometry close out the year —
+  // the real Common Core Grade 4 progression. This is the deepest the kit
+  // goes: a four-digit number's thousands/hundreds/tens/ones gets a full
+  // four-instrument groove (kick, snare, hi-hat, and — new this grade —
+  // ride cymbal for the smallest place), the most real-sounding arrangement
+  // RockBlocks Math has built yet, while single-fact lessons stay just as
+  // simple as ever.
+  // ============================================================
+  {
+    slug: "math-g4-l01-multiplying-1-digit-by-multi-digit",
+    grade: 4,
+    lessonNumber: 1,
+    title: "Multiplying 1-Digit by Multi-Digit Numbers",
+    mathSkill: "Multiply 1-Digit × Multi-Digit (4.NBT.B.5)",
+    teaches: "Every slot multiplies a one-digit number by a two-digit number — find the product, then build its tens on the kick and its ones on the hi-hat, a steady pulse answered by a faster one.",
+    bpm: 96,
+    challenges: {
+      A: {
+        prompt: "3 × 12 = ? Build a bass drum row of quarter notes for the tens of the answer and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "hihatClosed", count: 6 },
+        ],
+        explanation: "3 × 12 = 36 = 3 tens + 6 ones.",
+      },
+      B: {
+        prompt: "4 × 13 = ? Build a bass drum row of quarter notes for the tens of the answer and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "hihatClosed", count: 2 },
+        ],
+        explanation: "4 × 13 = 52 = 5 tens + 2 ones.",
+      },
+      C: {
+        prompt: "2 × 24 = ? Build a bass drum row of quarter notes for the tens of the answer and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "hihatClosed", count: 8 },
+        ],
+        explanation: "2 × 24 = 48 = 4 tens + 8 ones.",
+      },
+      D: {
+        prompt: "3 × 21 = ? Build a bass drum row of quarter notes for the tens of the answer and a hi-hat row for the ones.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "hihatClosed", count: 3 },
+        ],
+        explanation: "3 × 21 = 63 = 6 tens + 3 ones.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l02-factors-and-multiples",
+    grade: 4,
+    lessonNumber: 2,
+    title: "Factors and Multiples",
+    mathSkill: "Factors and Multiples (4.OA.B.4)",
+    teaches: "Every slot asks you to find factors or a multiple — build that count as a steady pulse.",
+    bpm: 96,
+    challenges: {
+      A: {
+        prompt: "How many factors does 8 have? (1, 2, 4, 8) Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "8's factors are 1, 2, 4, 8 — 4 factors.",
+      },
+      B: {
+        prompt: "What is the 3rd multiple of 2? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 6 }],
+        explanation: "2, 4, 6 — the 3rd multiple of 2 is 6.",
+      },
+      C: {
+        prompt: "How many factors does 12 have? (1, 2, 3, 4, 6, 12) Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 6 }],
+        explanation: "12's factors are 1, 2, 3, 4, 6, 12 — 6 factors.",
+      },
+      D: {
+        prompt: "What is the 4th multiple of 2? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 8 }],
+        explanation: "2, 4, 6, 8 — the 4th multiple of 2 is 8.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l03-division-with-remainders",
+    grade: 4,
+    lessonNumber: 3,
+    title: "Division with Remainders",
+    mathSkill: "Division with Remainders (4.NBT.B.6)",
+    teaches: "Every slot divides with some left over — build the whole groups on one instrument and the remainder on another, the quotient keeping steady time and the remainder landing as one last extra hit.",
+    bpm: 96,
+    challenges: {
+      A: {
+        prompt: "13 ÷ 4 = ? How many full groups of 4, and how many left over? Build a bass drum row with the groups and a snare row with the remainder.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 1 },
+        ],
+        explanation: "13 ÷ 4 = 3 remainder 1 (4×3=12, 13-12=1).",
+      },
+      B: {
+        prompt: "17 ÷ 5 = ? Build a bass drum row with the groups and a snare row with the remainder.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 2 },
+        ],
+        explanation: "17 ÷ 5 = 3 remainder 2 (5×3=15, 17-15=2).",
+      },
+      C: {
+        prompt: "22 ÷ 6 = ? Build a bass drum row with the groups and a snare row with the remainder.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 4 },
+        ],
+        explanation: "22 ÷ 6 = 3 remainder 4 (6×3=18, 22-18=4).",
+      },
+      D: {
+        prompt: "19 ÷ 3 = ? Build a bass drum row with the groups and a snare row with the remainder.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "snare", count: 1 },
+        ],
+        explanation: "19 ÷ 3 = 6 remainder 1 (3×6=18, 19-18=1).",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l04-multi-step-word-problems",
+    grade: 4,
+    lessonNumber: 4,
+    title: "Multi-Step Word Problems",
+    mathSkill: "Multi-Step Word Problems (4.OA.A.3)",
+    teaches: "Every slot takes two steps to solve — work through them in order, then build the final answer, spread across rows since it's usually too big for one.",
+    bpm: 98,
+    challenges: {
+      A: {
+        prompt:
+          "A baker makes 4 batches of 6 muffins each, then sells 10. How many muffins are left? Build a drum beat with that many quarter notes, spread across the bass and snare rows.",
+        targets: [{ instrument: ["kick", "snare"], count: 14 }],
+        explanation: "4 × 6 = 24, then 24 - 10 = 14.",
+      },
+      B: {
+        prompt:
+          "A bus has 3 rows of 4 seats each, plus 4 extra seats. How many seats in all? Build a drum beat with that many quarter notes, spread across the snare and hi-hat rows.",
+        targets: [{ instrument: ["snare", "hihatClosed"], count: 16 }],
+        explanation: "3 × 4 = 12, then 12 + 4 = 16.",
+      },
+      C: {
+        prompt: "A store has 4 shelves of 3 books each. 4 books are sold. How many books are left? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 8 }],
+        explanation: "4 × 3 = 12, then 12 - 4 = 8.",
+      },
+      D: {
+        prompt:
+          "A farmer has 6 rows of 2 pumpkins each, plus 3 more pumpkins found. How many pumpkins in all? Build a drum beat with that many quarter notes, spread across the bass and hi-hat rows.",
+        targets: [{ instrument: ["kick", "hihatClosed"], count: 15 }],
+        explanation: "6 × 2 = 12, then 12 + 3 = 15.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l05-place-value-to-the-thousands",
+    grade: 4,
+    lessonNumber: 5,
+    title: "Place Value to the Thousands",
+    mathSkill: "Place Value to 1,000,000 (4.NBT.A.1-2)",
+    teaches: "Every slot gives a four-digit number — build its parts on four different instruments, from thousands down to ones: kick holding the pulse, snare answering, hi-hat filling in, and — new this grade — ride cymbal keeping the fastest, steadiest part of all.",
+    bpm: 98,
+    challenges: {
+      A: {
+        prompt: "The number 3,241. Build quarter notes for its thousands (bass drum), hundreds (snare), tens (hi-hat), and ones (ride cymbal).",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 2 },
+          { instrument: "hihatClosed", count: 4 },
+          { instrument: "ride", count: 1 },
+        ],
+        explanation: "3,241 = 3 thousands + 2 hundreds + 4 tens + 1 one.",
+      },
+      B: {
+        prompt: "The number 5,672. Build quarter notes for its thousands (bass drum), hundreds (snare), tens (hi-hat), and ones (ride cymbal).",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 6 },
+          { instrument: "hihatClosed", count: 7 },
+          { instrument: "ride", count: 2 },
+        ],
+        explanation: "5,672 = 5 thousands + 6 hundreds + 7 tens + 2 ones.",
+      },
+      C: {
+        prompt: "The number 1,384. Build quarter notes for its thousands (bass drum), hundreds (snare), tens (hi-hat), and ones (ride cymbal).",
+        targets: [
+          { instrument: "kick", count: 1 },
+          { instrument: "snare", count: 3 },
+          { instrument: "hihatClosed", count: 8 },
+          { instrument: "ride", count: 4 },
+        ],
+        explanation: "1,384 = 1 thousand + 3 hundreds + 8 tens + 4 ones.",
+      },
+      D: {
+        prompt: "The number 4,156. Build quarter notes for its thousands (bass drum), hundreds (snare), tens (hi-hat), and ones (ride cymbal).",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 1 },
+          { instrument: "hihatClosed", count: 5 },
+          { instrument: "ride", count: 6 },
+        ],
+        explanation: "4,156 = 4 thousands + 1 hundred + 5 tens + 6 ones.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l06-rounding-multi-digit-numbers",
+    grade: 4,
+    lessonNumber: 6,
+    title: "Rounding Multi-Digit Numbers",
+    mathSkill: "Rounding Multi-Digit Numbers (4.NBT.A.3)",
+    teaches: "Every slot rounds a big number to a given place — build how many of that place-value unit the rounded number has.",
+    bpm: 98,
+    challenges: {
+      A: {
+        prompt: "Round 3,482 to the nearest thousand. How many thousands is that? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 3 }],
+        explanation: "3,482 rounds to 3,000, which is 3 thousands.",
+      },
+      B: {
+        prompt: "Round 6,750 to the nearest thousand. How many thousands is that? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 7 }],
+        explanation: "6,750 rounds to 7,000, which is 7 thousands.",
+      },
+      C: {
+        prompt: "Round 2,340 to the nearest thousand. How many thousands is that? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 2 }],
+        explanation: "2,340 rounds to 2,000, which is 2 thousands.",
+      },
+      D: {
+        prompt: "Round 5,590 to the nearest thousand. How many thousands is that? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "5,590 rounds to 6,000 (round up at the halfway point), which is 6 thousands.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l07-comparing-multi-digit-numbers",
+    grade: 4,
+    lessonNumber: 7,
+    title: "Comparing Multi-Digit Numbers",
+    mathSkill: "Comparing Multi-Digit Numbers (4.NBT.A.2)",
+    teaches: "Every slot compares two big numbers — figure out which is bigger, then build the digit that actually decided it as a steady pulse.",
+    bpm: 98,
+    challenges: {
+      A: {
+        prompt: "Which is bigger: 4,521 or 4,215? Build a bass drum row with the BIGGER number's hundreds digit, in quarter notes.",
+        targets: [{ instrument: "kick", count: 5 }],
+        explanation: "4,521 > 4,215 — compare digit by digit from the left; the hundreds digit (5 vs 2) decides it.",
+      },
+      B: {
+        prompt: "Which is bigger: 3,842 or 3,824? Build a snare drum row with the BIGGER number's tens digit, in quarter notes.",
+        targets: [{ instrument: "snare", count: 4 }],
+        explanation: "3,842 > 3,824 — the thousands and hundreds match, so the tens digit (4 vs 2) decides it.",
+      },
+      C: {
+        prompt: "Which is bigger: 6,103 or 6,130? Build a hi-hat row with the BIGGER number's tens digit, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 3 }],
+        explanation: "6,130 > 6,103 — the tens digit (3 vs 0) decides it.",
+      },
+      D: {
+        prompt: "Which is bigger: 7,256 or 7,265? Build a bass drum row with the BIGGER number's tens digit, in quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "7,265 > 7,256 — the tens digit (6 vs 5) decides it.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l08-multi-digit-addition",
+    grade: 4,
+    lessonNumber: 8,
+    title: "Multi-Digit Addition",
+    mathSkill: "Add Multi-Digit Numbers (4.NBT.B.4)",
+    teaches: "Every slot adds two four-digit numbers — build the sum's thousands, hundreds, tens, and ones on four different instruments, the fullest groove yet.",
+    bpm: 98,
+    challenges: {
+      A: {
+        prompt: "2,143 + 1,124 = ? Build quarter notes for the thousands (bass drum), hundreds (snare), tens (hi-hat), and ones (ride cymbal) of the answer.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 2 },
+          { instrument: "hihatClosed", count: 6 },
+          { instrument: "ride", count: 7 },
+        ],
+        explanation: "2,143 + 1,124 = 3,267 = 3 thousands + 2 hundreds + 6 tens + 7 ones.",
+      },
+      B: {
+        prompt: "3,215 + 2,142 = ? Build quarter notes for the thousands (bass drum), hundreds (snare), tens (hi-hat), and ones (ride cymbal) of the answer.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 3 },
+          { instrument: "hihatClosed", count: 5 },
+          { instrument: "ride", count: 7 },
+        ],
+        explanation: "3,215 + 2,142 = 5,357 = 5 thousands + 3 hundreds + 5 tens + 7 ones.",
+      },
+      C: {
+        prompt: "1,432 + 2,241 = ? Build quarter notes for the thousands (bass drum), hundreds (snare), tens (hi-hat), and ones (ride cymbal) of the answer.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 6 },
+          { instrument: "hihatClosed", count: 7 },
+          { instrument: "ride", count: 3 },
+        ],
+        explanation: "1,432 + 2,241 = 3,673 = 3 thousands + 6 hundreds + 7 tens + 3 ones.",
+      },
+      D: {
+        prompt: "4,121 + 1,234 = ? Build quarter notes for the thousands (bass drum), hundreds (snare), tens (hi-hat), and ones (ride cymbal) of the answer.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 3 },
+          { instrument: "hihatClosed", count: 5 },
+          { instrument: "ride", count: 5 },
+        ],
+        explanation: "4,121 + 1,234 = 5,355 = 5 thousands + 3 hundreds + 5 tens + 5 ones.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l09-multi-digit-subtraction",
+    grade: 4,
+    lessonNumber: 9,
+    title: "Multi-Digit Subtraction",
+    mathSkill: "Subtract Multi-Digit Numbers (4.NBT.B.4)",
+    teaches: "Every slot subtracts two four-digit numbers — build the difference's thousands, hundreds, tens, and ones on four different instruments.",
+    bpm: 98,
+    challenges: {
+      A: {
+        prompt: "5,384 - 2,151 = ? Build quarter notes for the thousands (bass drum), hundreds (snare), tens (hi-hat), and ones (ride cymbal) of the answer.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 2 },
+          { instrument: "hihatClosed", count: 3 },
+          { instrument: "ride", count: 3 },
+        ],
+        explanation: "5,384 - 2,151 = 3,233 = 3 thousands + 2 hundreds + 3 tens + 3 ones.",
+      },
+      B: {
+        prompt: "6,748 - 3,215 = ? Build quarter notes for the thousands (bass drum), hundreds (snare), tens (hi-hat), and ones (ride cymbal) of the answer.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 5 },
+          { instrument: "hihatClosed", count: 3 },
+          { instrument: "ride", count: 3 },
+        ],
+        explanation: "6,748 - 3,215 = 3,533 = 3 thousands + 5 hundreds + 3 tens + 3 ones.",
+      },
+      C: {
+        prompt: "8,596 - 4,273 = ? Build quarter notes for the thousands (bass drum), hundreds (snare), tens (hi-hat), and ones (ride cymbal) of the answer.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 3 },
+          { instrument: "hihatClosed", count: 2 },
+          { instrument: "ride", count: 3 },
+        ],
+        explanation: "8,596 - 4,273 = 4,323 = 4 thousands + 3 hundreds + 2 tens + 3 ones.",
+      },
+      D: {
+        prompt: "7,468 - 3,134 = ? Build quarter notes for the thousands (bass drum), hundreds (snare), tens (hi-hat), and ones (ride cymbal) of the answer.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 3 },
+          { instrument: "hihatClosed", count: 3 },
+          { instrument: "ride", count: 4 },
+        ],
+        explanation: "7,468 - 3,134 = 4,334 = 4 thousands + 3 hundreds + 3 tens + 4 ones.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l10-prime-and-composite-numbers",
+    grade: 4,
+    lessonNumber: 10,
+    title: "Prime and Composite Numbers",
+    mathSkill: "Prime and Composite Numbers (4.OA.B.4)",
+    teaches: "Every slot names a number as prime (only 1 and itself as factors) or composite (more factors than that) — build its total number of factors as a steady pulse.",
+    bpm: 100,
+    challenges: {
+      A: {
+        prompt: "Is 7 prime or composite? How many factors does it have? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 2 }],
+        explanation: "7 is prime — only 1 and 7, so 2 factors.",
+      },
+      B: {
+        prompt: "Is 6 prime or composite? How many factors does it have? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 4 }],
+        explanation: "6 is composite — 1, 2, 3, 6, so 4 factors.",
+      },
+      C: {
+        prompt: "Is 5 prime or composite? How many factors does it have? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 2 }],
+        explanation: "5 is prime — only 1 and 5, so 2 factors.",
+      },
+      D: {
+        prompt: "Is 8 prime or composite? How many factors does it have? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "8 is composite — 1, 2, 4, 8, so 4 factors.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l11-number-and-shape-patterns",
+    grade: 4,
+    lessonNumber: 11,
+    title: "Number and Shape Patterns",
+    mathSkill: "Number and Shape Patterns (4.OA.C.5)",
+    teaches: "Every slot gives a pattern rule — apply it to find the next number, then build that many quarter notes.",
+    bpm: 100,
+    challenges: {
+      A: {
+        prompt: "Start at 1 and add 2 each time: 1, 3, 5, __. What comes next? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 7 }],
+        explanation: "1, 3, 5, 7 — add 2 each time.",
+      },
+      B: {
+        prompt: "Start at 2 and double each time: 2, 4, __. What comes next? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 8 }],
+        explanation: "2, 4, 8 — double each time.",
+      },
+      C: {
+        prompt: "Start at 20 and subtract 5 each time: 20, 15, 10, __. What comes next? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 5 }],
+        explanation: "20, 15, 10, 5 — subtract 5 each time.",
+      },
+      D: {
+        prompt: "Start at 1 and add 3 each time: 1, 4, __. What comes next? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 7 }],
+        explanation: "1, 4, 7 — add 3 each time.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l12-equivalent-fractions",
+    grade: 4,
+    lessonNumber: 12,
+    title: "Equivalent Fractions",
+    mathSkill: "Equivalent Fractions (4.NF.A.1)",
+    teaches: "Every slot shows two equivalent fractions — build each one's numerator on its own instrument.",
+    bpm: 100,
+    challenges: {
+      A: {
+        prompt: "2/5 and 4/10 name the same amount. Build a bass drum row with the numerator of 2/5 and a snare row with the numerator of 4/10.",
+        targets: [
+          { instrument: "kick", count: 2 },
+          { instrument: "snare", count: 4 },
+        ],
+        explanation: "2/5 = 4/10.",
+      },
+      B: {
+        prompt: "3/4 and 6/8 name the same amount. Build a bass drum row with the numerator of 3/4 and a snare row with the numerator of 6/8.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 6 },
+        ],
+        explanation: "3/4 = 6/8.",
+      },
+      C: {
+        prompt: "1/3 and 3/9 name the same amount. Build a hi-hat row with the numerator of 1/3 and a bass drum row with the numerator of 3/9.",
+        targets: [
+          { instrument: "hihatClosed", count: 1 },
+          { instrument: "kick", count: 3 },
+        ],
+        explanation: "1/3 = 3/9.",
+      },
+      D: {
+        prompt: "2/6 and 1/3 name the same amount. Build a snare row with the numerator of 2/6 and a hi-hat row with the numerator of 1/3.",
+        targets: [
+          { instrument: "snare", count: 2 },
+          { instrument: "hihatClosed", count: 1 },
+        ],
+        explanation: "2/6 = 1/3.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l13-comparing-fractions-with-unlike-denominators",
+    grade: 4,
+    lessonNumber: 13,
+    title: "Comparing Fractions with Unlike Denominators",
+    mathSkill: "Comparing Fractions with Unlike Denominators (4.NF.A.2)",
+    teaches: "Every slot compares two fractions with different denominators — figure out which is bigger, then build only that fraction's numerator.",
+    bpm: 100,
+    challenges: {
+      A: {
+        prompt: "Which is bigger: 3/4 or 1/2? Build a bass drum row with the BIGGER fraction's numerator, in quarter notes.",
+        targets: [{ instrument: "kick", count: 3 }],
+        explanation: "3/4 > 1/2 (0.75 > 0.5).",
+      },
+      B: {
+        prompt: "Which is bigger: 5/8 or 1/4? Build a snare drum row with the BIGGER fraction's numerator, in quarter notes.",
+        targets: [{ instrument: "snare", count: 5 }],
+        explanation: "5/8 > 1/4 (0.625 > 0.25).",
+      },
+      C: {
+        prompt: "Which is bigger: 2/3 or 1/6? Build a hi-hat row with the BIGGER fraction's numerator, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 2 }],
+        explanation: "2/3 > 1/6 (about 0.67 > about 0.17).",
+      },
+      D: {
+        prompt: "Which is bigger: 1/2 or 3/8? Build a bass drum row with the BIGGER fraction's numerator, in quarter notes.",
+        targets: [{ instrument: "kick", count: 1 }],
+        explanation: "1/2 > 3/8 (0.5 > 0.375).",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l14-adding-fractions-with-like-denominators",
+    grade: 4,
+    lessonNumber: 14,
+    title: "Adding Fractions with Like Denominators",
+    mathSkill: "Add Fractions with Like Denominators (4.NF.B.3a)",
+    teaches: "Every slot adds two fractions that share a denominator — add just the numerators, then build that total.",
+    bpm: 100,
+    challenges: {
+      A: {
+        prompt: "1/8 + 4/8 = ? Build a bass drum row with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: "kick", count: 5 }],
+        explanation: "1/8 + 4/8 = 5/8.",
+      },
+      B: {
+        prompt: "2/6 + 3/6 = ? Build a snare drum row with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: "snare", count: 5 }],
+        explanation: "2/6 + 3/6 = 5/6.",
+      },
+      C: {
+        prompt: "3/10 + 4/10 = ? Build a hi-hat row with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 7 }],
+        explanation: "3/10 + 4/10 = 7/10.",
+      },
+      D: {
+        prompt: "2/5 + 2/5 = ? Build a bass drum row with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "2/5 + 2/5 = 4/5.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l15-subtracting-fractions-with-like-denominators",
+    grade: 4,
+    lessonNumber: 15,
+    title: "Subtracting Fractions with Like Denominators",
+    mathSkill: "Subtract Fractions with Like Denominators (4.NF.B.3a)",
+    teaches: "Every slot subtracts two fractions that share a denominator — subtract just the numerators, then build what's left.",
+    bpm: 100,
+    challenges: {
+      A: {
+        prompt: "7/8 - 3/8 = ? Build a bass drum row with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "7/8 - 3/8 = 4/8.",
+      },
+      B: {
+        prompt: "5/6 - 2/6 = ? Build a snare drum row with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: "snare", count: 3 }],
+        explanation: "5/6 - 2/6 = 3/6.",
+      },
+      C: {
+        prompt: "9/10 - 4/10 = ? Build a hi-hat row with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 5 }],
+        explanation: "9/10 - 4/10 = 5/10.",
+      },
+      D: {
+        prompt: "4/5 - 1/5 = ? Build a bass drum row with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: "kick", count: 3 }],
+        explanation: "4/5 - 1/5 = 3/5.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l16-multiplying-a-fraction-by-a-whole-number",
+    grade: 4,
+    lessonNumber: 16,
+    title: "Multiplying a Fraction by a Whole Number",
+    mathSkill: "Multiply a Fraction by a Whole Number (4.NF.B.4)",
+    teaches: "Every slot multiplies a fraction by a whole number — multiply just the numerator by the whole number, then build the result.",
+    bpm: 102,
+    challenges: {
+      A: {
+        prompt: "3 × 1/4 = ? Build a bass drum row with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: "kick", count: 3 }],
+        explanation: "3 × 1/4 = 3/4.",
+      },
+      B: {
+        prompt: "4 × 1/3 = ? Build a snare drum row with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: "snare", count: 4 }],
+        explanation: "4 × 1/3 = 4/3.",
+      },
+      C: {
+        prompt: "2 × 2/5 = ? Build a hi-hat row with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 4 }],
+        explanation: "2 × 2/5 = 4/5.",
+      },
+      D: {
+        prompt: "5 × 1/6 = ? Build a bass drum row with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: "kick", count: 5 }],
+        explanation: "5 × 1/6 = 5/6.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l17-decimals-as-fractions",
+    grade: 4,
+    lessonNumber: 17,
+    title: "Decimals as Fractions",
+    mathSkill: "Decimals as Fractions of Tenths and Hundredths (4.NF.C.6)",
+    teaches: "Every slot gives a decimal — build how many tenths (or hundredths) it is.",
+    bpm: 102,
+    challenges: {
+      A: {
+        prompt: "0.3 as a fraction is how many tenths? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 3 }],
+        explanation: "0.3 = 3/10 — 3 tenths.",
+      },
+      B: {
+        prompt: "0.7 as a fraction is how many tenths? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 7 }],
+        explanation: "0.7 = 7/10 — 7 tenths.",
+      },
+      C: {
+        prompt: "0.05 as a fraction is how many hundredths? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 5 }],
+        explanation: "0.05 = 5/100 — 5 hundredths.",
+      },
+      D: {
+        prompt: "0.6 as a fraction is how many tenths? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "0.6 = 6/10 — 6 tenths.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l18-comparing-decimals",
+    grade: 4,
+    lessonNumber: 18,
+    title: "Comparing Decimals",
+    mathSkill: "Comparing Decimals (4.NF.C.7)",
+    teaches: "Every slot compares two decimals — figure out which is bigger, then build its tenths digit as a steady pulse.",
+    bpm: 102,
+    challenges: {
+      A: {
+        prompt: "Which is bigger: 0.4 or 0.6? Build a bass drum row with the BIGGER decimal's tenths digit, in quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "0.6 > 0.4.",
+      },
+      B: {
+        prompt: "Which is bigger: 0.35 or 0.53? Build a snare drum row with the BIGGER decimal's tenths digit, in quarter notes.",
+        targets: [{ instrument: "snare", count: 5 }],
+        explanation: "0.53 > 0.35 — compare the tenths digit first (5 vs 3).",
+      },
+      C: {
+        prompt: "Which is bigger: 0.2 or 0.19? Build a hi-hat row with the BIGGER decimal's tenths digit, in quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 2 }],
+        explanation: "0.2 (0.20) > 0.19 — 2 tenths beats 1 tenth.",
+      },
+      D: {
+        prompt: "Which is bigger: 0.7 or 0.68? Build a bass drum row with the BIGGER decimal's tenths digit, in quarter notes.",
+        targets: [{ instrument: "kick", count: 7 }],
+        explanation: "0.7 > 0.68 — 7 tenths beats 6 tenths.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l19-measurement-conversions",
+    grade: 4,
+    lessonNumber: 19,
+    title: "Measurement Conversions",
+    mathSkill: "Measurement Conversions (4.MD.A.1-2)",
+    teaches: "Every slot converts between units — figure out the new count, then build that many quarter notes.",
+    bpm: 102,
+    challenges: {
+      A: {
+        prompt: "How many feet are in 2 yards? (1 yard = 3 feet) Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "2 yards × 3 feet = 6 feet.",
+      },
+      B: {
+        prompt:
+          "How many inches are in 1 foot? (1 foot = 12 inches) Build a drum beat with that many quarter notes, spread across the snare and hi-hat rows.",
+        targets: [{ instrument: ["snare", "hihatClosed"], count: 12 }],
+        explanation: "1 foot = 12 inches.",
+      },
+      C: {
+        prompt: "How many quarts are in 2 gallons? (1 gallon = 4 quarts) Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 8 }],
+        explanation: "2 gallons × 4 quarts = 8 quarts.",
+      },
+      D: {
+        prompt:
+          "How many feet are in 3 yards? (1 yard = 3 feet) Build a drum beat with that many quarter notes, spread across the bass and snare rows.",
+        targets: [{ instrument: ["kick", "snare"], count: 9 }],
+        explanation: "3 yards × 3 feet = 9 feet.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l20-area-and-perimeter-word-problems",
+    grade: 4,
+    lessonNumber: 20,
+    title: "Area and Perimeter Word Problems",
+    mathSkill: "Area and Perimeter Word Problems (4.MD.A.3)",
+    teaches: "Every slot is a word problem about a rectangle's area or perimeter — figure out which one it's asking for, then build the answer.",
+    bpm: 102,
+    challenges: {
+      A: {
+        prompt:
+          "A garden is 5 feet long and 3 feet wide. What is its area? Build a drum beat with that many quarter notes, spread across the bass and snare rows.",
+        targets: [{ instrument: ["kick", "snare"], count: 15 }],
+        explanation: "Area = length × width = 5 × 3 = 15.",
+      },
+      B: {
+        prompt:
+          "A rug is 4 feet long and 2 feet wide. What is its perimeter? Build a drum beat with that many quarter notes, spread across the snare and hi-hat rows.",
+        targets: [{ instrument: ["snare", "hihatClosed"], count: 12 }],
+        explanation: "Perimeter = 2 × (4 + 2) = 12.",
+      },
+      C: {
+        prompt:
+          "A room is 5 feet long and 2 feet wide. What is its area? Build a drum beat with that many quarter notes, spread across the hi-hat and bass rows.",
+        targets: [{ instrument: ["hihatClosed", "kick"], count: 10 }],
+        explanation: "Area = 5 × 2 = 10.",
+      },
+      D: {
+        prompt:
+          "A patio is 3 feet long and 3 feet wide. What is its perimeter? Build a drum beat with that many quarter notes, spread across the bass and snare rows.",
+        targets: [{ instrument: ["kick", "snare"], count: 12 }],
+        explanation: "Perimeter = 2 × (3 + 3) = 12.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l21-angle-measurement",
+    grade: 4,
+    lessonNumber: 21,
+    title: "Angle Measurement",
+    mathSkill: "Angle Measurement (4.MD.C.5-6)",
+    teaches: "Every slot gives an angle in degrees — since the degree count itself is too big to build directly, build how many TENS of degrees it is.",
+    bpm: 104,
+    challenges: {
+      A: {
+        prompt: "A 40° angle. How many tens of degrees is that? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "40° is 4 tens of degrees.",
+      },
+      B: {
+        prompt: "A 70° angle. How many tens of degrees is that? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 7 }],
+        explanation: "70° is 7 tens of degrees.",
+      },
+      C: {
+        prompt:
+          "A right angle measures 90°. How many tens of degrees is that? Build a drum beat with that many quarter notes, spread across the hi-hat and bass rows.",
+        targets: [{ instrument: ["hihatClosed", "kick"], count: 9 }],
+        explanation: "90° is 9 tens of degrees.",
+      },
+      D: {
+        prompt: "A 60° angle. How many tens of degrees is that? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 6 }],
+        explanation: "60° is 6 tens of degrees.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l22-classifying-two-dimensional-shapes",
+    grade: 4,
+    lessonNumber: 22,
+    title: "Classifying Two-Dimensional Shapes",
+    mathSkill: "Classify Two-Dimensional Shapes (4.G.A.2)",
+    teaches: "Every slot names a shape by its angles or sides — count the feature it's asking about, then build that many quarter notes.",
+    bpm: 104,
+    challenges: {
+      A: {
+        prompt: "A right triangle has how many right angles? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 1 }],
+        explanation: "A right triangle has exactly 1 right angle.",
+      },
+      B: {
+        prompt: "A rectangle has how many right angles? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 4 }],
+        explanation: "A rectangle has 4 right angles, one at each corner.",
+      },
+      C: {
+        prompt: "An acute triangle has how many acute angles? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 3 }],
+        explanation: "An acute triangle has 3 acute angles — all of them.",
+      },
+      D: {
+        prompt: "A parallelogram has how many pairs of parallel sides? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 2 }],
+        explanation: "A parallelogram has 2 pairs of parallel sides.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l23-lines-of-symmetry",
+    grade: 4,
+    lessonNumber: 23,
+    title: "Lines of Symmetry",
+    mathSkill: "Lines of Symmetry (4.G.A.3)",
+    teaches: "Every slot names a shape — build how many lines of symmetry it has, one quarter note per line.",
+    bpm: 104,
+    challenges: {
+      A: {
+        prompt: "A square has how many lines of symmetry? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 4 }],
+        explanation: "A square has 4 lines of symmetry.",
+      },
+      B: {
+        prompt: "An equilateral triangle has how many lines of symmetry? Build a snare drum row with that many quarter notes.",
+        targets: [{ instrument: "snare", count: 3 }],
+        explanation: "An equilateral triangle has 3 lines of symmetry.",
+      },
+      C: {
+        prompt: "A regular hexagon has how many lines of symmetry? Build a hi-hat row with that many quarter notes.",
+        targets: [{ instrument: "hihatClosed", count: 6 }],
+        explanation: "A regular hexagon has 6 lines of symmetry.",
+      },
+      D: {
+        prompt: "A rectangle (non-square) has how many lines of symmetry? Build a bass drum row with that many quarter notes.",
+        targets: [{ instrument: "kick", count: 2 }],
+        explanation: "A non-square rectangle has 2 lines of symmetry — through the middle each way, but not diagonally.",
+      },
+    },
+  },
+  {
+    slug: "math-g4-l24-interpreting-line-plots",
+    grade: 4,
+    lessonNumber: 24,
+    title: "Interpreting Line Plots",
+    mathSkill: "Interpreting Line Plots (4.MD.B.4)",
+    teaches: "Every slot reads a line plot's data — build the count for each value it asks about, a simple groove built entirely from real data points, the last lesson of the year.",
+    bpm: 104,
+    challenges: {
+      A: {
+        prompt: "A line plot shows how many pets kids have: 3 kids have 1 pet, 5 kids have 2 pets. Build a bass drum row of quarter notes for kids with 1 pet and a snare row for kids with 2 pets.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 5 },
+        ],
+        explanation: "1 pet: 3 kids. 2 pets: 5 kids — straight from the line plot.",
+      },
+      B: {
+        prompt: "A line plot shows shoe sizes: 4 kids wear size 5, 6 kids wear size 6. Build a snare row for size 5 and a hi-hat row for size 6.",
+        targets: [
+          { instrument: "snare", count: 4 },
+          { instrument: "hihatClosed", count: 6 },
+        ],
+        explanation: "Size 5: 4 kids. Size 6: 6 kids.",
+      },
+      C: {
+        prompt: "A line plot shows minutes of reading: 2 kids read for 3 minutes, 7 kids read for 5 minutes. Build a hi-hat row for the 3-minute readers and a bass drum row for the 5-minute readers.",
+        targets: [
+          { instrument: "hihatClosed", count: 2 },
+          { instrument: "kick", count: 7 },
+        ],
+        explanation: "3 minutes: 2 kids. 5 minutes: 7 kids.",
+      },
+      D: {
+        prompt: "A line plot shows plants grown: 5 kids grew 2 plants, 3 kids grew 4 plants. Build a bass drum row for 2-plant growers and a snare row for 4-plant growers.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 3 },
+        ],
+        explanation: "2 plants: 5 kids. 4 plants: 3 kids.",
       },
     },
   },

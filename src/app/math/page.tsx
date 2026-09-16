@@ -14,7 +14,7 @@ import { isMathAdmin } from "@/lib/auth/mathAdmin";
 export const metadata: Metadata = buildShareMetadata({
   title: "RockBlocks Math — Learn Math Through Drumming, Free",
   description:
-    "RockBlocks Math is a free, grade-aligned math curriculum taught through drumming. Kindergarten, Grade 1, and Grade 2 each get 24 lessons pairing a math concept — counting, addition, subtraction, place value, and more — with a drum pattern built to correlate with it, then have you build and check your own answer in the real RockBlocks editor. No login or download.",
+    "RockBlocks Math is a free, grade-aligned math curriculum taught through drumming. Kindergarten through Grade 4 each get 24 lessons pairing a math concept — counting, addition, subtraction, multiplication, fractions, place value, and more — with a drum pattern built to correlate with it, then have you build and check your own answer in the real RockBlocks editor. No login or download.",
   path: "/math",
 });
 
