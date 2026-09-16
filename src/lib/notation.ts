@@ -222,6 +222,23 @@ function prepareMeasure(
     numBeats
   ).fill(undefined);
 
+  // VF.Beam.generateBeams, left to its own defaults, groups the notes it's
+  // given into sub-beams itself — by counting up to a quarter note's worth
+  // of ticks and breaking there, the same boundary every one of our own
+  // per-beat calls already sits on. That's redundant with our own grouping
+  // (each call here already covers exactly one beat, or one already-trimmed
+  // run within it) and actively wrong whenever a beat mixes a triplet
+  // subdivision on one line with a straight subdivision on another: the
+  // colliding onsets can land as little as 1-2 (of our 24-per-beat) ticks
+  // apart, which durationForTicks has to snap to the nearest real duration
+  // since no notehead that short exists — and that snap is exactly what
+  // desyncs VexFlow's own running tick total from ours, so its default
+  // grouping can overshoot mid-beat and strand the last note or two as an
+  // unbeamed, unflagged bare stem. Passing one deliberately oversized group
+  // (a whole note's worth — 4x any run we ever hand it) makes every note
+  // passed in one call land in a single group regardless of that mismatch.
+  const ONE_BEAM_GROUP = [new VF.Fraction(1, 1)];
+
   // A rest at the start or end of a would-be beam group isn't beamed in
   // standard notation: a subdivided beat with one of its hits turned to a
   // rest reads as a flagged note next to a rest, not a one-note beam. Trim
@@ -397,7 +414,7 @@ function prepareMeasure(
       const hasRest = segments.some((seg) => !seg.instruments);
       if (!hasRest) {
         beams.push(
-          ...VF.Beam.generateBeams(beatNotes, { stemDirection: STEM_DIRECTION })
+          ...VF.Beam.generateBeams(beatNotes, { groups: ONE_BEAM_GROUP, stemDirection: STEM_DIRECTION })
         );
       }
     } else {
@@ -406,7 +423,11 @@ function prepareMeasure(
         const toBeam = beamableRun(run);
         if (toBeam) {
           beams.push(
-            ...VF.Beam.generateBeams(toBeam, { beamRests: true, stemDirection: STEM_DIRECTION })
+            ...VF.Beam.generateBeams(toBeam, {
+              groups: ONE_BEAM_GROUP,
+              beamRests: true,
+              stemDirection: STEM_DIRECTION,
+            })
           );
         }
         run = [];
