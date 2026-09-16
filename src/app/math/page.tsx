@@ -7,7 +7,7 @@ import { MATH_GRADES } from "@/lib/mathSchool";
 import { buildShareMetadata } from "@/lib/shareMetadata";
 import { breadcrumbJsonLd, mathCourseJsonLd, mathLessonListJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
-import { MathProgressOverview } from "@/components/MathProgressOverview";
+import { MathLessonsBrowser } from "@/components/MathLessonsBrowser";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isMathAdmin } from "@/lib/auth/mathAdmin";
 
@@ -80,14 +80,7 @@ export default async function MathIndexPage() {
           login or download required to try it.
         </p>
 
-        {MATH_GRADES.map((g) => (
-          <MathProgressOverview
-            key={g.grade}
-            grade={g.grade}
-            lessons={lessons.filter((l) => l.grade === g.grade)}
-            allLessonSlugs={allLessonSlugs}
-          />
-        ))}
+        <MathLessonsBrowser lessons={lessons} allLessonSlugs={allLessonSlugs} />
       </div>
     </div>
   );
