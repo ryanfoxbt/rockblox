@@ -100,7 +100,7 @@ export interface MathGrade {
   label: string;
 }
 
-// Kindergarten through Grade 4 exist today — index/list pages derive their
+// Kindergarten through Grade 6 exist today — index/list pages derive their
 // grade sections from this, not a hardcoded grade string. Kindergarten is
 // grade 0 (so it sorts first via asc(grade) everywhere) but is never shown
 // as "Grade 0" — see gradeLabel below, which every page uses instead of
@@ -111,6 +111,8 @@ export const MATH_GRADES: MathGrade[] = [
   { grade: 2, label: "Grade 2" },
   { grade: 3, label: "Grade 3" },
   { grade: 4, label: "Grade 4" },
+  { grade: 5, label: "Grade 5" },
+  { grade: 6, label: "Grade 6" },
 ];
 
 // The human-facing name for a grade level — "Kindergarten" for grade 0,
@@ -4516,6 +4518,1550 @@ export const MATH_LESSONS: MathLesson[] = [
           { instrument: "snare", count: 3 },
         ],
         explanation: "2 plants: 5 kids. 4 plants: 3 kids.",
+      },
+    },
+  },
+
+  // ============================================================
+  // GRADE 5 — order of operations and powers of ten open the fall,
+  // decimal operations and fraction operations with unlike denominators
+  // fill winter and early spring, volume and the coordinate plane close
+  // out the year — the real Common Core Grade 5 progression. Numbers get
+  // genuinely bigger this grade (decimal sums counted in tenths, division
+  // by a unit fraction, multi-digit products), so a plain row of quarter
+  // notes usually can't hold an answer at all — building it *requires*
+  // mixing in eighth notes, triplets, and faster subdivisions, not just
+  // defaulting to one quarter note per block. The blocks mechanic keeps
+  // doing the heavy lifting for anything shaped like equal groups
+  // (multiplication, division, and — new this grade — dividing by a unit
+  // fraction, where splitting a whole into its unit fractions maps onto
+  // splitting one block into that many notes about as cleanly as this
+  // model gets).
+  // ============================================================
+  {
+    slug: "math-g5-l01-order-of-operations",
+    grade: 5,
+    lessonNumber: 1,
+    title: "Order of Operations",
+    mathSkill: "Order of Operations with Parentheses (5.OA.A.1)",
+    teaches: "Every slot has an expression with parentheses — solve inside the parentheses first, then finish the rest, and build the final answer as a drum beat with that many notes in all. Mix in eighth notes and triplets to fit them — most of these are too big for a row of plain quarter notes.",
+    bpm: 106,
+    challenges: {
+      A: {
+        prompt: "(3 + 2) × 4 = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
+        explanation: "(3 + 2) × 4 = 5 × 4 = 20 — solve inside the parentheses first.",
+      },
+      B: {
+        prompt: "(8 - 3) × 5 = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 25 }],
+        explanation: "(8 - 3) × 5 = 5 × 5 = 25.",
+      },
+      C: {
+        prompt: "2 × (6 + 3) = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 18 }],
+        explanation: "2 × (6 + 3) = 2 × 9 = 18.",
+      },
+      D: {
+        prompt: "(12 - 4) × 2 = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 16 }],
+        explanation: "(12 - 4) × 2 = 8 × 2 = 16.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l02-writing-numerical-expressions",
+    grade: 5,
+    lessonNumber: 2,
+    title: "Writing Numerical Expressions",
+    mathSkill: "Writing and Evaluating Expressions (5.OA.A.2)",
+    teaches: "Every slot describes a two-step calculation in words — translate it into an expression, work it out in order, and build the result as a drum beat with that many notes in all.",
+    bpm: 106,
+    challenges: {
+      A: {
+        prompt: "Add 6 and 4, then multiply by 3. What's the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "(6 + 4) × 3 = 10 × 3 = 30.",
+      },
+      B: {
+        prompt: "Subtract 2 from 9, then multiply by 5. What's the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35 }],
+        explanation: "(9 - 2) × 5 = 7 × 5 = 35.",
+      },
+      C: {
+        prompt: "Multiply 4 by 3, then add 5. What's the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 17 }],
+        explanation: "(4 × 3) + 5 = 12 + 5 = 17.",
+      },
+      D: {
+        prompt: "Multiply 6 by 2, then subtract 3. What's the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "(6 × 2) - 3 = 12 - 3 = 9.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l03-powers-of-ten",
+    grade: 5,
+    lessonNumber: 3,
+    title: "Powers of Ten",
+    mathSkill: "Powers of 10 (5.NBT.A.1-2)",
+    teaches: "Every slot multiplies a digit by a power of ten — the exponent tells you which place value it lands in; build how many of that unit the answer has.",
+    bpm: 106,
+    challenges: {
+      A: {
+        prompt: "3 × 10^1 = ? How many tens is that? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "3 × 10^1 = 30, which is 3 tens.",
+      },
+      B: {
+        prompt: "5 × 10^2 = ? How many hundreds is that? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "5 × 10^2 = 500, which is 5 hundreds.",
+      },
+      C: {
+        prompt: "2 × 10^3 = ? How many thousands is that? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 2 }],
+        explanation: "2 × 10^3 = 2,000, which is 2 thousands.",
+      },
+      D: {
+        prompt: "7 × 10^1 = ? How many tens is that? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "7 × 10^1 = 70, which is 7 tens.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l04-multiplying-multi-digit-numbers",
+    grade: 5,
+    lessonNumber: 4,
+    title: "Multiplying Multi-Digit Numbers",
+    mathSkill: "Multiply Multi-Digit Whole Numbers (5.NBT.B.5)",
+    teaches: "Every slot multiplies two bigger numbers — the first is how many BLOCKS you use, the second is about how many notes go in each one. These run right up against how much a block can hold (up to 6 notes), so expect to reach for triplets and sixteenth notes, not just eighths.",
+    bpm: 106,
+    challenges: {
+      A: {
+        prompt: "8 × 5 = ? Build a drum beat using exactly 8 blocks that add up to 40 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 40, blocksUsed: 8 }],
+        explanation: "8 × 5 = 40 — 8 blocks holding 40 notes in all.",
+      },
+      B: {
+        prompt: "7 × 6 = ? Build a drum beat using exactly 7 blocks that add up to 42 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 42, blocksUsed: 7 }],
+        explanation: "7 × 6 = 42 — 7 blocks holding 42 notes in all.",
+      },
+      C: {
+        prompt: "8 × 6 = ? Build a drum beat using exactly 8 blocks that add up to 48 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 48, blocksUsed: 8 }],
+        explanation: "8 × 6 = 48 — 8 blocks holding 48 notes in all (every block completely full).",
+      },
+      D: {
+        prompt: "7 × 5 = ? Build a drum beat using exactly 7 blocks that add up to 35 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35, blocksUsed: 7 }],
+        explanation: "7 × 5 = 35 — 7 blocks holding 35 notes in all.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l05-dividing-multi-digit-numbers",
+    grade: 5,
+    lessonNumber: 5,
+    title: "Dividing Multi-Digit Numbers",
+    mathSkill: "Divide Multi-Digit Numbers (5.NBT.B.6)",
+    teaches: "Every slot divides a bigger number — the divisor is how many BLOCKS you use; build the whole dividend across exactly that many blocks, packing several notes into each one.",
+    bpm: 106,
+    challenges: {
+      A: {
+        prompt: "42 ÷ 7 = ? Build a drum beat using exactly 7 blocks that add up to 42 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 42, blocksUsed: 7 }],
+        explanation: "42 ÷ 7 = 6 — 7 blocks (groups), 6 in each, 42 in all.",
+      },
+      B: {
+        prompt: "40 ÷ 8 = ? Build a drum beat using exactly 8 blocks that add up to 40 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 40, blocksUsed: 8 }],
+        explanation: "40 ÷ 8 = 5 — 8 blocks, 5 in each, 40 in all.",
+      },
+      C: {
+        prompt: "48 ÷ 8 = ? Build a drum beat using exactly 8 blocks that add up to 48 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 48, blocksUsed: 8 }],
+        explanation: "48 ÷ 8 = 6 — 8 blocks, 6 in each, 48 in all (every block completely full).",
+      },
+      D: {
+        prompt: "35 ÷ 7 = ? Build a drum beat using exactly 7 blocks that add up to 35 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35, blocksUsed: 7 }],
+        explanation: "35 ÷ 7 = 5 — 7 blocks, 5 in each, 35 in all.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l06-rounding-decimals",
+    grade: 5,
+    lessonNumber: 6,
+    title: "Rounding Decimals",
+    mathSkill: "Rounding Decimals (5.NBT.A.4)",
+    teaches: "Every slot rounds a decimal — most to the nearest whole number, one to the nearest tenth; build the result's own digit anywhere in the kit.",
+    bpm: 106,
+    challenges: {
+      A: {
+        prompt: "Round 4.7 to the nearest whole number. Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "4.7 rounds up to 5.",
+      },
+      B: {
+        prompt: "Round 3.2 to the nearest whole number. Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "3.2 rounds down to 3.",
+      },
+      C: {
+        prompt: "Round 8.5 to the nearest whole number. Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "8.5 rounds up to 9 (round up at the halfway point).",
+      },
+      D: {
+        prompt: "Round 6.38 to the nearest tenth. The result is 6 and how many tenths? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "6.38 rounds to 6.4 — 6 and 4 tenths.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l07-adding-decimals",
+    grade: 5,
+    lessonNumber: 7,
+    title: "Adding Decimals",
+    mathSkill: "Add Decimals to Hundredths (5.NBT.B.7)",
+    teaches: "Every slot adds two decimals — multiply the total by 10 to count it in tenths, then build that many notes across the kit. None of these fit as plain quarter notes; mix in eighth notes, triplets, and sixteenths to pack them all in.",
+    bpm: 108,
+    challenges: {
+      A: {
+        prompt: "3.2 + 1.5 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 47 }],
+        explanation: "3.2 + 1.5 = 4.7, which is 47 tenths.",
+      },
+      B: {
+        prompt: "2.4 + 3.9 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 63 }],
+        explanation: "2.4 + 3.9 = 6.3, which is 63 tenths.",
+      },
+      C: {
+        prompt: "5.6 + 2.7 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 83 }],
+        explanation: "5.6 + 2.7 = 8.3, which is 83 tenths.",
+      },
+      D: {
+        prompt: "1.8 + 4.6 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 64 }],
+        explanation: "1.8 + 4.6 = 6.4, which is 64 tenths.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l08-subtracting-decimals",
+    grade: 5,
+    lessonNumber: 8,
+    title: "Subtracting Decimals",
+    mathSkill: "Subtract Decimals to Hundredths (5.NBT.B.7)",
+    teaches: "Every slot subtracts two decimals — multiply what's left by 10 to count it in tenths, then build that many notes across the kit, mixing in faster subdivisions to fit them.",
+    bpm: 108,
+    challenges: {
+      A: {
+        prompt: "8.4 - 3.6 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 48 }],
+        explanation: "8.4 - 3.6 = 4.8, which is 48 tenths.",
+      },
+      B: {
+        prompt: "9.5 - 2.8 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 67 }],
+        explanation: "9.5 - 2.8 = 6.7, which is 67 tenths.",
+      },
+      C: {
+        prompt: "7.3 - 4.5 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 28 }],
+        explanation: "7.3 - 4.5 = 2.8, which is 28 tenths.",
+      },
+      D: {
+        prompt: "6.1 - 2.4 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 37 }],
+        explanation: "6.1 - 2.4 = 3.7, which is 37 tenths.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l09-multiplying-decimals",
+    grade: 5,
+    lessonNumber: 9,
+    title: "Multiplying Decimals",
+    mathSkill: "Multiply Decimals (5.NBT.B.7)",
+    teaches: "Every slot multiplies a decimal by a whole number — the whole number is how many BLOCKS you use, and the notes packed into each one are the decimal counted in tenths; build the total (also in tenths) across exactly that many blocks.",
+    bpm: 108,
+    challenges: {
+      A: {
+        prompt: "0.5 × 6 = ? Build a drum beat using exactly 6 blocks that add up to 30 tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30, blocksUsed: 6 }],
+        explanation: "0.5 × 6 = 3.0 — 6 blocks (the whole number), 5 tenths in each, 30 tenths in all.",
+      },
+      B: {
+        prompt: "0.3 × 8 = ? Build a drum beat using exactly 8 blocks that add up to 24 tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24, blocksUsed: 8 }],
+        explanation: "0.3 × 8 = 2.4 — 8 blocks, 3 tenths in each, 24 tenths in all.",
+      },
+      C: {
+        prompt: "0.4 × 5 = ? Build a drum beat using exactly 5 blocks that add up to 20 tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20, blocksUsed: 5 }],
+        explanation: "0.4 × 5 = 2.0 — 5 blocks, 4 tenths in each, 20 tenths in all.",
+      },
+      D: {
+        prompt: "0.2 × 7 = ? Build a drum beat using exactly 7 blocks that add up to 14 tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 14, blocksUsed: 7 }],
+        explanation: "0.2 × 7 = 1.4 — 7 blocks, 2 tenths in each, 14 tenths in all.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l10-dividing-decimals",
+    grade: 5,
+    lessonNumber: 10,
+    title: "Dividing Decimals",
+    mathSkill: "Divide Decimals (5.NBT.B.7)",
+    teaches: "Every slot divides a decimal by a whole number — multiply the answer by 10 to count it in tenths, then build that many notes anywhere in the kit.",
+    bpm: 108,
+    challenges: {
+      A: {
+        prompt: "4.8 ÷ 6 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "4.8 ÷ 6 = 0.8, which is 8 tenths.",
+      },
+      B: {
+        prompt: "6.3 ÷ 7 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "6.3 ÷ 7 = 0.9, which is 9 tenths.",
+      },
+      C: {
+        prompt: "8.4 ÷ 4 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21 }],
+        explanation: "8.4 ÷ 4 = 2.1, which is 21 tenths.",
+      },
+      D: {
+        prompt: "9.6 ÷ 8 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "9.6 ÷ 8 = 1.2, which is 12 tenths.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l11-comparing-decimals-to-thousandths",
+    grade: 5,
+    lessonNumber: 11,
+    title: "Comparing Decimals to Thousandths",
+    mathSkill: "Compare Decimals to Thousandths (5.NBT.A.3b)",
+    teaches: "Every slot compares two decimals down to the thousandths place — figure out which is bigger, then build the digit that actually decided it, anywhere in the kit.",
+    bpm: 108,
+    challenges: {
+      A: {
+        prompt: "Which is bigger: 0.456 or 0.465? Build a drum beat with the BIGGER decimal's hundredths digit, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "0.465 > 0.456 — the tenths match (4), so the hundredths digit (6 vs 5) decides it.",
+      },
+      B: {
+        prompt: "Which is bigger: 0.72 or 0.719? Build a drum beat with the BIGGER decimal's hundredths digit, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 2 }],
+        explanation: "0.72 (0.720) > 0.719 — the tenths match (7), so the hundredths digit (2 vs 1) decides it.",
+      },
+      C: {
+        prompt: "Which is bigger: 0.6 or 0.599? Build a drum beat with the BIGGER decimal's tenths digit, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "0.6 (0.600) > 0.599 — the tenths digit (6 vs 5) decides it.",
+      },
+      D: {
+        prompt: "Which is bigger: 0.834 or 0.843? Build a drum beat with the BIGGER decimal's hundredths digit, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "0.843 > 0.834 — the tenths match (8), so the hundredths digit (4 vs 3) decides it.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l12-adding-fractions-unlike-denominators",
+    grade: 5,
+    lessonNumber: 12,
+    title: "Adding Fractions with Unlike Denominators",
+    mathSkill: "Add Fractions with Unlike Denominators (5.NF.A.1)",
+    teaches: "Every slot adds two fractions with different denominators — rewrite both over a common denominator first, then add just the numerators, and build that total anywhere in the kit.",
+    bpm: 108,
+    challenges: {
+      A: {
+        prompt: "1/2 + 1/3 = ? (common denominator 6) Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "1/2 + 1/3 = 3/6 + 2/6 = 5/6.",
+      },
+      B: {
+        prompt: "1/4 + 1/6 = ? (common denominator 12) Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "1/4 + 1/6 = 3/12 + 2/12 = 5/12.",
+      },
+      C: {
+        prompt: "2/3 + 1/4 = ? (common denominator 12) Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 11 }],
+        explanation: "2/3 + 1/4 = 8/12 + 3/12 = 11/12.",
+      },
+      D: {
+        prompt: "1/2 + 2/5 = ? (common denominator 10) Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "1/2 + 2/5 = 5/10 + 4/10 = 9/10.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l13-subtracting-fractions-unlike-denominators",
+    grade: 5,
+    lessonNumber: 13,
+    title: "Subtracting Fractions with Unlike Denominators",
+    mathSkill: "Subtract Fractions with Unlike Denominators (5.NF.A.1)",
+    teaches: "Every slot subtracts two fractions with different denominators — rewrite both over a common denominator first, then subtract just the numerators, and build what's left anywhere in the kit.",
+    bpm: 108,
+    challenges: {
+      A: {
+        prompt: "3/4 - 1/3 = ? (common denominator 12) Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "3/4 - 1/3 = 9/12 - 4/12 = 5/12.",
+      },
+      B: {
+        prompt: "5/6 - 1/2 = ? (common denominator 6) Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 2 }],
+        explanation: "5/6 - 1/2 = 5/6 - 3/6 = 2/6.",
+      },
+      C: {
+        prompt: "2/3 - 1/4 = ? (common denominator 12) Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "2/3 - 1/4 = 8/12 - 3/12 = 5/12.",
+      },
+      D: {
+        prompt: "7/8 - 1/2 = ? (common denominator 8) Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "7/8 - 1/2 = 7/8 - 4/8 = 3/8.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l14-multiplying-fractions",
+    grade: 5,
+    lessonNumber: 14,
+    title: "Multiplying Fractions",
+    mathSkill: "Multiply Fraction by Fraction (5.NF.B.4)",
+    teaches: "Every slot multiplies two fractions — multiply the numerators together for the new numerator, then build that many quarter notes anywhere in the kit.",
+    bpm: 108,
+    challenges: {
+      A: {
+        prompt: "1/2 × 2/3 = ? Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 2 }],
+        explanation: "1/2 × 2/3 = (1×2)/(2×3) = 2/6.",
+      },
+      B: {
+        prompt: "3/4 × 2/5 = ? Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "3/4 × 2/5 = (3×2)/(4×5) = 6/20.",
+      },
+      C: {
+        prompt: "2/3 × 3/4 = ? Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "2/3 × 3/4 = (2×3)/(3×4) = 6/12.",
+      },
+      D: {
+        prompt: "1/3 × 3/5 = ? Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "1/3 × 3/5 = (1×3)/(3×5) = 3/15.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l15-area-with-fractional-side-lengths",
+    grade: 5,
+    lessonNumber: 15,
+    title: "Area with Fractional Side Lengths",
+    mathSkill: "Area with Fractional Side Lengths (5.NF.B.4b)",
+    teaches: "Every slot gives a rectangle with fraction side lengths — its area is the two fractions multiplied together; build the numerator of that area anywhere in the kit.",
+    bpm: 108,
+    challenges: {
+      A: {
+        prompt: "A rectangle is 2/3 unit long and 3/4 unit wide. What is its area? Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "Area = 2/3 × 3/4 = 6/12.",
+      },
+      B: {
+        prompt: "A rectangle is 1/2 unit long and 2/5 unit wide. What is its area? Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 2 }],
+        explanation: "Area = 1/2 × 2/5 = 2/10.",
+      },
+      C: {
+        prompt: "A rectangle is 3/5 unit long and 1/2 unit wide. What is its area? Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "Area = 3/5 × 1/2 = 3/10.",
+      },
+      D: {
+        prompt: "A rectangle is 2/3 unit long and 1/4 unit wide. What is its area? Build a drum beat with the numerator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 2 }],
+        explanation: "Area = 2/3 × 1/4 = 2/12.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l16-dividing-a-unit-fraction-by-a-whole-number",
+    grade: 5,
+    lessonNumber: 16,
+    title: "Dividing a Unit Fraction by a Whole Number",
+    mathSkill: "Divide a Unit Fraction by a Whole Number (5.NF.B.7a)",
+    teaches: "Every slot divides a unit fraction by a whole number — the new denominator is the old one multiplied by that whole number; build the denominator anywhere in the kit.",
+    bpm: 108,
+    challenges: {
+      A: {
+        prompt: "1/3 ÷ 4 = ? Build a drum beat with the denominator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "1/3 ÷ 4 = 1/12 — the denominator becomes 3 × 4 = 12.",
+      },
+      B: {
+        prompt: "1/2 ÷ 5 = ? Build a drum beat with the denominator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "1/2 ÷ 5 = 1/10 — the denominator becomes 2 × 5 = 10.",
+      },
+      C: {
+        prompt: "1/4 ÷ 3 = ? Build a drum beat with the denominator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "1/4 ÷ 3 = 1/12 — the denominator becomes 4 × 3 = 12.",
+      },
+      D: {
+        prompt: "1/5 ÷ 2 = ? Build a drum beat with the denominator of the answer, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "1/5 ÷ 2 = 1/10 — the denominator becomes 5 × 2 = 10.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l17-dividing-a-whole-number-by-a-unit-fraction",
+    grade: 5,
+    lessonNumber: 17,
+    title: "Dividing a Whole Number by a Unit Fraction",
+    mathSkill: "Divide a Whole Number by a Unit Fraction (5.NF.B.7b)",
+    teaches: "Every slot divides a whole number by a unit fraction — the whole number is how many BLOCKS you use, and the fraction's denominator is how many notes fit in each block (splitting every whole into that many equal pieces); build the total across exactly that many blocks.",
+    bpm: 108,
+    challenges: {
+      A: {
+        prompt: "6 ÷ 1/3 = ? Build a drum beat using exactly 6 blocks that add up to 18 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 18, blocksUsed: 6 }],
+        explanation: "6 ÷ 1/3 = 18 — 6 blocks (the wholes), each split into 3 thirds, 18 in all.",
+      },
+      B: {
+        prompt: "4 ÷ 1/2 = ? Build a drum beat using exactly 4 blocks that add up to 8 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8, blocksUsed: 4 }],
+        explanation: "4 ÷ 1/2 = 8 — 4 blocks, each split into 2 halves, 8 in all.",
+      },
+      C: {
+        prompt: "5 ÷ 1/4 = ? Build a drum beat using exactly 5 blocks that add up to 20 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20, blocksUsed: 5 }],
+        explanation: "5 ÷ 1/4 = 20 — 5 blocks, each split into 4 quarters, 20 in all.",
+      },
+      D: {
+        prompt: "3 ÷ 1/5 = ? Build a drum beat using exactly 3 blocks that add up to 15 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15, blocksUsed: 3 }],
+        explanation: "3 ÷ 1/5 = 15 — 3 blocks, each split into 5 fifths, 15 in all.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l18-converting-measurement-units",
+    grade: 5,
+    lessonNumber: 18,
+    title: "Converting Measurement Units",
+    mathSkill: "Convert Measurement Units (5.MD.A.1)",
+    teaches: "Every slot converts between units within the same measurement system — figure out the new count, then build that many notes anywhere in the kit.",
+    bpm: 110,
+    challenges: {
+      A: {
+        prompt: "How many cups are in 3 quarts? (1 quart = 4 cups) Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "3 quarts × 4 cups = 12 cups.",
+      },
+      B: {
+        prompt: "How many ounces are in 2 pounds? (1 pound = 16 ounces) Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "2 pounds × 16 ounces = 32 ounces.",
+      },
+      C: {
+        prompt: "How many feet are in 4 yards? (1 yard = 3 feet) Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "4 yards × 3 feet = 12 feet.",
+      },
+      D: {
+        prompt: "How many inches are in 2 feet? (1 foot = 12 inches) Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "2 feet × 12 inches = 24 inches.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l19-volume-of-rectangular-prisms",
+    grade: 5,
+    lessonNumber: 19,
+    title: "Volume of Rectangular Prisms",
+    mathSkill: "Volume of Rectangular Prisms (5.MD.C.5)",
+    teaches: "Every slot gives a box's three dimensions — multiply length × width × height for its volume, then build that many notes anywhere in the kit.",
+    bpm: 110,
+    challenges: {
+      A: {
+        prompt: "A box is 3 units long, 2 units wide, and 4 units tall. What is its volume? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "Volume = 3 × 2 × 4 = 24.",
+      },
+      B: {
+        prompt: "A box is 2 units long, 3 units wide, and 5 units tall. What is its volume? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "Volume = 2 × 3 × 5 = 30.",
+      },
+      C: {
+        prompt: "A box is 5 units long, 2 units wide, and 2 units tall. What is its volume? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
+        explanation: "Volume = 5 × 2 × 2 = 20.",
+      },
+      D: {
+        prompt: "A box is 3 units long, 3 units wide, and 2 units tall. What is its volume? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 18 }],
+        explanation: "Volume = 3 × 3 × 2 = 18.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l20-line-plots-with-fractional-data",
+    grade: 5,
+    lessonNumber: 20,
+    title: "Line Plots with Fractional Data",
+    mathSkill: "Line Plots with Fractional Data (5.MD.B.2)",
+    teaches: "Every slot reads a line plot measured in fraction-inch units — build each group's count on its own instrument, straight from the plot.",
+    bpm: 110,
+    challenges: {
+      A: {
+        prompt: "A line plot shows plant heights in 1/4-inch units: 3 plants at 2 1/4 in, 5 plants at 2 1/2 in. Build a bass drum row for the 2 1/4-inch plants and a snare row for the 2 1/2-inch plants.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 5 },
+        ],
+        explanation: "2 1/4 in: 3 plants. 2 1/2 in: 5 plants — straight from the plot.",
+      },
+      B: {
+        prompt: "A line plot shows pencil lengths in 1/2-inch units: 4 pencils at 5 in, 6 pencils at 5 1/2 in. Build a bass drum row for the 5-inch pencils and a snare row for the 5 1/2-inch pencils.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 6 },
+        ],
+        explanation: "5 in: 4 pencils. 5 1/2 in: 6 pencils.",
+      },
+      C: {
+        prompt: "A line plot shows ribbon lengths in 1/4-inch units: 2 ribbons at 3 in, 7 ribbons at 3 1/4 in. Build a bass drum row for the 3-inch ribbons and a snare row for the 3 1/4-inch ribbons.",
+        targets: [
+          { instrument: "kick", count: 2 },
+          { instrument: "snare", count: 7 },
+        ],
+        explanation: "3 in: 2 ribbons. 3 1/4 in: 7 ribbons.",
+      },
+      D: {
+        prompt: "A line plot shows leaf widths in 1/2-inch units: 5 leaves at 1 in, 3 leaves at 1 1/2 in. Build a bass drum row for the 1-inch leaves and a snare row for the 1 1/2-inch leaves.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 3 },
+        ],
+        explanation: "1 in: 5 leaves. 1 1/2 in: 3 leaves.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l21-coordinate-plane-plotting-points",
+    grade: 5,
+    lessonNumber: 21,
+    title: "Coordinate Plane: Plotting Points",
+    mathSkill: "Plotting Points on the Coordinate Plane (5.G.A.1-2)",
+    teaches: "Every slot gives an ordered pair — build the x-coordinate on the bass drum and the y-coordinate on the snare.",
+    bpm: 110,
+    challenges: {
+      A: {
+        prompt: "Plot the point (3, 5). Build a bass drum row with the x-coordinate and a snare row with the y-coordinate, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 5 },
+        ],
+        explanation: "(3, 5) — x = 3, y = 5.",
+      },
+      B: {
+        prompt: "Plot the point (4, 2). Build a bass drum row with the x-coordinate and a snare row with the y-coordinate, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 2 },
+        ],
+        explanation: "(4, 2) — x = 4, y = 2.",
+      },
+      C: {
+        prompt: "Plot the point (6, 1). Build a bass drum row with the x-coordinate and a snare row with the y-coordinate, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "snare", count: 1 },
+        ],
+        explanation: "(6, 1) — x = 6, y = 1.",
+      },
+      D: {
+        prompt: "Plot the point (2, 7). Build a bass drum row with the x-coordinate and a snare row with the y-coordinate, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 2 },
+          { instrument: "snare", count: 7 },
+        ],
+        explanation: "(2, 7) — x = 2, y = 7.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l22-classifying-shapes-in-a-hierarchy",
+    grade: 5,
+    lessonNumber: 22,
+    title: "Classifying Shapes in a Hierarchy",
+    mathSkill: "Classify Shapes in a Hierarchy (5.G.B.3-4)",
+    teaches: "Every slot names a shape from a chain of categories (square → rectangle → parallelogram → quadrilateral) — every shape in the chain shares the feature being asked about; build that many quarter notes anywhere in the kit.",
+    bpm: 110,
+    challenges: {
+      A: {
+        prompt: "A square is a rectangle, which is a parallelogram, which is a quadrilateral. How many sides does every shape in that chain have? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "Every shape in the chain is a quadrilateral, so every one has 4 sides.",
+      },
+      B: {
+        prompt: "A rhombus is a parallelogram, which is a quadrilateral. How many sides does every shape in that chain have? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "Every shape in the chain is a quadrilateral, so every one has 4 sides.",
+      },
+      C: {
+        prompt: "A square is also a rectangle. How many right angles does it have? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "A square inherits every rectangle property, including 4 right angles.",
+      },
+      D: {
+        prompt: "A rhombus is also a parallelogram. How many pairs of parallel sides does it have? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 2 }],
+        explanation: "A rhombus inherits every parallelogram property, including 2 pairs of parallel sides.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l23-multi-step-word-problems",
+    grade: 5,
+    lessonNumber: 23,
+    title: "Multi-Step Word Problems",
+    mathSkill: "Multi-Step Word Problems (5.OA/5.NBT)",
+    teaches: "Every slot takes two steps to solve — work through them in order, then build the final total anywhere in the kit. These are big enough that plain quarter notes won't fit; mix in faster subdivisions.",
+    bpm: 110,
+    challenges: {
+      A: {
+        prompt: "A store has 6 boxes of 8 pens each. They sell 15 pens. How many pens are left? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 33 }],
+        explanation: "6 × 8 = 48, then 48 - 15 = 33.",
+      },
+      B: {
+        prompt: "A baker makes 5 trays of 12 cookies each, then gives away 20. How many are left? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 40 }],
+        explanation: "5 × 12 = 60, then 60 - 20 = 40.",
+      },
+      C: {
+        prompt: "A class raises money in 4 groups of $15 each, then spends $25. How much is left? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35 }],
+        explanation: "4 × 15 = 60, then 60 - 25 = 35.",
+      },
+      D: {
+        prompt: "A garden has 7 rows of 6 flowers each, then 10 more are planted. How many flowers in all? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 52 }],
+        explanation: "7 × 6 = 42, then 42 + 10 = 52.",
+      },
+    },
+  },
+  {
+    slug: "math-g5-l24-patterns-two-rules-ordered-pairs",
+    grade: 5,
+    lessonNumber: 24,
+    title: "Patterns: Two Rules, Ordered Pairs",
+    mathSkill: "Patterns from Two Rules (5.OA.B.3)",
+    teaches: "Every slot runs two number patterns side by side from the same starting point — follow the second rule out to the given step, and build that many notes anywhere in the kit, the last lesson of the year.",
+    bpm: 110,
+    challenges: {
+      A: {
+        prompt: "Rule 1: start at 0, add 2 each time. Rule 2: start at 0, add 4 each time. After 3 steps, what is Rule 2's number? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "Rule 2: 4, 8, 12 — after 3 steps, 12.",
+      },
+      B: {
+        prompt: "Rule 1: start at 0, add 3 each time. Rule 2: start at 0, add 6 each time. After 4 steps, what is Rule 2's number? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "Rule 2: 6, 12, 18, 24 — after 4 steps, 24.",
+      },
+      C: {
+        prompt: "Rule 1: start at 0, add 2 each time. Rule 2: start at 0, add 8 each time. After 2 steps, what is Rule 2's number? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 16 }],
+        explanation: "Rule 2: 8, 16 — after 2 steps, 16.",
+      },
+      D: {
+        prompt: "Rule 1: start at 0, add 5 each time. Rule 2: start at 0, add 10 each time. After 3 steps, what is Rule 2's number? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "Rule 2: 10, 20, 30 — after 3 steps, 30.",
+      },
+    },
+  },
+
+  // ============================================================
+  // GRADE 6 — ratios and rates open the fall (the year's real new idea:
+  // one quantity scaling another), negative numbers and exponents lead
+  // into winter, expressions and one-step equations fill early spring,
+  // and geometry (triangles, parallelograms, surface area) with
+  // statistics (mean, median, range) close out the year — the real
+  // Common Core Grade 6 progression. A ratio is itself a scaling
+  // relationship, so it's the best fit yet for the blocks mechanic: a
+  // ratio's second term becomes how many notes go in each block, and how
+  // many times that ratio repeats becomes how many blocks — ratio tables,
+  // unit-rate scaling, multi-digit division, and triangle/parallelogram
+  // area all get the same treatment. Numbers stay big enough all year
+  // that a plain row of quarter notes won't hold most answers.
+  // ============================================================
+  {
+    slug: "math-g6-l01-ratios-and-ratio-language",
+    grade: 6,
+    lessonNumber: 1,
+    title: "Ratios and Ratio Language",
+    mathSkill: "Ratio Language (6.RP.A.1)",
+    teaches: "Every slot gives a ratio and a number of groups of it — the groups are how many BLOCKS you use, and the ratio's own term is about how many notes go in each block; build the total across exactly that many blocks.",
+    bpm: 112,
+    challenges: {
+      A: {
+        prompt: "The ratio of cats to dogs is 2:3. If there are 4 groups of this ratio, how many dogs are there? Build a drum beat using exactly 4 blocks that add up to 12 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12, blocksUsed: 4 }],
+        explanation: "4 groups of a 2:3 ratio means 4 × 3 = 12 dogs — 4 blocks holding 12 notes in all.",
+      },
+      B: {
+        prompt: "The ratio of red to blue marbles is 3:5. If there are 3 groups of this ratio, how many blue marbles are there? Build a drum beat using exactly 3 blocks that add up to 15 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15, blocksUsed: 3 }],
+        explanation: "3 groups of a 3:5 ratio means 3 × 5 = 15 blue marbles.",
+      },
+      C: {
+        prompt: "The ratio of boys to girls is 1:4. If there are 5 groups of this ratio, how many girls are there? Build a drum beat using exactly 5 blocks that add up to 20 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20, blocksUsed: 5 }],
+        explanation: "5 groups of a 1:4 ratio means 5 × 4 = 20 girls.",
+      },
+      D: {
+        prompt: "The ratio of apples to oranges is 2:1. If there are 6 groups of this ratio, how many apples are there? Build a drum beat using exactly 6 blocks that add up to 12 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12, blocksUsed: 6 }],
+        explanation: "6 groups of a 2:1 ratio means 6 × 2 = 12 apples.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l02-ratio-tables",
+    grade: 6,
+    lessonNumber: 2,
+    title: "Ratio Tables",
+    mathSkill: "Ratio Tables (6.RP.A.3a)",
+    teaches: "Every slot scales a recipe or rate up by a number of batches — the batches are how many BLOCKS you use, and the per-batch amount is about how many notes go in each one.",
+    bpm: 112,
+    challenges: {
+      A: {
+        prompt: "A recipe uses 2 cups of flour for every 1 cup of sugar. Build a drum beat using exactly 5 blocks that add up to 10 notes in all — the flour needed for 5 batches.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10, blocksUsed: 5 }],
+        explanation: "5 batches × 2 cups of flour = 10 cups — 5 blocks holding 10 notes in all.",
+      },
+      B: {
+        prompt: "A paint mix uses 3 parts red for every 1 part white. Build a drum beat using exactly 4 blocks that add up to 12 notes in all — the red paint needed for 4 batches.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12, blocksUsed: 4 }],
+        explanation: "4 batches × 3 parts red = 12 parts.",
+      },
+      C: {
+        prompt: "A school keeps 1 teacher for every 6 students. Build a drum beat using exactly 3 blocks that add up to 18 notes in all — the students across 3 classes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 18, blocksUsed: 3 }],
+        explanation: "3 classes × 6 students = 18 students.",
+      },
+      D: {
+        prompt: "A car travels 5 miles for every 1 hour. Build a drum beat using exactly 4 blocks that add up to 20 notes in all — the miles traveled in 4 hours.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20, blocksUsed: 4 }],
+        explanation: "4 hours × 5 miles = 20 miles.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l03-unit-rates",
+    grade: 6,
+    lessonNumber: 3,
+    title: "Unit Rates",
+    mathSkill: "Unit Rates (6.RP.A.2)",
+    teaches: "Every slot gives a total and how many it took — divide to find the rate for just one, then build that many notes anywhere in the kit.",
+    bpm: 112,
+    challenges: {
+      A: {
+        prompt: "A car travels 120 miles in 4 hours. What is the unit rate, in miles per hour? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "120 ÷ 4 = 30 miles per hour.",
+      },
+      B: {
+        prompt: "A recipe uses 18 cups of flour across 6 batches. What is the unit rate, in cups per batch? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "18 ÷ 6 = 3 cups per batch.",
+      },
+      C: {
+        prompt: "9 items cost $45. What is the unit rate, in dollars per item? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "45 ÷ 9 = 5 dollars per item.",
+      },
+      D: {
+        prompt: "150 words are typed in 5 minutes. What is the unit rate, in words per minute? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "150 ÷ 5 = 30 words per minute.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l04-solving-unit-rate-problems",
+    grade: 6,
+    lessonNumber: 4,
+    title: "Solving Unit Rate Problems",
+    mathSkill: "Solve Unit Rate Problems (6.RP.A.3b)",
+    teaches: "Every slot gives a unit rate, then asks for a bigger amount — the new amount you're scaling to is how many BLOCKS you use, and the unit rate itself is about how many notes go in each block.",
+    bpm: 112,
+    challenges: {
+      A: {
+        prompt: "Apples cost $3 per pound. Build a drum beat using exactly 5 blocks that add up to 15 notes in all — the cost for 5 pounds.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15, blocksUsed: 5 }],
+        explanation: "5 pounds × $3 = $15 — 5 blocks holding 15 notes in all.",
+      },
+      B: {
+        prompt: "A printer prints 4 pages per minute. Build a drum beat using exactly 6 blocks that add up to 24 notes in all — the pages printed in 6 minutes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24, blocksUsed: 6 }],
+        explanation: "6 minutes × 4 pages = 24 pages.",
+      },
+      C: {
+        prompt: "A car uses 2 gallons of gas per trip. Build a drum beat using exactly 7 blocks that add up to 14 notes in all — the gallons used across 7 trips.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 14, blocksUsed: 7 }],
+        explanation: "7 trips × 2 gallons = 14 gallons.",
+      },
+      D: {
+        prompt: "A factory makes 5 toys per hour. Build a drum beat using exactly 4 blocks that add up to 20 notes in all — the toys made in 4 hours.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20, blocksUsed: 4 }],
+        explanation: "4 hours × 5 toys = 20 toys.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l05-percent-of-a-quantity",
+    grade: 6,
+    lessonNumber: 5,
+    title: "Percent of a Quantity",
+    mathSkill: "Find a Percent of a Quantity (6.RP.A.3c)",
+    teaches: "Every slot asks for a percent of a number — turn the percent into a fraction or decimal, multiply, and build the result anywhere in the kit.",
+    bpm: 112,
+    challenges: {
+      A: {
+        prompt: "What is 50% of 40? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
+        explanation: "50% of 40 = 0.5 × 40 = 20.",
+      },
+      B: {
+        prompt: "What is 25% of 60? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "25% of 60 = 0.25 × 60 = 15.",
+      },
+      C: {
+        prompt: "What is 10% of 90? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "10% of 90 = 0.1 × 90 = 9.",
+      },
+      D: {
+        prompt: "What is 20% of 35? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "20% of 35 = 0.2 × 35 = 7.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l06-dividing-fractions-by-fractions",
+    grade: 6,
+    lessonNumber: 6,
+    title: "Dividing Fractions by Fractions",
+    mathSkill: "Divide Fractions by Fractions (6.NS.A.1)",
+    teaches: "Every slot divides one fraction by another — flip the second fraction and multiply, then build the numerator of the result anywhere in the kit.",
+    bpm: 112,
+    challenges: {
+      A: {
+        prompt: "1/2 ÷ 1/4 = ? Build a drum beat with the numerator of the answer (before simplifying), in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "1/2 ÷ 1/4 = 1/2 × 4/1 = 4/2 = 2.",
+      },
+      B: {
+        prompt: "2/3 ÷ 1/6 = ? Build a drum beat with the numerator of the answer (before simplifying), in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "2/3 ÷ 1/6 = 2/3 × 6/1 = 12/3 = 4.",
+      },
+      C: {
+        prompt: "3/4 ÷ 1/2 = ? Build a drum beat with the numerator of the answer (before simplifying), in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "3/4 ÷ 1/2 = 3/4 × 2/1 = 6/4 = 1.5.",
+      },
+      D: {
+        prompt: "1/3 ÷ 1/6 = ? Build a drum beat with the numerator of the answer (before simplifying), in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "1/3 ÷ 1/6 = 1/3 × 6/1 = 6/3 = 2.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l07-multi-digit-division",
+    grade: 6,
+    lessonNumber: 7,
+    title: "Multi-Digit Division",
+    mathSkill: "Divide Multi-Digit Numbers (6.NS.B.2)",
+    teaches: "Every slot divides a bigger number — the divisor is how many BLOCKS you use; build the whole dividend across exactly that many blocks, most of them completely full.",
+    bpm: 112,
+    challenges: {
+      A: {
+        prompt: "42 ÷ 7 = ? Build a drum beat using exactly 7 blocks that add up to 42 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 42, blocksUsed: 7 }],
+        explanation: "42 ÷ 7 = 6 — 7 blocks, 6 in each, 42 in all (every block completely full).",
+      },
+      B: {
+        prompt: "40 ÷ 8 = ? Build a drum beat using exactly 8 blocks that add up to 40 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 40, blocksUsed: 8 }],
+        explanation: "40 ÷ 8 = 5 — 8 blocks, 5 in each, 40 in all.",
+      },
+      C: {
+        prompt: "36 ÷ 6 = ? Build a drum beat using exactly 6 blocks that add up to 36 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 36, blocksUsed: 6 }],
+        explanation: "36 ÷ 6 = 6 — 6 blocks, 6 in each, 36 in all (every block completely full).",
+      },
+      D: {
+        prompt: "48 ÷ 8 = ? Build a drum beat using exactly 8 blocks that add up to 48 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 48, blocksUsed: 8 }],
+        explanation: "48 ÷ 8 = 6 — 8 blocks, 6 in each, 48 in all (every block completely full).",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l08-operations-with-decimals",
+    grade: 6,
+    lessonNumber: 8,
+    title: "Operations with Decimals",
+    mathSkill: "Multiply and Divide Decimals (6.NS.B.3)",
+    teaches: "Every slot multiplies or divides with decimals — for multiplication, the whole number is how many BLOCKS you use; for division, just build the result counted in tenths, anywhere in the kit.",
+    bpm: 112,
+    challenges: {
+      A: {
+        prompt: "0.6 × 5 = ? Build a drum beat using exactly 5 blocks that add up to 30 tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30, blocksUsed: 5 }],
+        explanation: "0.6 × 5 = 3.0 — 5 blocks (the whole number), 6 tenths in each, 30 tenths in all.",
+      },
+      B: {
+        prompt: "0.5 × 7 = ? Build a drum beat using exactly 7 blocks that add up to 35 tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35, blocksUsed: 7 }],
+        explanation: "0.5 × 7 = 3.5 — 7 blocks, 5 tenths in each, 35 tenths in all.",
+      },
+      C: {
+        prompt: "5.6 ÷ 7 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "5.6 ÷ 7 = 0.8, which is 8 tenths.",
+      },
+      D: {
+        prompt: "8.1 ÷ 9 = ? Build a drum beat with that many tenths in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "8.1 ÷ 9 = 0.9, which is 9 tenths.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l09-greatest-common-factor",
+    grade: 6,
+    lessonNumber: 9,
+    title: "Greatest Common Factor",
+    mathSkill: "Greatest Common Factor (6.NS.B.4)",
+    teaches: "Every slot gives two numbers — find their greatest common factor, then build that many quarter notes anywhere in the kit.",
+    bpm: 114,
+    challenges: {
+      A: {
+        prompt: "What is the greatest common factor (GCF) of 12 and 18? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "12 = 2×2×3, 18 = 2×3×3 — the GCF is 2×3 = 6.",
+      },
+      B: {
+        prompt: "What is the greatest common factor (GCF) of 8 and 20? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "8 = 2×2×2, 20 = 2×2×5 — the GCF is 2×2 = 4.",
+      },
+      C: {
+        prompt: "What is the greatest common factor (GCF) of 15 and 25? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "15 = 3×5, 25 = 5×5 — the GCF is 5.",
+      },
+      D: {
+        prompt: "What is the greatest common factor (GCF) of 9 and 24? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "9 = 3×3, 24 = 2×2×2×3 — the GCF is 3.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l10-least-common-multiple",
+    grade: 6,
+    lessonNumber: 10,
+    title: "Least Common Multiple",
+    mathSkill: "Least Common Multiple (6.NS.B.4)",
+    teaches: "Every slot gives two numbers — find their least common multiple, then build that many notes anywhere in the kit.",
+    bpm: 114,
+    challenges: {
+      A: {
+        prompt: "What is the least common multiple (LCM) of 4 and 6? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "Multiples of 4: 4, 8, 12. Multiples of 6: 6, 12 — the LCM is 12.",
+      },
+      B: {
+        prompt: "What is the least common multiple (LCM) of 3 and 5? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "3 and 5 share no smaller factors, so the LCM is just 3 × 5 = 15.",
+      },
+      C: {
+        prompt: "What is the least common multiple (LCM) of 6 and 8? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "Multiples of 6: 6, 12, 18, 24. Multiples of 8: 8, 16, 24 — the LCM is 24.",
+      },
+      D: {
+        prompt: "What is the least common multiple (LCM) of 4 and 10? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
+        explanation: "Multiples of 4: 4, 8, 12, 16, 20. Multiples of 10: 10, 20 — the LCM is 20.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l11-positive-and-negative-numbers",
+    grade: 6,
+    lessonNumber: 11,
+    title: "Positive and Negative Numbers",
+    mathSkill: "Positive and Negative Numbers (6.NS.C.5)",
+    teaches: "Every slot moves along a number line that dips below zero — work out where you land, then build that landing value (as a positive count) anywhere in the kit.",
+    bpm: 114,
+    challenges: {
+      A: {
+        prompt: "The temperature is -5°F in the morning and rises by 12 degrees. What is the new temperature? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "-5 + 12 = 7°F.",
+      },
+      B: {
+        prompt: "A submarine is at -20 feet and rises 8 feet. How many feet below the surface is it now? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "-20 + 8 = -12, so it's 12 feet below the surface.",
+      },
+      C: {
+        prompt: "The temperature is -3°C and drops another 4 degrees. How far from zero is the new temperature? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "-3 - 4 = -7, which is 7 degrees away from zero.",
+      },
+      D: {
+        prompt: "A hiker starts at -8 feet (below sea level) and climbs 20 feet. What is the new elevation? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "-8 + 20 = 12 feet above sea level.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l12-absolute-value",
+    grade: 6,
+    lessonNumber: 12,
+    title: "Absolute Value",
+    mathSkill: "Absolute Value (6.NS.C.7c)",
+    teaches: "Every slot asks for a number's distance from zero — build that distance (always positive) anywhere in the kit.",
+    bpm: 114,
+    challenges: {
+      A: {
+        prompt: "What is |-7|? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "|-7| = 7 — its distance from zero.",
+      },
+      B: {
+        prompt: "What is |4|? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "|4| = 4 — it's already positive.",
+      },
+      C: {
+        prompt: "Which is bigger: |-9| or |5|? Build a drum beat with the bigger absolute value, in quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "|-9| = 9, which is bigger than |5| = 5.",
+      },
+      D: {
+        prompt: "What is |-12|? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "|-12| = 12 — its distance from zero.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l13-exponents",
+    grade: 6,
+    lessonNumber: 13,
+    title: "Exponents",
+    mathSkill: "Exponents (6.EE.A.1)",
+    teaches: "Every slot evaluates a number raised to a power — multiply the base by itself that many times, then build the result anywhere in the kit. None of these are small; expect to mix in triplets and sixteenth notes.",
+    bpm: 114,
+    challenges: {
+      A: {
+        prompt: "2^4 = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 16 }],
+        explanation: "2^4 = 2×2×2×2 = 16.",
+      },
+      B: {
+        prompt: "3^3 = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 27 }],
+        explanation: "3^3 = 3×3×3 = 27.",
+      },
+      C: {
+        prompt: "5^2 = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 25 }],
+        explanation: "5^2 = 5×5 = 25.",
+      },
+      D: {
+        prompt: "2^5 = ? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "2^5 = 2×2×2×2×2 = 32.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l14-evaluating-expressions-with-variables",
+    grade: 6,
+    lessonNumber: 14,
+    title: "Evaluating Expressions with Variables",
+    mathSkill: "Evaluate Expressions with Variables (6.EE.A.2c)",
+    teaches: "Every slot gives an expression and a value for its variable — substitute the value in, work it out in order, and build the result anywhere in the kit.",
+    bpm: 114,
+    challenges: {
+      A: {
+        prompt: "Evaluate 3x + 2 when x = 5. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 17 }],
+        explanation: "3(5) + 2 = 15 + 2 = 17.",
+      },
+      B: {
+        prompt: "Evaluate 2x - 4 when x = 9. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 14 }],
+        explanation: "2(9) - 4 = 18 - 4 = 14.",
+      },
+      C: {
+        prompt: "Evaluate 5x when x = 6. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "5(6) = 30.",
+      },
+      D: {
+        prompt: "Evaluate x^2 when x = 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 16 }],
+        explanation: "4^2 = 16.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l15-writing-expressions",
+    grade: 6,
+    lessonNumber: 15,
+    title: "Writing Expressions",
+    mathSkill: "Write Expressions (6.EE.A.2a)",
+    teaches: "Every slot describes an expression in words — write it out, plug in the given value, and build the result anywhere in the kit.",
+    bpm: 114,
+    challenges: {
+      A: {
+        prompt: "4 more than 3 times a number x, where x = 5. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 19 }],
+        explanation: "3x + 4 = 3(5) + 4 = 15 + 4 = 19.",
+      },
+      B: {
+        prompt: "6 less than 5 times a number x, where x = 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 14 }],
+        explanation: "5x - 6 = 5(4) - 6 = 20 - 6 = 14.",
+      },
+      C: {
+        prompt: "Twice a number x plus 7, where x = 8. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 23 }],
+        explanation: "2x + 7 = 2(8) + 7 = 16 + 7 = 23.",
+      },
+      D: {
+        prompt: "A number x divided by 2, plus 3, where x = 10. Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "x/2 + 3 = 10/2 + 3 = 5 + 3 = 8.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l16-one-step-equations-addition-subtraction",
+    grade: 6,
+    lessonNumber: 16,
+    title: "One-Step Equations: Addition & Subtraction",
+    mathSkill: "One-Step Equations (6.EE.B.7)",
+    teaches: "Every slot hides x in an addition or subtraction equation — undo it with the opposite operation, then build x anywhere in the kit.",
+    bpm: 114,
+    challenges: {
+      A: {
+        prompt: "x + 7 = 15. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "x + 7 = 15, so x = 15 - 7 = 8.",
+      },
+      B: {
+        prompt: "x - 4 = 9. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "x - 4 = 9, so x = 9 + 4 = 13.",
+      },
+      C: {
+        prompt: "x + 15 = 22. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "x + 15 = 22, so x = 22 - 15 = 7.",
+      },
+      D: {
+        prompt: "x - 6 = 11. What is x? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 17 }],
+        explanation: "x - 6 = 11, so x = 11 + 6 = 17.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l17-one-step-equations-multiplication-division",
+    grade: 6,
+    lessonNumber: 17,
+    title: "One-Step Equations: Multiplication & Division",
+    mathSkill: "One-Step Equations (6.EE.B.7)",
+    teaches: "Every slot hides x in a multiplication or division equation — undo it with the opposite operation, then build x anywhere in the kit.",
+    bpm: 114,
+    challenges: {
+      A: {
+        prompt: "4x = 28. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "4x = 28, so x = 28 ÷ 4 = 7.",
+      },
+      B: {
+        prompt: "x ÷ 3 = 6. What is x? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 18 }],
+        explanation: "x ÷ 3 = 6, so x = 6 × 3 = 18.",
+      },
+      C: {
+        prompt: "5x = 45. What is x? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "5x = 45, so x = 45 ÷ 5 = 9.",
+      },
+      D: {
+        prompt: "x ÷ 4 = 8. What is x? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "x ÷ 4 = 8, so x = 8 × 4 = 32.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l18-independent-and-dependent-variables",
+    grade: 6,
+    lessonNumber: 18,
+    title: "Independent and Dependent Variables",
+    mathSkill: "Independent and Dependent Variables (6.EE.C.9)",
+    teaches: "Every slot gives a rule linking two variables — plug the given x into the rule to find y, then build y anywhere in the kit.",
+    bpm: 116,
+    challenges: {
+      A: {
+        prompt: "The rule is y = 3x. When x = 4, what is y? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "y = 3(4) = 12.",
+      },
+      B: {
+        prompt: "The rule is y = 2x + 1. When x = 5, what is y? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 11 }],
+        explanation: "y = 2(5) + 1 = 10 + 1 = 11.",
+      },
+      C: {
+        prompt: "The rule is y = x + 6. When x = 7, what is y? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "y = 7 + 6 = 13.",
+      },
+      D: {
+        prompt: "The rule is y = 4x - 2. When x = 3, what is y? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "y = 4(3) - 2 = 12 - 2 = 10.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l19-area-of-triangles",
+    grade: 6,
+    lessonNumber: 19,
+    title: "Area of Triangles",
+    mathSkill: "Area of Triangles (6.G.A.1)",
+    teaches: "Every slot gives a triangle's base and height — its area is half of base times height; the base is how many BLOCKS you use, and the area is the total notes across exactly that many.",
+    bpm: 116,
+    challenges: {
+      A: {
+        prompt: "A triangle has a base of 6 and a height of 4. What is its area? Build a drum beat using exactly 6 blocks that add up to 12 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12, blocksUsed: 6 }],
+        explanation: "Area = (6 × 4) ÷ 2 = 12 — 6 blocks (the base) holding 12 notes in all.",
+      },
+      B: {
+        prompt: "A triangle has a base of 8 and a height of 3. What is its area? Build a drum beat using exactly 8 blocks that add up to 12 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12, blocksUsed: 8 }],
+        explanation: "Area = (8 × 3) ÷ 2 = 12 — 8 blocks holding 12 notes in all.",
+      },
+      C: {
+        prompt: "A triangle has a base of 5 and a height of 4. What is its area? Build a drum beat using exactly 5 blocks that add up to 10 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10, blocksUsed: 5 }],
+        explanation: "Area = (5 × 4) ÷ 2 = 10 — 5 blocks holding 10 notes in all.",
+      },
+      D: {
+        prompt: "A triangle has a base of 7 and a height of 2. What is its area? Build a drum beat using exactly 7 blocks that add up to 7 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7, blocksUsed: 7 }],
+        explanation: "Area = (7 × 2) ÷ 2 = 7 — 7 blocks holding 7 notes in all, one per block.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l20-area-of-parallelograms-and-trapezoids",
+    grade: 6,
+    lessonNumber: 20,
+    title: "Area of Parallelograms and Trapezoids",
+    mathSkill: "Area of Parallelograms and Trapezoids (6.G.A.1)",
+    teaches: "A parallelogram's area is base times height — the base is how many BLOCKS you use. A trapezoid has two different bases, so it doesn't split into blocks as cleanly; just build its total area anywhere in the kit.",
+    bpm: 116,
+    challenges: {
+      A: {
+        prompt: "A parallelogram has a base of 5 and a height of 4. What is its area? Build a drum beat using exactly 5 blocks that add up to 20 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20, blocksUsed: 5 }],
+        explanation: "Area = 5 × 4 = 20 — 5 blocks (the base) holding 20 notes in all.",
+      },
+      B: {
+        prompt: "A parallelogram has a base of 6 and a height of 3. What is its area? Build a drum beat using exactly 6 blocks that add up to 18 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 18, blocksUsed: 6 }],
+        explanation: "Area = 6 × 3 = 18 — 6 blocks holding 18 notes in all.",
+      },
+      C: {
+        prompt: "A trapezoid has bases of 4 and 6, and a height of 3. What is its area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "Area = ((4 + 6) ÷ 2) × 3 = 5 × 3 = 15.",
+      },
+      D: {
+        prompt: "A trapezoid has bases of 5 and 7, and a height of 2. What is its area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "Area = ((5 + 7) ÷ 2) × 2 = 6 × 2 = 12.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l21-surface-area",
+    grade: 6,
+    lessonNumber: 21,
+    title: "Surface Area",
+    mathSkill: "Surface Area of Rectangular Prisms (6.G.A.4)",
+    teaches: "Every slot gives a box's three dimensions — find the area of each pair of faces, double it, and add them all up; build the total anywhere in the kit. These are the biggest totals yet — expect to fill most of the kit with fast subdivisions.",
+    bpm: 116,
+    challenges: {
+      A: {
+        prompt: "A box is 2 units long, 3 units wide, and 4 units tall. What is its surface area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 52 }],
+        explanation: "Surface area = 2×(2×3 + 2×4 + 3×4) = 2×(6 + 8 + 12) = 2×26 = 52.",
+      },
+      B: {
+        prompt: "A box is 1 unit long, 2 units wide, and 3 units tall. What is its surface area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 22 }],
+        explanation: "Surface area = 2×(1×2 + 1×3 + 2×3) = 2×(2 + 3 + 6) = 2×11 = 22.",
+      },
+      C: {
+        prompt: "A box is 2 units long, 2 units wide, and 3 units tall. What is its surface area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "Surface area = 2×(2×2 + 2×3 + 2×3) = 2×(4 + 6 + 6) = 2×16 = 32.",
+      },
+      D: {
+        prompt: "A box is 3 units long, 3 units wide, and 2 units tall. What is its surface area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 42 }],
+        explanation: "Surface area = 2×(3×3 + 3×2 + 3×2) = 2×(9 + 6 + 6) = 2×21 = 42.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l22-volume-with-fractional-edge-lengths",
+    grade: 6,
+    lessonNumber: 22,
+    title: "Volume with Fractional Edge Lengths",
+    mathSkill: "Volume with Fractional Edge Lengths (6.G.A.2)",
+    teaches: "Every slot gives a box with one fractional edge — multiply all three dimensions together, and build the result anywhere in the kit.",
+    bpm: 116,
+    challenges: {
+      A: {
+        prompt: "A box is 4 units long, 3 units wide, and 1/2 unit tall. What is its volume? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "Volume = 4 × 3 × 1/2 = 6.",
+      },
+      B: {
+        prompt: "A box is 5 units long, 2 units wide, and 1/2 unit tall. What is its volume? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "Volume = 5 × 2 × 1/2 = 5.",
+      },
+      C: {
+        prompt: "A box is 6 units long, 2 units wide, and 1/3 unit tall. What is its volume? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "Volume = 6 × 2 × 1/3 = 4.",
+      },
+      D: {
+        prompt: "A box is 4 units long, 3 units wide, and 1/4 unit tall. What is its volume? Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "Volume = 4 × 3 × 1/4 = 3.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l23-mean-and-median",
+    grade: 6,
+    lessonNumber: 23,
+    title: "Mean and Median",
+    mathSkill: "Mean and Median (6.SP.B.5c)",
+    teaches: "Every slot asks for a data set's mean or median — work it out (add and divide for the mean, sort and find the middle for the median), then build the result anywhere in the kit.",
+    bpm: 116,
+    challenges: {
+      A: {
+        prompt: "Find the mean of 4, 6, 8, 2. Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "(4 + 6 + 8 + 2) ÷ 4 = 20 ÷ 4 = 5.",
+      },
+      B: {
+        prompt: "Find the median of 3, 7, 5, 9, 1. Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "Sorted: 1, 3, 5, 7, 9 — the middle number is 5.",
+      },
+      C: {
+        prompt: "Find the mean of 10, 20, 30. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
+        explanation: "(10 + 20 + 30) ÷ 3 = 60 ÷ 3 = 20.",
+      },
+      D: {
+        prompt: "Find the median of 12, 4, 8, 16, 10. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "Sorted: 4, 8, 10, 12, 16 — the middle number is 10.",
+      },
+    },
+  },
+  {
+    slug: "math-g6-l24-range",
+    grade: 6,
+    lessonNumber: 24,
+    title: "Range",
+    mathSkill: "Range as a Measure of Variation (6.SP.B.5c)",
+    teaches: "Every slot asks for a data set's range — subtract the smallest value from the largest, then build the result anywhere in the kit, the last lesson of the year.",
+    bpm: 116,
+    challenges: {
+      A: {
+        prompt: "Find the range of 4, 9, 2, 7. Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "Range = 9 - 2 = 7.",
+      },
+      B: {
+        prompt: "Find the range of 15, 3, 8, 20. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 17 }],
+        explanation: "Range = 20 - 3 = 17.",
+      },
+      C: {
+        prompt: "Find the range of 10, 14, 11, 13. Build a drum beat with that many quarter notes.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "Range = 14 - 10 = 4.",
+      },
+      D: {
+        prompt: "Find the range of 25, 5, 18. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
+        explanation: "Range = 25 - 5 = 20.",
       },
     },
   },
