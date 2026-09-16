@@ -2,6 +2,7 @@ import { MetadataRoute } from "next";
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { boards, lessons, mathLessons, songs } from "@/db/schema";
+import { RW_GRADES } from "@/lib/rockWords";
 
 const SITE_URL = "https://rockblocks.app";
 
@@ -38,6 +39,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/school`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/math`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/songs`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE_URL}/rockwords`, changeFrequency: "monthly", priority: 0.8 },
+    ...RW_GRADES.filter((g) => g.isLive).map((g) => ({
+      url: `${SITE_URL}/rockwords/${g.slug}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
   ];
 
   const lessonPages: MetadataRoute.Sitemap = lessonRows.map((row) => ({

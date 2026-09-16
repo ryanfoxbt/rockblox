@@ -8,7 +8,9 @@ import { DEFAULT_KIT } from "@/lib/drumKits";
 import { saveDraft } from "@/lib/draftStorage";
 import { generateRockWordsBeat } from "@/lib/rockWordsBeat";
 import {
+  effectiveMaxRows,
   evaluateGuess,
+  hintsAllowed,
   isVowel,
   isWinningGuess,
   LetterStatus,
@@ -199,11 +201,16 @@ const CELL_COLOR: Record<LetterStatus, string> = {
 // (on brand with the app's own 2×2 logo) instead of a tall rectangle for a
 // short word or a wide one for a long word.
 const BLOCK_SIDE_PX = 220;
+// Below this, a cell stops shrinking to keep the block square and the block
+// just ends up wider than tall instead — a Grade 12 word is up to 11
+// letters wide, and chasing a fixed square footprint that far would shrink
+// every letter into an unreadable sliver.
+const MIN_CELL_PX = 32;
 
 function cellSizeForBlock(cols: number, rowsInBlock: number): { width: number; height: number } {
   return {
-    width: Math.round(BLOCK_SIDE_PX / cols),
-    height: Math.round(BLOCK_SIDE_PX / rowsInBlock),
+    width: Math.max(MIN_CELL_PX, Math.round(BLOCK_SIDE_PX / cols)),
+    height: Math.max(MIN_CELL_PX, Math.round(BLOCK_SIDE_PX / rowsInBlock)),
   };
 }
 
@@ -216,7 +223,7 @@ interface BlockRow {
 function RoundPlay({
   grade,
   round,
-  maxRows,
+  maxRows: adminMaxRows,
   onPlayAgain,
   loadingNext,
 }: {
@@ -230,8 +237,20 @@ function RoundPlay({
   const { data: session } = authClient.useSession();
   const isSignedIn = !!session?.user;
 
+  // The admin's global 4/6/8 setting, clamped to whatever this grade's word
+  // length actually allows (see effectiveMaxRows) — a grade whose words need
+  // 2 beats each always resolves to 4, regardless of the admin setting.
+  const maxRows = effectiveMaxRows(grade, adminMaxRows);
+  // Only the grades that beatsPerRow squeezed down to 4 guesses (word length
+  // 7+) get any hints at all — see hintsAllowed's own comment.
+  const totalHints = hintsAllowed(grade.wordLength);
+
   const [guesses, setGuesses] = useState<RockWordsRound[]>([]);
   const [currentInput, setCurrentInput] = useState("");
+  // position -> letter, for positions revealed by a hint rather than found
+  // through an actual guess. Resets for free on every new round since
+  // RoundPlay remounts fresh (key={round.id} in RockWordsGame above).
+  const [hintReveals, setHintReveals] = useState<Map<number, string>>(new Map());
   const [clueVisible, setClueVisible] = useState(round.clueShownByDefault);
   const [shake, setShake] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -287,8 +306,40 @@ function RoundPlay({
         if (!existing || rank[status] > rank[existing]) map.set(letter, status);
       }
     }
+    // A hinted letter is a confirmed hit, same as if it had been guessed in
+    // that spot — "hit" already outranks everything, so this can't downgrade
+    // a status a real guess already earned.
+    for (const letter of hintReveals.values()) map.set(letter, "hit");
     return map;
-  }, [guesses]);
+  }, [guesses, hintReveals]);
+
+  // Every position the player already knows for certain — from an actual
+  // guess's hit, or from a spent hint — merged into one map so a hint never
+  // wastes itself re-revealing a letter a guess already found.
+  const knownByPosition = useMemo(() => {
+    const map = new Map<number, string>(hintReveals);
+    for (const g of guesses) {
+      for (let i = 0; i < g.statuses.length; i++) {
+        if (g.statuses[i] === "hit") map.set(i, g.guess[i]);
+      }
+    }
+    return map;
+  }, [guesses, hintReveals]);
+
+  const hintsUsed = hintReveals.size;
+  const hintAvailable =
+    totalHints > 0 && hintsUsed < totalHints && phase === "playing" && knownByPosition.size < grade.wordLength;
+
+  const useHint = useCallback(() => {
+    if (!hintAvailable) return;
+    const candidates: number[] = [];
+    for (let i = 0; i < grade.wordLength; i++) {
+      if (!knownByPosition.has(i)) candidates.push(i);
+    }
+    if (candidates.length === 0) return;
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    setHintReveals((prev) => new Map(prev).set(pick, round.word[pick]));
+  }, [hintAvailable, grade.wordLength, knownByPosition, round.word]);
 
   const submitGuess = useCallback(async () => {
     if (checkingWord || phase !== "playing" || currentInput.length !== grade.wordLength) {
@@ -403,7 +454,38 @@ function RoundPlay({
         >
           {loadingNext ? "Loading…" : "🔄 New word"}
         </button>
+        {totalHints > 0 && (
+          <button
+            type="button"
+            onClick={useHint}
+            disabled={!hintAvailable}
+            title="Reveal one letter's position for free — doesn't use a guess"
+            className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/70 transition hover:border-yellow-400 hover:text-yellow-400 disabled:opacity-40"
+          >
+            🔓 Hint ({totalHints - hintsUsed} left)
+          </button>
+        )}
       </div>
+
+      {totalHints > 0 && (
+        <div className="flex gap-1">
+          {Array.from({ length: grade.wordLength }, (_, i) => {
+            const letter = knownByPosition.get(i);
+            return (
+              <div
+                key={i}
+                className={`flex h-7 w-6 items-center justify-center rounded border text-xs font-black uppercase ${
+                  letter
+                    ? "border-green-500 bg-green-600/30 text-green-300"
+                    : "border-white/10 bg-white/5 text-white/20"
+                }`}
+              >
+                {letter ?? ""}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {clueVisible && (
         <p className="max-w-xs rounded-md border border-yellow-400/30 bg-yellow-400/10 px-3 py-2 text-center text-sm text-yellow-200">

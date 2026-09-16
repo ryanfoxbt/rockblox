@@ -5,6 +5,7 @@
 // story everywhere is most of what "GEO" actually asks for.
 
 import { gradeLabel } from "@/lib/mathSchool";
+import { gradeByNumber as rockWordsGradeByNumber } from "@/lib/rockWords";
 
 export const SITE_URL = "https://rockblocks.app";
 export const SITE_NAME = "RockBlocks";
@@ -39,6 +40,7 @@ export const FEATURE_LIST: string[] = [
   "Export a share-ready video of a beat's Fractal Art — vertical (9:16) for TikTok and Instagram Reels, or square (1:1) — with the beat's own sheet music and a live playhead overlaid, an optional RockBlocks logo, and a 7–15 second clip length",
   "Drum School: 100 free stepwise lessons that build a full groove one idea at a time",
   "RockBlocks Math: a free, grade-aligned math curriculum where each lesson pairs a math concept with a drum pattern built to correlate with it",
+  "RockWords: a free, grade-tailored (Kindergarten-Grade 12) Wordle-style word game where every guess builds part of a real, physically-playable drum pattern — right letters hit hard, wrong letters still get a real drum hit, vowels add their own drum color, and a live dictionary check keeps every guess a real word",
 ];
 
 export const HOW_TO_STEPS: { name: string; text: string }[] = [
@@ -278,6 +280,71 @@ export const FRACTAL_ART_FAQ: { q: string; a: string }[] = [
   },
 ];
 
+export const ROCKWORDS_DESCRIPTION =
+  "RockWords is a free, grade-tailored Wordle-style word game for Kindergarten through Grade 12 that turns every guess into part of a real, physically-playable RockBlocks drum pattern. A right letter in the right spot hits hard, a right letter in the wrong spot lands just off the beat, a wrong letter still gets a real drum hit instead of going silent, and any vowel you guess adds its own drum color — built so it never asks for more than two hands and a foot, the same as a real drummer. Word length climbs with grade level (3 letters in Kindergarten up to 11 in Grade 12), with vocabulary difficulty carrying the rest of the increase. Finishing a round hands the beat straight into the real RockBlocks editor — no login required, and it saves to your account automatically if you're signed in.";
+
+export const ROCKWORDS_STEPS: { name: string; text: string }[] = [
+  {
+    name: "Pick a grade",
+    text: "Kindergarten through Grade 12 are all playable, each with its own word length and vocabulary level — start wherever fits.",
+  },
+  {
+    name: "Guess the word",
+    text: "Type letters and press Enter. Right letter, right spot turns green; right letter, wrong spot turns amber; wrong letters turn gray — the same colors as any Wordle-style game.",
+  },
+  {
+    name: "Watch the beat build",
+    text: "Every guess adds to a real drum pattern as you go: correct letters hit the snare or a tom, wrong letters land on the kick instead of going silent, and the pattern plays back automatically after each guess.",
+  },
+  {
+    name: "Use the clue — or a hint — if you're stuck",
+    text: "A clue is always one tap away, hidden by default so it's optional rather than given away. Grade 4 and up (the 7-letter-and-longer words) also get a few free hints that reveal one letter's position without using up a guess.",
+  },
+  {
+    name: "Solve it (or run out of guesses)",
+    text: "Either way, you've built a complete, playable drum pattern out of nothing but how you guessed.",
+  },
+  {
+    name: "Keep the beat going",
+    text: "Signed in, it saves straight to your account as a new song. Not signed in, it carries over to the main RockBlocks editor instead — no login required either way.",
+  },
+];
+
+export const ROCKWORDS_FAQ: { q: string; a: string }[] = [
+  {
+    q: "What is RockWords?",
+    a: "RockWords is a free, grade-tailored Wordle-style word-guessing game built into RockBlocks. Every guess you make turns into part of a real, playable drum pattern — right letters hit hard, wrong letters still get a real drum hit instead of silence, and vowels add their own drum color.",
+  },
+  {
+    q: "What grades does RockWords cover?",
+    a: "Kindergarten through Grade 12. Word length grows with grade level (3 letters in Kindergarten up to 11 in Grade 12), and vocabulary difficulty increases alongside it.",
+  },
+  {
+    q: "Why do some grades only get 4 guesses instead of 6 or 8?",
+    a: "A RockBlocks pattern maxes out at 8 beats. Words up to 6 letters fit in a single beat per guess, so those grades (Kindergarten-Grade 3) use whichever guess count is configured. Grade 4 and up use words long enough that each guess needs two beats, so those grades always play with 4 guesses (4 × 2 = 8) no matter the setting.",
+  },
+  {
+    q: "How is RockWords still winnable with 4 guesses at an 11-letter word?",
+    a: "Every grade that's capped at 4 guesses also gets free hints — 1 hint for 7-8 letter words, 2 for 9-10, and 3 for the 11-letter Grade 12 words. A hint reveals one letter's exact position for free and never uses up a guess (or the beat that guess would have added), so it's extra help on top of the guess budget rather than a trade against it.",
+  },
+  {
+    q: "Is the beat generated by RockWords actually playable on a real drum kit?",
+    a: "Yes. The generator never asks for more than one kick (a foot) plus one hit apiece from two hands at any instant — extra colors like toms and a crash cymbal always substitute for a hand's part rather than stacking on top of it.",
+  },
+  {
+    q: "Does RockWords check that a guess is a real word?",
+    a: "Yes. Every guess is checked against a live dictionary before it's accepted, so a guess has to be a real English word — genuinely educational, not just a puzzle mechanic.",
+  },
+  {
+    q: "Do I need an account to play RockWords?",
+    a: "No. RockWords works with no login. Finish a round and it hands your beat straight into the main RockBlocks editor; sign in first and it instead saves directly to your account as a new song.",
+  },
+  {
+    q: "Is RockWords free?",
+    a: "Yes. Every grade, every round, and taking the resulting beat into the full RockBlocks editor are all free, with no account required.",
+  },
+];
+
 type Json = Record<string, unknown>;
 
 const organizationLd: Json = {
@@ -451,6 +518,47 @@ export const fractalArtPageJsonLd: Json = {
   ],
 };
 
+// /rockwords graph — WebPage + a HowTo for the game loop + an FAQPage,
+// layered on top of the root graph. Per-grade pages add their own Course
+// JSON-LD (see rockWordsCourseJsonLd below) on top of this.
+export const rockWordsPageJsonLd: Json = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": `${SITE_URL}/rockwords#webpage`,
+      url: `${SITE_URL}/rockwords`,
+      name: "RockWords — A Word Game That Builds a Drum Beat",
+      description: ROCKWORDS_DESCRIPTION,
+      isPartOf: { "@id": `${SITE_URL}/#website` },
+      about: { "@id": `${SITE_URL}/#app` },
+      primaryImageOfPage: `${SITE_URL}/opengraph-image`,
+    },
+    {
+      "@type": "HowTo",
+      name: "How to play RockWords",
+      description: "Guess a grade-appropriate word and watch every guess turn into part of a real, playable drum pattern.",
+      image: `${SITE_URL}/opengraph-image`,
+      totalTime: "PT3M",
+      step: ROCKWORDS_STEPS.map((s, i) => ({
+        "@type": "HowToStep",
+        position: i + 1,
+        name: s.name,
+        text: s.text,
+      })),
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/rockwords#faq`,
+      mainEntity: ROCKWORDS_FAQ.map(({ q, a }) => ({
+        "@type": "Question",
+        name: q,
+        acceptedAnswer: { "@type": "Answer", text: a },
+      })),
+    },
+  ],
+};
+
 // /about graph.
 export const aboutPageJsonLd: Json = {
   "@context": "https://schema.org",
@@ -601,6 +709,45 @@ export function mathLessonJsonLd(lesson: {
       url: `${SITE_URL}/math`,
     },
     provider: { "@id": `${SITE_URL}/#organization` },
+  };
+}
+
+function rockWordsGradeLabel(grade: number): string {
+  return rockWordsGradeByNumber(grade)?.label ?? `Grade ${grade}`;
+}
+
+// One RockWords grade as a Course — mirrors mathCourseJsonLd.
+export function rockWordsCourseJsonLd(grade: number, wordCount: number): Json {
+  const label = rockWordsGradeLabel(grade);
+  const slug = rockWordsGradeByNumber(grade)?.slug ?? String(grade);
+  return {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: `RockWords — ${label}`,
+    url: `${SITE_URL}/rockwords/${slug}`,
+    description: `A free ${label} word-guessing game where every guess builds part of a real, playable RockBlocks drum pattern — ${wordCount} words at this grade's own word length and vocabulary level.`,
+    provider: { "@id": `${SITE_URL}/#organization` },
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    educationalLevel: label,
+  };
+}
+
+// Every live RockWords grade as an ordered list — mirrors mathLessonListJsonLd.
+export function rockWordsGradeListJsonLd(grades: { grade: number; slug: string; label: string }[]): Json {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "RockWords grades",
+    url: `${SITE_URL}/rockwords`,
+    numberOfItems: grades.length,
+    itemListOrder: "https://schema.org/ItemListOrderAscending",
+    itemListElement: grades.map((g, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${SITE_URL}/rockwords/${g.slug}`,
+      name: `RockWords — ${g.label}`,
+    })),
   };
 }
 

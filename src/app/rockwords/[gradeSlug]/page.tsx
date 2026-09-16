@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { and, eq, sql } from "drizzle-orm";
+import { and, count, eq, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { getDb } from "@/db";
 import { rockWordsWords } from "@/db/schema";
-import { gradeBySlug } from "@/lib/rockWords";
+import { beatsPerRow, gradeBySlug } from "@/lib/rockWords";
 import { getRockWordsMaxRows } from "@/lib/rockWordsSettingsServer";
 import { buildShareMetadata } from "@/lib/shareMetadata";
+import { breadcrumbJsonLd, rockWordsCourseJsonLd } from "@/lib/seo";
+import { JsonLd } from "@/components/JsonLd";
 import { RockWordsGame } from "@/components/RockWordsGame";
 
 export async function generateMetadata({
@@ -65,7 +67,7 @@ export default async function RockWordsGradePage({ params }: { params: Promise<{
   // Picked with SQL's own random() rather than Math.random() over a fetched
   // array — keeps this Server Component's render pure (no impure calls in
   // the render body) and only ever pulls the one row that's actually needed.
-  const [rows, maxRows] = await Promise.all([
+  const [rows, maxRows, [{ wordCount }]] = await Promise.all([
     db
       .select({
         id: rockWordsWords.id,
@@ -78,6 +80,10 @@ export default async function RockWordsGradePage({ params }: { params: Promise<{
       .orderBy(sql`random()`)
       .limit(1),
     getRockWordsMaxRows(),
+    db
+      .select({ wordCount: count() })
+      .from(rockWordsWords)
+      .where(and(eq(rockWordsWords.grade, grade.grade), eq(rockWordsWords.isPublished, true))),
   ]);
 
   if (rows.length === 0) {
@@ -95,9 +101,18 @@ export default async function RockWordsGradePage({ params }: { params: Promise<{
   }
 
   const initialRound = rows[0];
+  const needsTwoBeats = beatsPerRow(grade.wordLength) > 1;
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 px-4 py-10 text-white sm:px-6">
+      <JsonLd data={rockWordsCourseJsonLd(grade.grade, wordCount)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", url: "/" },
+          { name: "RockWords", url: "/rockwords" },
+          { name: grade.label, url: `/rockwords/${grade.slug}` },
+        ])}
+      />
       <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
         {crumb}
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
@@ -108,6 +123,12 @@ export default async function RockWordsGradePage({ params }: { params: Promise<{
           hard, close-but-wrong letters land off the beat, wrong letters still get their own real drum hit
           instead of going silent, and vowels always add their own drum color.
         </p>
+        {needsTwoBeats && (
+          <p className="text-xs text-white/40">
+            {grade.label} words are long enough to need two beats each, so this grade always gets 4 guesses no
+            matter what the site-wide setting is — a full pattern only has 8 beats to work with.
+          </p>
+        )}
         <div className="mt-2">
           <RockWordsGame grade={grade} initialRound={initialRound} maxRows={maxRows} />
         </div>

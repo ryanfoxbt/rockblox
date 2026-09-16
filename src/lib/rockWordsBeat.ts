@@ -10,27 +10,34 @@
 // brief, with toms and a crash used only as substitutions for a hand's part,
 // never stacked on top of it.
 //
-// One guess row = one beat of the measure (row 0 is beat 1, row 1 is beat 2,
-// ...), so the pattern is exactly as long as how many guesses have actually
-// been played, up to the game's own guess limit — which tops out at 8, the
-// same as a pattern's own beat ceiling. Within that one beat, a row's own
-// letters subdivide it evenly (3 letters -> eighth-note triplets, 4 ->
-// straight sixteenths, 5 -> sixteenth-note triplets, one slot left as rest):
+// One guess row is one beat of the measure — unless its word is longer than
+// 6 letters, in which case it spills into a second consecutive beat (see
+// splitWordIntoBeats and beatsPerRow in rockWords.ts for why 6 is the line:
+// a beat can only be evenly subdivided by real note values up to 6 slots at
+// once). Either way the pattern is exactly as long as how many beats the
+// guesses played so far actually needed, up to the game's own guess limit —
+// which, for any grade needing 2 beats/row, is itself capped at 4 so the
+// total never exceeds a pattern's own 8-beat ceiling (see effectiveMaxRows).
+// Within one beat, the letters landing there subdivide it evenly (3 ->
+// eighth-note triplets, 4 -> straight sixteenths, 5-6 -> sixteenth-note
+// triplets, a 6th slot rested when only 5 land there):
 //   - hit or present (the letter's in the word, right spot or not) -> a
 //     plain, unaccented hit, the hand's part
 //   - miss (wrong letter) -> no hand hit here at all; instead the kick (the
 //     *other* limb, a foot) fills that exact slot, so a wrong letter still
 //     gets a real, full-volume, undeniably-there hit without ever asking a
 //     hand to be in two places at once.
-// Deliberately no accents or ghost notes for these grades (K-2) — every
-// hand/foot hit plays at the same plain velocity, which is simpler and more
-// consistent for the youngest players to follow. Reserved as a tool for a
-// future, older grade rather than used here.
-// Any vowel in the guess (right or wrong) swaps that whole beat's hand part
-// from snare to a tom — front vowels (e/i) -> High Tom, back vowels
-// (a/o/u) -> Low Tom, mixed/tied -> Mid Tom — a different drum, still one
-// hand. The hi-hat keeps the beat on every row except the one that wins the
-// round, where it swaps to a crash for the resolve.
+// Deliberately no accents or ghost notes for these grades (K-12, today) —
+// every hand/foot hit plays at the same plain velocity, which is simpler
+// and more consistent to follow. Reserved as a tool for a future, even
+// harder tier rather than used here.
+// Any vowel among the letters landing in one beat (right or wrong) swaps
+// that beat's hand part from snare to a tom — front vowels (e/i) -> High
+// Tom, back vowels (a/o/u) -> Low Tom, mixed/tied -> Mid Tom — a different
+// drum, still one hand, decided per beat rather than per whole row so a
+// long word's two beats can each have their own color. The hi-hat keeps
+// time on every beat except the very last one of the round, which swaps to
+// a crash instead when that final guess actually wins.
 //
 // Pure and deterministic — the same rows always produce the same beat, and
 // it never depends on the target word itself, only on what was actually
@@ -45,26 +52,45 @@
 import { NoteName, RhythmHit, RhythmTile, tileFromHits } from "./rhythm";
 import { InstrumentId } from "./instruments";
 import { DEFAULT_VOLUME, LineData, MAX_BEATS } from "./song";
-import { isVowel, isWinningGuess, LetterStatus, RockWordsRound } from "./rockWords";
+import { beatsPerRow, isVowel, isWinningGuess, LetterStatus, RockWordsRound } from "./rockWords";
 
 const KICK: InstrumentId = "kick";
 const HAND_A_DEFAULT: InstrumentId = "hihatClosed";
 const HAND_A_ON_WIN: InstrumentId = "crash";
 const HAND_B_DEFAULT: InstrumentId = "snare";
 
-// How one row's letters subdivide its one beat — chosen so the slots always
-// sum to exactly one beat (a tile's own hard rule) with real note values:
-// 3 fits eighth-note triplets exactly, 4 fits straight sixteenths exactly,
-// and 5 doesn't evenly divide the note vocabulary this app has, so it takes
-// 5 of a 6-slot sixteenth-note-triplet grid and rests the 6th.
-const SUBDIVISION_BY_WORD_LENGTH: Record<number, { noteName: NoteName; slots: number }> = {
+// How many letters land in one beat subdivide it evenly — chosen so the
+// slots always sum to exactly one beat (a tile's own hard rule) with real
+// note values: 3 fits eighth-note triplets exactly, 4 fits straight
+// sixteenths exactly, and 5 doesn't evenly divide the note vocabulary this
+// app has, so it takes 5 of a 6-slot sixteenth-note-triplet grid and rests
+// the 6th (6 itself fills that same grid completely). Nothing here ever
+// needs to go past 6 — see splitWordIntoBeats, which is what keeps a beat
+// from ever being asked to hold more than 6 letters at once.
+const SUBDIVISION_BY_COUNT: Record<number, { noteName: NoteName; slots: number }> = {
+  1: { noteName: "quarter", slots: 1 },
+  2: { noteName: "eighth", slots: 2 },
   3: { noteName: "eighthTriplet", slots: 3 },
   4: { noteName: "sixteenth", slots: 4 },
   5: { noteName: "sixteenthTriplet", slots: 6 },
+  6: { noteName: "sixteenthTriplet", slots: 6 },
 };
 
-function subdivisionFor(wordLength: number): { noteName: NoteName; slots: number } {
-  return SUBDIVISION_BY_WORD_LENGTH[wordLength] ?? { noteName: "sixteenth", slots: wordLength };
+function subdivisionFor(letterCount: number): { noteName: NoteName; slots: number } {
+  return SUBDIVISION_BY_COUNT[letterCount] ?? { noteName: "sixteenth", slots: letterCount };
+}
+
+// Splits a word's letters across however many beats it needs (see
+// beatsPerRow), as evenly as possible rather than packing the first beat to
+// its 6-letter max and leaving an awkward leftover — e.g. 7 letters becomes
+// [4, 3], 11 becomes [6, 5], never [6, 1]. A word that already fits in one
+// beat (<=6 letters) returns a single-element array unchanged.
+export function splitWordIntoBeats(wordLength: number): number[] {
+  const beats = beatsPerRow(wordLength);
+  if (beats <= 1) return [wordLength];
+  const base = Math.floor(wordLength / beats);
+  const extra = wordLength % beats;
+  return Array.from({ length: beats }, (_, i) => base + (i < extra ? 1 : 0));
 }
 
 // Builds the hand's tile for one row: a plain, unaccented hit for every
@@ -136,6 +162,41 @@ function randomLineId(seed: string): string {
   return `line-${seed}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// One beat's worth of a flattened, row-agnostic timeline — a long word's
+// row becomes more than one of these (see splitWordIntoBeats), so
+// everything downstream (hand/kick tiles, vowel color, the win-cymbal swap)
+// operates on "the letters landing in this beat," never on "the whole row,"
+// and never needs to know which original row a beat came from except for
+// `isWinningBeat`.
+interface BeatChunk {
+  column: number;
+  statuses: LetterStatus[];
+  letters: string[];
+  isWinningBeat: boolean;
+}
+
+function flattenIntoBeatChunks(rows: RockWordsRound[]): BeatChunk[] {
+  const chunks: BeatChunk[] = [];
+  let column = 0;
+  rows.forEach((row, rowIndex) => {
+    const letters = row.guess.toLowerCase().split("");
+    const sizes = splitWordIntoBeats(letters.length);
+    const isRowWin = rowIndex === rows.length - 1 && isWinningGuess(row.statuses);
+    let offset = 0;
+    sizes.forEach((size, chunkIndex) => {
+      chunks.push({
+        column,
+        statuses: row.statuses.slice(offset, offset + size),
+        letters: letters.slice(offset, offset + size),
+        isWinningBeat: isRowWin && chunkIndex === sizes.length - 1,
+      });
+      offset += size;
+      column++;
+    });
+  });
+  return chunks;
+}
+
 export function generateRockWordsBeat(rows: RockWordsRound[]): LineData[] {
   const kickBlocks = emptyBlocks();
   const hihatBlocks = emptyBlocks();
@@ -145,42 +206,47 @@ export function generateRockWordsBeat(rows: RockWordsRound[]): LineData[] {
   const midTomBlocks = emptyBlocks();
   const highTomBlocks = emptyBlocks();
 
-  rows.forEach((row, i) => {
-    const letters = row.guess.toLowerCase().split("");
-    const isFinalRow = i === rows.length - 1;
+  for (const chunk of flattenIntoBeatChunks(rows)) {
+    const { column } = chunk;
+    // Guards against ever writing past a pattern's own MAX_BEATS ceiling —
+    // shouldn't happen given effectiveMaxRows already keeps total beats
+    // within budget, but a beat this generator can't actually hold is worth
+    // silently dropping rather than corrupting a fixed-length blocks array.
+    if (column >= MAX_BEATS) continue;
 
-    // Hand A: the hi-hat keeps time on every beat except the one that wins
-    // the round, which swaps it for a crash instead — a substitution, so
-    // it's still ever only one hand's hit at this beat.
-    if (isFinalRow && isWinningGuess(row.statuses)) {
-      crashBlocks[i] = HAND_A_TILE;
+    // Hand A: the hi-hat keeps time on every beat except the very last one
+    // of the round, which swaps to a crash instead when that final guess
+    // actually wins — a substitution, so it's still ever only one hand's
+    // hit at this beat.
+    if (chunk.isWinningBeat) {
+      crashBlocks[column] = HAND_A_TILE;
     } else {
-      hihatBlocks[i] = HAND_A_TILE;
+      hihatBlocks[column] = HAND_A_TILE;
     }
 
     // Hand B: snare by default, swapped for a tom (never both) when the
-    // guess has any vowel in it at all — still one hand, just a different
-    // drum. Which tom is picked from every vowel actually guessed this row,
-    // correct or not.
-    const handTile = buildHandTile(row.statuses);
+    // letters landing in *this beat* include any vowel at all — still one
+    // hand, just a different drum. Decided per beat, not per whole row, so
+    // a long word's two beats can each have their own color.
+    const handTile = buildHandTile(chunk.statuses);
     if (handTile) {
-      const vowelsInRow = letters.filter(isVowel);
-      if (vowelsInRow.length > 0) {
-        const tomVoice = dominantVowelTom(vowelsInRow);
-        if (tomVoice === "lowTom") lowTomBlocks[i] = handTile;
-        else if (tomVoice === "highTom") highTomBlocks[i] = handTile;
-        else midTomBlocks[i] = handTile;
+      const vowelsInBeat = chunk.letters.filter(isVowel);
+      if (vowelsInBeat.length > 0) {
+        const tomVoice = dominantVowelTom(vowelsInBeat);
+        if (tomVoice === "lowTom") lowTomBlocks[column] = handTile;
+        else if (tomVoice === "highTom") highTomBlocks[column] = handTile;
+        else midTomBlocks[column] = handTile;
       } else {
-        snareBlocks[i] = handTile;
+        snareBlocks[column] = handTile;
       }
     }
 
     // The foot: picks up exactly the slots the hand rested on (the wrong
     // letters), so a miss still gets a real, undeniable hit without ever
     // needing a third hand.
-    const kickTile = buildKickTile(row.statuses);
-    if (kickTile) kickBlocks[i] = kickTile;
-  });
+    const kickTile = buildKickTile(chunk.statuses);
+    if (kickTile) kickBlocks[column] = kickTile;
+  }
 
   const lines: LineData[] = [];
   const addLine = (instrument: InstrumentId, blocks: (RhythmTile | null)[]) => {
@@ -206,16 +272,20 @@ export interface RockWordsBeatRule {
 // does — see the file header. Rendered verbatim on /rockwords/admin.
 export const ROCKWORDS_BEAT_RULES: RockWordsBeatRule[] = [
   {
-    title: "One beat per guess row",
-    detail: "Row 1 is beat 1 of the measure, row 2 is beat 2, and so on — the pattern is exactly as long as how many guesses have actually been played, up to the game's own guess limit (4, 6, or 8).",
+    title: "One beat per guess row — two for a longer word",
+    detail: "A word up to 6 letters fits in a single beat; longer than that (Grade 4 and up), it splits as evenly as possible across two consecutive beats instead (7 letters → 4+3, 11 → 6+5) — a beat can only be evenly subdivided by real note values up to 6 slots at once. The pattern is exactly as long as how many beats the guesses played so far actually needed.",
   },
   {
     title: "Playable by two hands and a foot, never more",
     detail: "At any instant this asks for at most one kick (a foot) plus one hit apiece from two hands — never a third simultaneous hand part. Extra colors (toms, crash) always substitute for a hand's part, never stack on top of it.",
   },
   {
+    title: "Longer words mean fewer guesses",
+    detail: "A pattern maxes out at 8 beats total, so a grade whose words need 2 beats each can only ever fit 4 guesses (4 × 2 = 8) — regardless of the admin's 4/6/8 setting, which only has room to matter for grades whose words still fit in 1 beat.",
+  },
+  {
     title: "A letter that's in the word → a plain hand hit",
-    detail: "Right spot or not, a plain, unaccented hit, subdividing the row's own beat evenly by word length (eighth-note triplets for 3 letters, straight sixteenths for 4, sixteenth-note triplets for 5). No accents or ghost notes for these grades (K-2) — every hit plays at the same volume, which is simpler and more consistent for young players. Held in reserve as a tool for a future, older grade.",
+    detail: "Right spot or not, a plain, unaccented hit, subdividing whichever beat it landed in evenly by how many letters share that beat (eighth-note triplets for 3, straight sixteenths for 4, sixteenth-note triplets for 5-6). No accents or ghost notes for any grade today — every hit plays at the same volume, which is simpler and more consistent to follow. Held in reserve as a tool for a future, even harder tier.",
   },
   {
     title: "Wrong letter → the kick takes that slot",
@@ -223,11 +293,11 @@ export const ROCKWORDS_BEAT_RULES: RockWordsBeatRule[] = [
   },
   {
     title: "Any vowel swaps the hand's drum, not its count",
-    detail: "A guess with a vowel in it (right or wrong) plays that whole beat's hand part on a tom instead of the snare — front vowels (e/i) → High Tom, back vowels (a/o/u) → Low Tom, mixed or tied → Mid Tom. Still one hand, just a different drum.",
+    detail: "Whichever beat has a vowel in it (right or wrong) plays that beat's hand part on a tom instead of the snare — front vowels (e/i) → High Tom, back vowels (a/o/u) → Low Tom, mixed or tied → Mid Tom. Decided per beat, not per whole row, so a long word's two beats can each have their own color. Still one hand, just a different drum.",
   },
   {
     title: "The hi-hat holds time; a crash marks the win",
-    detail: "The hi-hat plays every beat except the one that actually wins the round, where it swaps to a crash cymbal for the resolve — again a substitution, not an addition.",
+    detail: "The hi-hat plays every beat except the very last one of the round, which swaps to a crash cymbal instead when that final guess actually wins — again a substitution, not an addition.",
   },
   {
     title: "Never depends on the answer",

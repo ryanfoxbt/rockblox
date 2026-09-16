@@ -44,7 +44,9 @@ export function RockWordsSettingsPanel({ initialMaxRows }: { initialMaxRows: Max
       <h2 className="text-xs font-bold uppercase tracking-wide text-white/40">Game settings</h2>
       <p className="mt-1 text-sm text-white/60">
         How many total guesses every grade gets. The board splits into square &ldquo;Block&rdquo; sections as
-        you go, not one long list — see the layout for each option below.
+        you go, not one long list — see the layout for each option below. This only actually changes anything
+        for Kindergarten-Grade 3 (whose words fit in one beat each) — Grade 4 and up always use 4 guesses,
+        since their longer words need two beats each and a pattern maxes out at 8.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {MAX_ROWS_OPTIONS.map((option) => (
