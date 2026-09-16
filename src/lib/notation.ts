@@ -381,12 +381,15 @@ function prepareMeasure(
       tuplets.push(
         new VF.Tuplet(beatNotes, { numNotes, notesOccupied, ratioed: false })
       );
-      const toBeam = beamableRun(
-        beatNotes.map((note, i) => ({ note, isRest: !segments[i].instruments }))
-      );
-      if (toBeam) {
+      // The bracket above still covers the whole group either way, but the
+      // beam underneath only connects when every subdivision in the beat is
+      // an actual note — a beat that's short a letter (e.g. RockWords' 6th
+      // sixteenth-triplet slot with only 5 letters landing there) reads as
+      // separately-flagged notes instead of a beam that skips over the gap.
+      const hasRest = segments.some((seg) => !seg.instruments);
+      if (!hasRest) {
         beams.push(
-          ...VF.Beam.generateBeams(toBeam, { beamRests: true, stemDirection: STEM_DIRECTION })
+          ...VF.Beam.generateBeams(beatNotes, { stemDirection: STEM_DIRECTION })
         );
       }
     } else {
