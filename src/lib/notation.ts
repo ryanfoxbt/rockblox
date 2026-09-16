@@ -133,6 +133,14 @@ const NOTE_END_PAD = 12;
 // collapse to the width of its clef.
 const MIN_BAR_WIDTH = 170;
 
+// How far past a system's own natural width drawSystem will stretch it to
+// use up available space — see drawSystem's own comment for why this is
+// capped instead of always filling the viewport. 1.35 reads as a bit of
+// honest breathing room on a sparse bar without approaching the point
+// where a beamed group's own notes space out as far as the gap between
+// beats — the exact thing that cap exists to prevent.
+const MAX_STRETCH_RATIO = 1.35;
+
 // One instrument's onset at a given tick, carrying its dynamic level along
 // so the notehead can be marked with an accent (">") or wrapped in
 // parentheses (ghost) the same way a real drum chart would.
@@ -471,16 +479,18 @@ function drawMeasure(
 //
 // `availWidth` is an offer, not an order, but it's never exceeded. Every bar
 // first says how narrow it can get without its notes colliding or running
-// past the barline; if the offer covers that total, the slack is shared out
-// in proportion to what each bar asked for (a bar of 16ths earns more room
-// than a bar of quarters, and the bar carrying the clef and time signature
-// earns the room those take). If it doesn't — a busy bar on a narrow phone —
-// the system is drawn at the natural size its notes need and then the whole
-// drawing is scaled down (via the SVG's viewBox, so every note, beam and
-// tuplet shrinks together rather than any one element being recomputed at a
-// different size) until it fits inside what was offered. A bar never has to
-// be scrolled to see the rest of it; on a very narrow screen a very busy bar
-// just reads smaller.
+// past the barline; if the offer covers that total, a *bounded* amount of
+// slack is shared out in proportion to what each bar asked for (a bar of
+// 16ths earns more room than a bar of quarters, and the bar carrying the
+// clef and time signature earns the room those take) — see
+// MAX_STRETCH_RATIO for why that sharing is capped rather than filling
+// availWidth outright. If the offer doesn't cover the natural total — a
+// busy bar on a narrow phone — the system is drawn at the natural size its
+// notes need and then the whole drawing is scaled down (via the SVG's
+// viewBox, so every note, beam and tuplet shrinks together rather than any
+// one element being recomputed at a different size) until it fits inside
+// what was offered. A bar never has to be scrolled to see the rest of it;
+// on a very narrow screen a very busy bar just reads smaller.
 function drawSystem(
   VF: VF,
   context: ReturnType<VF["Renderer"]["prototype"]["getContext"]>,
@@ -490,10 +500,19 @@ function drawSystem(
 ): NotationLayout {
   const prepared = specs.map((spec) => prepareMeasure(VF, context, spec));
   const totalMin = prepared.reduce((sum, p) => sum + p.minWidth, 0);
-  // The system's natural size: fills availWidth when the music has room to
-  // spare, or grows past it to whatever the busiest layout actually needs —
-  // never squeezed at this stage, so nothing collides or gets clipped.
-  const naturalUsable = Math.ceil(Math.max(availWidth - STAVE_MARGIN_X * 2, totalMin));
+  // The system's natural size: some breathing room past what the notes
+  // strictly need when the music is sparse (so a one-beat answer doesn't
+  // read as pressed against the margin), capped at MAX_STRETCH_RATIO rather
+  // than filling however much width the viewport happens to offer — without
+  // that cap, a short answer (a common case here: a Math slot is often just
+  // 1-2 beats) gets stretched edge-to-edge across a wide fullscreen panel,
+  // which spaces notes within one beamed beat as far apart as the gap
+  // *between* beats and makes a subdivided beat's own notes read as
+  // unrelated instead of grouped. Never squeezed below the natural total at
+  // this stage either way, so nothing collides or gets clipped; a system
+  // busier than availWidth still grows past it and gets scaled down below.
+  const stretchedUsable = Math.min(availWidth - STAVE_MARGIN_X * 2, totalMin * MAX_STRETCH_RATIO);
+  const naturalUsable = Math.ceil(Math.max(stretchedUsable, totalMin));
   const naturalWidth = naturalUsable + STAVE_MARGIN_X * 2;
 
   // Resize before anything is drawn: the SVG has to be as wide as the system
