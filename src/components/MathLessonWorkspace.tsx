@@ -7,61 +7,89 @@ import { Confetti } from "./Confetti";
 import { MathLessonAbout } from "./MathLessonAbout";
 import type { BoardSlotData, ExtendedSlotLetter, SlotLetter, SlotMap } from "@/lib/board";
 import { SLOT_LETTERS } from "@/lib/board";
-import { gradeLabel, type MathChallenge } from "@/lib/mathSchool";
+import { ANY_KIT_PIECE, gradeLabel, type MathChallenge } from "@/lib/mathSchool";
 import { getTileById } from "@/lib/rhythm";
 import type { StoredLine } from "@/lib/song";
 import type { StackArrangement } from "@/lib/stack";
 import { useMathProgress } from "@/lib/useMathProgress";
 import { clearMathLessonDraft, loadMathLessonDraft, saveMathLessonDraft } from "@/lib/mathLessonDraft";
 
-// Counts real hits (not rests) a target instrument has in a slot's lines —
-// a tile can itself hold more than one hit (an eighth pair, a triplet run),
-// so this is the total sound count, not the block count, matching how every
-// challenge prompt talks about "quarter notes." Sums across every line
-// using that instrument in case the student added more than one.
-function countHitsForInstrument(lines: StoredLine[], instrument: string): number {
+// True when a target's instrument list means "anywhere in the kit" rather
+// than "these specific pieces" — checked by value, not reference, since a
+// challenge's targets always arrive fresh off the database (JSON), never
+// the same array instance as the ANY_KIT_PIECE constant itself. A target
+// this loose should count every line the student built, including a 4th+
+// piece added via "+ Add drum piece" — the prompt already promises
+// "anywhere in the kit," so a ride cymbal or rimshot reached for out of
+// nowhere still counts toward the total. A target naming its own specific
+// instrument(s) (a coordinate's x on kick vs. y on snare, a fact family's
+// two addends split across two rows, a "these two only" pairing) keeps
+// counting just those rows — folding in an unrelated extra piece there
+// would break the very quantity that row is standing in for.
+function isAnyKitPieceTarget(instrument: MathChallenge["targets"][number]["instrument"]): boolean {
+  if (!Array.isArray(instrument) || instrument.length !== ANY_KIT_PIECE.length) return false;
+  const sorted = [...instrument].sort();
+  const anyKitSorted = [...ANY_KIT_PIECE].sort();
+  return sorted.every((id, i) => id === anyKitSorted[i]);
+}
+
+// Counts real hits (not rests) a single line contributes — a tile can
+// itself hold more than one hit (an eighth pair, a triplet run), so this is
+// the total sound count, not the block count, matching how every challenge
+// prompt talks about "quarter notes."
+function countHitsForLine(line: StoredLine): number {
   let total = 0;
-  for (const line of lines) {
-    if (line.instrument !== instrument) continue;
-    for (const id of line.blocks) {
-      if (!id) continue;
-      const tile = getTileById(id);
-      if (!tile) continue;
-      for (const hit of tile.hits) {
-        if (hit.type === "note") total++;
-      }
+  for (const id of line.blocks) {
+    if (!id) continue;
+    const tile = getTileById(id);
+    if (!tile) continue;
+    for (const hit of tile.hits) {
+      if (hit.type === "note") total++;
     }
   }
   return total;
 }
 
-// A target's instrument is either one row, or — when a total is too big for
-// one 8-block row of quarter notes — a small set of rows the student can
-// split it across however they like. Either way, this is the one number
+// Sums countHitsForLine across every line using a given instrument, in case
+// the student added more than one row of it.
+function countHitsForInstrument(lines: StoredLine[], instrument: string): number {
+  return lines.filter((line) => line.instrument === instrument).reduce((sum, line) => sum + countHitsForLine(line), 0);
+}
+
+// A target's instrument is either one row, a small named set of rows a
+// too-big total can be split across, or (ANY_KIT_PIECE) every row the
+// student has — see isAnyKitPieceTarget. Either way, this is the one number
 // that gets compared against the target's count.
 function countTargetHits(lines: StoredLine[], target: MathChallenge["targets"][number]): number {
+  if (isAnyKitPieceTarget(target.instrument)) {
+    return lines.reduce((sum, line) => sum + countHitsForLine(line), 0);
+  }
   const instruments = Array.isArray(target.instrument) ? target.instrument : [target.instrument];
   return instruments.reduce((sum, instrument) => sum + countHitsForInstrument(lines, instrument), 0);
 }
 
-// Companion to countHitsForInstrument for `blocksUsed` targets — a block
-// counts as "used" once it holds at least one real hit, regardless of how
-// many notes that one block's own tile packs in (an eighth pair and a
+// Companion to countHitsForLine for `blocksUsed` targets — a block counts
+// as "used" once it holds at least one real hit, regardless of how many
+// notes that one block's own tile packs in (an eighth pair and a
 // sixteenth-triplet run are both "one block used").
-function countBlocksUsedForInstrument(lines: StoredLine[], instrument: string): number {
+function countBlocksUsedForLine(line: StoredLine): number {
   let used = 0;
-  for (const line of lines) {
-    if (line.instrument !== instrument) continue;
-    for (const id of line.blocks) {
-      if (!id) continue;
-      const tile = getTileById(id);
-      if (tile?.hits.some((h) => h.type === "note")) used++;
-    }
+  for (const id of line.blocks) {
+    if (!id) continue;
+    const tile = getTileById(id);
+    if (tile?.hits.some((h) => h.type === "note")) used++;
   }
   return used;
 }
 
+function countBlocksUsedForInstrument(lines: StoredLine[], instrument: string): number {
+  return lines.filter((line) => line.instrument === instrument).reduce((sum, line) => sum + countBlocksUsedForLine(line), 0);
+}
+
 function countTargetBlocksUsed(lines: StoredLine[], target: MathChallenge["targets"][number]): number {
+  if (isAnyKitPieceTarget(target.instrument)) {
+    return lines.reduce((sum, line) => sum + countBlocksUsedForLine(line), 0);
+  }
   const instruments = Array.isArray(target.instrument) ? target.instrument : [target.instrument];
   return instruments.reduce((sum, instrument) => sum + countBlocksUsedForInstrument(lines, instrument), 0);
 }

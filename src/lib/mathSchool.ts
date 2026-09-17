@@ -80,9 +80,14 @@ export interface BeatChallengeTarget {
 // for "build a drum beat" questions (Grade 2 and up), where the point is
 // letting the student choose where in the kit, and where in the row, an
 // answer's hits land, rather than pinning them to one prescribed row.
-// Reaching for a 4th, less common piece is still always possible via
-// "+ Add drum piece" in the Editor — it just won't count toward this
-// particular total, the same as any instrument not named in a target.
+// Grading (see isAnyKitPieceTarget in MathLessonWorkspace.tsx) treats a
+// target whose instrument list matches this one by value as "anywhere in
+// the kit, literally" — it counts every line the student built, not just
+// these three — so reaching for a 4th, less common piece via "+ Add drum
+// piece" in the Editor counts toward the total too, matching what every one
+// of these prompts already promises ("build a drum beat," "anywhere in the
+// kit"). A target naming its own specific instrument(s) instead (not this
+// constant) still counts only those named rows — see BeatChallengeTarget.
 export const ANY_KIT_PIECE: InstrumentId[] = ["kick", "snare", "hihatClosed"];
 
 // A real, checkable question the student answers inside the real RockBlocks
@@ -100,7 +105,7 @@ export interface MathGrade {
   label: string;
 }
 
-// Kindergarten through Grade 8 exist today — index/list pages derive their
+// Kindergarten through Grade 9 exist today — index/list pages derive their
 // grade sections from this, not a hardcoded grade string. Kindergarten is
 // grade 0 (so it sorts first via asc(grade) everywhere) but is never shown
 // as "Grade 0" — see gradeLabel below, which every page uses instead of
@@ -115,6 +120,7 @@ export const MATH_GRADES: MathGrade[] = [
   { grade: 6, label: "Grade 6" },
   { grade: 7, label: "Grade 7" },
   { grade: 8, label: "Grade 8" },
+  { grade: 9, label: "Grade 9" },
 ];
 
 // The human-facing name for a grade level — "Kindergarten" for grade 0,
@@ -7579,6 +7585,863 @@ export const MATH_LESSONS: MathLesson[] = [
         prompt: "In a survey, 50 students like reading, and 18 of those also like writing. How many like reading but NOT writing? Build a drum beat with that many notes in all.",
         targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
         explanation: "50 - 18 = 32.",
+      },
+    },
+  },
+
+  // ============================================================
+  // HIGH SCHOOL — starting the K-8 curriculum's grade-by-grade climb into
+  // 9-12. Common Core (and Oregon's 2021 adoption of it) doesn't band high
+  // school standards by grade the way K-8 is banded — high school math is
+  // organized by conceptual category (A, F, G, N, S) and left to each
+  // district to sequence into courses. Grade 9-12 here map to the single
+  // most common US course sequence for those grades — Algebra I, Geometry,
+  // Algebra II, and a capstone (Pre-Calc/Statistics) — same fall-through-
+  // spring pacing convention as K-8, cited by conceptual-category code
+  // (e.g. A-REI.B.3) instead of a grade-banded one.
+  //
+  // Grade 9 = Algebra I. Same 24-lesson, four-unit-per-quarter shape as
+  // every grade before it, but two mechanics get pushed further now that
+  // the math itself has two moving parts more often: a target's
+  // `instrument` array can pair two different kit pieces so a single slot
+  // grades two related quantities at once (rise on crash + run on ride for
+  // slope, x on kick + y on snare for a system's solution, a trinomial's
+  // two factors on low tom + mid tom, a quadratic's two roots on high tom +
+  // rimshot) — and `blocksUsed` now doubles as a literal time-signature
+  // choice, not just a grouping count: building a solution across exactly
+  // N blocks writes an N/4 bar (see timeSignatureLabel in song.ts), so
+  // solving "6x = 30" by building 5 blocks worth 30 notes puts the answer
+  // in 5/4, and the geometric-sequence capstone's 6-block term lands in a
+  // full 6/4 bar. Every lesson's auto-generated Stack (/math/<slug>/stack)
+  // is still there too — worth a listen on the sequence lessons in
+  // particular, where repeating a slot across the Stack's steps is exactly
+  // what the sequence itself does.
+  // ============================================================
+  {
+    slug: "math-g9-l01-order-of-operations-with-exponents",
+    grade: 9,
+    lessonNumber: 1,
+    title: "Order of Operations with Exponents",
+    mathSkill: "Evaluate Numerical Expressions Involving Exponents (A-SSE.A.1)",
+    teaches: "Every slot is a numerical expression with an exponent — apply the exponent first, then multiply/divide, then add/subtract, and build that many notes anywhere in the kit.",
+    bpm: 128,
+    challenges: {
+      A: {
+        prompt: "Evaluate 2³ + 4 × 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
+        explanation: "2³ = 8, then 4 × 3 = 12. 8 + 12 = 20.",
+      },
+      B: {
+        prompt: "Evaluate 3² + 5 × 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 29 }],
+        explanation: "3² = 9, then 5 × 4 = 20. 9 + 20 = 29.",
+      },
+      C: {
+        prompt: "Evaluate 4² - 2 × 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "4² = 16, then 2 × 3 = 6. 16 - 6 = 10.",
+      },
+      D: {
+        prompt: "Evaluate 5² + 3 × 5. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 40 }],
+        explanation: "5² = 25, then 3 × 5 = 15. 25 + 15 = 40.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l02-evaluating-algebraic-expressions",
+    grade: 9,
+    lessonNumber: 2,
+    title: "Evaluating Algebraic Expressions",
+    mathSkill: "Evaluate Expressions by Substitution (A-SSE.A.1)",
+    teaches: "Every slot gives an expression with a squared term and a value for x — substitute, then work it out, then build that many notes anywhere in the kit.",
+    bpm: 128,
+    challenges: {
+      A: {
+        prompt: "Evaluate 2x² + 3 when x = 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21 }],
+        explanation: "2(3)² + 3 = 2(9) + 3 = 18 + 3 = 21.",
+      },
+      B: {
+        prompt: "Evaluate 3x² - 2 when x = 2. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "3(2)² - 2 = 3(4) - 2 = 12 - 2 = 10.",
+      },
+      C: {
+        prompt: "Evaluate x² + 5x when x = 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 36 }],
+        explanation: "(4)² + 5(4) = 16 + 20 = 36.",
+      },
+      D: {
+        prompt: "Evaluate 4x² - x when x = 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 33 }],
+        explanation: "4(3)² - 3 = 4(9) - 3 = 36 - 3 = 33.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l03-combining-like-terms",
+    grade: 9,
+    lessonNumber: 3,
+    title: "Combining Like Terms",
+    mathSkill: "Simplify Expressions by Combining Like Terms (A-SSE.A.1.b)",
+    teaches: "Every slot has three like terms to combine into one — simplify, substitute the given x, then build that many notes anywhere in the kit.",
+    bpm: 128,
+    challenges: {
+      A: {
+        prompt: "Simplify 5x + 3x - 2x to a single term, then evaluate it when x = 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "5x + 3x - 2x = 6x. 6(4) = 24.",
+      },
+      B: {
+        prompt: "Simplify 7x - 2x + x to a single term, then evaluate it when x = 5. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "7x - 2x + x = 6x. 6(5) = 30.",
+      },
+      C: {
+        prompt: "Simplify 4x + 6x - 3x to a single term, then evaluate it when x = 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21 }],
+        explanation: "4x + 6x - 3x = 7x. 7(3) = 21.",
+      },
+      D: {
+        prompt: "Simplify 9x - 4x + 2x to a single term, then evaluate it when x = 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 28 }],
+        explanation: "9x - 4x + 2x = 7x. 7(4) = 28.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l04-the-distributive-property",
+    grade: 9,
+    lessonNumber: 4,
+    title: "The Distributive Property",
+    mathSkill: "Expand Expressions with the Distributive Property (A-SSE.A.2)",
+    teaches: "Every slot has a number times a sum — distribute it across both terms, substitute the given x, then build that many notes anywhere in the kit.",
+    bpm: 128,
+    challenges: {
+      A: {
+        prompt: "Expand 3(x + 5) using the distributive property, then evaluate when x = 2. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21 }],
+        explanation: "3(x + 5) = 3x + 15. 3(2) + 15 = 6 + 15 = 21.",
+      },
+      B: {
+        prompt: "Expand 4(x + 2) using the distributive property, then evaluate when x = 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
+        explanation: "4(x + 2) = 4x + 8. 4(3) + 8 = 12 + 8 = 20.",
+      },
+      C: {
+        prompt: "Expand 2(x + 7) using the distributive property, then evaluate when x = 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 22 }],
+        explanation: "2(x + 7) = 2x + 14. 2(4) + 14 = 8 + 14 = 22.",
+      },
+      D: {
+        prompt: "Expand 5(x + 1) using the distributive property, then evaluate when x = 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
+        explanation: "5(x + 1) = 5x + 5. 5(3) + 5 = 15 + 5 = 20.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l05-one-step-equations-addition-and-subtraction",
+    grade: 9,
+    lessonNumber: 5,
+    title: "One-Step Equations (Addition & Subtraction)",
+    mathSkill: "Solve One-Step Equations by Addition/Subtraction (A-REI.B.3)",
+    teaches: "Every slot is a one-step equation — undo the addition or subtraction to isolate x, then build that many notes anywhere in the kit.",
+    bpm: 128,
+    challenges: {
+      A: {
+        prompt: "Solve for x: x + 8 = 15. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "x + 8 = 15 → x = 15 - 8 = 7.",
+      },
+      B: {
+        prompt: "Solve for x: x - 5 = 12. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 17 }],
+        explanation: "x - 5 = 12 → x = 12 + 5 = 17.",
+      },
+      C: {
+        prompt: "Solve for x: x + 13 = 20. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "x + 13 = 20 → x = 20 - 13 = 7.",
+      },
+      D: {
+        prompt: "Solve for x: x - 9 = 6. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "x - 9 = 6 → x = 6 + 9 = 15.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l06-one-step-equations-multiplication-and-division",
+    grade: 9,
+    lessonNumber: 6,
+    title: "One-Step Equations (Multiplication & Division)",
+    mathSkill: "Solve One-Step Equations by Multiplication/Division (A-REI.B.3)",
+    teaches: "Every slot is a one-step equation like 6x = 30 — x itself is how many BLOCKS you use, and the total is how many notes go across them, so solving by division becomes splitting the total into x equal groups.",
+    bpm: 128,
+    challenges: {
+      A: {
+        prompt: "Solve 6x = 30 for x. Build a drum beat using exactly that many blocks, adding up to 30 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30, blocksUsed: 5 }],
+        explanation: "6x = 30 → x = 30 ÷ 6 = 5 — 5 blocks holding 30 notes in all, 6 in each.",
+      },
+      B: {
+        prompt: "Solve 5x = 35 for x. Build a drum beat using exactly that many blocks, adding up to 35 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35, blocksUsed: 7 }],
+        explanation: "5x = 35 → x = 35 ÷ 5 = 7 — 7 blocks holding 35 notes in all, 5 in each.",
+      },
+      C: {
+        prompt: "Solve 8x = 32 for x. Build a drum beat using exactly that many blocks, adding up to 32 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32, blocksUsed: 4 }],
+        explanation: "8x = 32 → x = 32 ÷ 8 = 4 — 4 blocks holding 32 notes in all, 8 in each.",
+      },
+      D: {
+        prompt: "Solve 9x = 27 for x. Build a drum beat using exactly that many blocks, adding up to 27 notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 27, blocksUsed: 3 }],
+        explanation: "9x = 27 → x = 27 ÷ 9 = 3 — 3 blocks holding 27 notes in all, 9 in each.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l07-two-step-equations",
+    grade: 9,
+    lessonNumber: 7,
+    title: "Two-Step Equations",
+    mathSkill: "Solve Two-Step Equations (A-REI.B.3)",
+    teaches: "Every slot is a two-step equation — undo the addition/subtraction first, then the multiplication, to isolate x, then build that many notes anywhere in the kit.",
+    bpm: 130,
+    challenges: {
+      A: {
+        prompt: "Solve for x: 3x + 4 = 19. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "3x + 4 = 19 → 3x = 15 → x = 5.",
+      },
+      B: {
+        prompt: "Solve for x: 5x - 6 = 24. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "5x - 6 = 24 → 5x = 30 → x = 6.",
+      },
+      C: {
+        prompt: "Solve for x: 2x + 9 = 23. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "2x + 9 = 23 → 2x = 14 → x = 7.",
+      },
+      D: {
+        prompt: "Solve for x: 4x - 3 = 29. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "4x - 3 = 29 → 4x = 32 → x = 8.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l08-multi-step-equations-variables-on-both-sides",
+    grade: 9,
+    lessonNumber: 8,
+    title: "Multi-Step Equations with Variables on Both Sides",
+    mathSkill: "Solve Equations with the Variable on Both Sides (A-REI.A.1)",
+    teaches: "Every slot has x terms on both sides — gather them onto one side, gather the numbers onto the other, then build the solution anywhere in the kit.",
+    bpm: 130,
+    challenges: {
+      A: {
+        prompt: "Solve for x: 5x + 3 = 2x + 18. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "5x + 3 = 2x + 18 → 3x = 15 → x = 5.",
+      },
+      B: {
+        prompt: "Solve for x: 6x - 7 = 3x + 11. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "6x - 7 = 3x + 11 → 3x = 18 → x = 6.",
+      },
+      C: {
+        prompt: "Solve for x: 8x - 3 = 5x + 18. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "8x - 3 = 5x + 18 → 3x = 21 → x = 7.",
+      },
+      D: {
+        prompt: "Solve for x: 10x - 8 = 4x + 46. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "10x - 8 = 4x + 46 → 6x = 54 → x = 9.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l09-slope-from-two-points",
+    grade: 9,
+    lessonNumber: 9,
+    title: "Slope from Two Points — Rise Over Run",
+    mathSkill: "Find the Slope Between Two Points (F-IF.B.6)",
+    teaches: "Every slot gives two points on a line — find the rise (change in y) and the run (change in x), then build a crash cymbal row for the rise and a ride cymbal row for the run.",
+    bpm: 130,
+    challenges: {
+      A: {
+        prompt: "A line passes through (1, 2) and (5, 10). What is the rise (change in y)? What is the run (change in x)? Build a crash cymbal row with the rise in quarter notes and a ride cymbal row with the run in quarter notes.",
+        targets: [
+          { instrument: "crash", count: 8 },
+          { instrument: "ride", count: 4 },
+        ],
+        explanation: "Rise = 10 - 2 = 8. Run = 5 - 1 = 4. Slope = rise ÷ run = 8 ÷ 4 = 2.",
+      },
+      B: {
+        prompt: "A line passes through (0, 1) and (3, 7). What is the rise (change in y)? What is the run (change in x)? Build a crash cymbal row with the rise in quarter notes and a ride cymbal row with the run in quarter notes.",
+        targets: [
+          { instrument: "crash", count: 6 },
+          { instrument: "ride", count: 3 },
+        ],
+        explanation: "Rise = 7 - 1 = 6. Run = 3 - 0 = 3. Slope = rise ÷ run = 6 ÷ 3 = 2.",
+      },
+      C: {
+        prompt: "A line passes through (1, 4) and (9, 12). What is the rise (change in y)? What is the run (change in x)? Build a crash cymbal row with the rise in quarter notes and a ride cymbal row with the run in quarter notes.",
+        targets: [
+          { instrument: "crash", count: 8 },
+          { instrument: "ride", count: 8 },
+        ],
+        explanation: "Rise = 12 - 4 = 8. Run = 9 - 1 = 8. Slope = rise ÷ run = 8 ÷ 8 = 1.",
+      },
+      D: {
+        prompt: "A line passes through (2, 2) and (5, 11). What is the rise (change in y)? What is the run (change in x)? Build a crash cymbal row with the rise in quarter notes and a ride cymbal row with the run in quarter notes.",
+        targets: [
+          { instrument: "crash", count: 9 },
+          { instrument: "ride", count: 3 },
+        ],
+        explanation: "Rise = 11 - 2 = 9. Run = 5 - 2 = 3. Slope = rise ÷ run = 9 ÷ 3 = 3.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l10-slope-intercept-form",
+    grade: 9,
+    lessonNumber: 10,
+    title: "Slope-Intercept Form — Graphing Lines",
+    mathSkill: "Use Slope-Intercept Form to Find Points on a Line (F-IF.C.7a)",
+    teaches: "Every slot gives a line as y = mx + b and an x-value — plug it in and work it out, then build the resulting y-value anywhere in the kit.",
+    bpm: 130,
+    challenges: {
+      A: {
+        prompt: "A line is y = 2x + 3. What is y when x = 5? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "y = 2(5) + 3 = 10 + 3 = 13.",
+      },
+      B: {
+        prompt: "A line is y = 3x - 1. What is y when x = 6? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 17 }],
+        explanation: "y = 3(6) - 1 = 18 - 1 = 17.",
+      },
+      C: {
+        prompt: "A line is y = 4x + 2. What is y when x = 4? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 18 }],
+        explanation: "y = 4(4) + 2 = 16 + 2 = 18.",
+      },
+      D: {
+        prompt: "A line is y = 5x - 3. What is y when x = 5? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 22 }],
+        explanation: "y = 5(5) - 3 = 25 - 3 = 22.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l11-writing-an-equation-of-a-line",
+    grade: 9,
+    lessonNumber: 11,
+    title: "Writing an Equation of a Line from Two Points",
+    mathSkill: "Write a Linear Equation Given Slope and a Point (A-CED.A.2)",
+    teaches: "Every slot gives a slope and a point the line passes through — use b = y - mx to find the y-intercept, then build that many notes anywhere in the kit.",
+    bpm: 130,
+    challenges: {
+      A: {
+        prompt: "A line has slope 3 and passes through the point (2, 11). What is the y-intercept b (using b = y - mx)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "b = y - mx = 11 - 3(2) = 11 - 6 = 5.",
+      },
+      B: {
+        prompt: "A line has slope 2 and passes through the point (4, 15). What is the y-intercept b (using b = y - mx)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "b = y - mx = 15 - 2(4) = 15 - 8 = 7.",
+      },
+      C: {
+        prompt: "A line has slope 4 and passes through the point (3, 20). What is the y-intercept b (using b = y - mx)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "b = y - mx = 20 - 4(3) = 20 - 12 = 8.",
+      },
+      D: {
+        prompt: "A line has slope 5 and passes through the point (2, 16). What is the y-intercept b (using b = y - mx)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "b = y - mx = 16 - 5(2) = 16 - 10 = 6.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l12-linear-inequalities-in-one-variable",
+    grade: 9,
+    lessonNumber: 12,
+    title: "Linear Inequalities in One Variable",
+    mathSkill: "Solve One-Variable Linear Inequalities (A-REI.B.3)",
+    teaches: "Every slot is an inequality — solve it like an equation to find the boundary value, then build a row that lands on the correct side of that boundary.",
+    bpm: 130,
+    challenges: {
+      A: {
+        prompt: "Solve for x: x + 4 > 10. Build a snare drum row with MORE quarter notes than the boundary value, showing a number that satisfies the inequality.",
+        targets: [{ instrument: "snare", count: 6, comparison: "gt" }],
+        explanation: "x + 4 > 10 → x > 6. Any count of 7 or more satisfies it.",
+      },
+      B: {
+        prompt: "Solve for x: 2x < 18. Build a hi-hat row with FEWER quarter notes than the boundary value, showing a number that satisfies the inequality.",
+        targets: [{ instrument: "hihatClosed", count: 9, comparison: "lt" }],
+        explanation: "2x < 18 → x < 9. Any count of 8 or fewer satisfies it.",
+      },
+      C: {
+        prompt: "Solve for x: x - 3 > 5. Build a bass drum row with MORE quarter notes than the boundary value, showing a number that satisfies the inequality.",
+        targets: [{ instrument: "kick", count: 8, comparison: "gt" }],
+        explanation: "x - 3 > 5 → x > 8. Any count of 9 or more satisfies it.",
+      },
+      D: {
+        prompt: "Solve for x: 3x < 21. Build a snare drum row with FEWER quarter notes than the boundary value, showing a number that satisfies the inequality.",
+        targets: [{ instrument: "snare", count: 7, comparison: "lt" }],
+        explanation: "3x < 21 → x < 7. Any count of 6 or fewer satisfies it.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l13-compound-inequalities",
+    grade: 9,
+    lessonNumber: 13,
+    title: "Compound Inequalities",
+    mathSkill: "Solve and Represent Compound Inequalities (A-REI.B.3)",
+    teaches: "Every slot is a compound inequality with two boundaries — build a snare row above the lower one and a hi-hat row below the upper one, together showing a value between them.",
+    bpm: 130,
+    challenges: {
+      A: {
+        prompt: "Solve the compound inequality: 5 < x < 12. Build a snare row with MORE than 5 quarter notes AND a hi-hat row with FEWER than 12 quarter notes, together showing a value of x between them.",
+        targets: [
+          { instrument: "snare", count: 5, comparison: "gt" },
+          { instrument: "hihatClosed", count: 12, comparison: "lt" },
+        ],
+        explanation: "x must be greater than 5 and less than 12 — any snare count above 5 and hi-hat count below 12 shows a value in that range.",
+      },
+      B: {
+        prompt: "Solve the compound inequality: 3 < x < 10. Build a snare row with MORE than 3 quarter notes AND a hi-hat row with FEWER than 10 quarter notes, together showing a value of x between them.",
+        targets: [
+          { instrument: "snare", count: 3, comparison: "gt" },
+          { instrument: "hihatClosed", count: 10, comparison: "lt" },
+        ],
+        explanation: "x must be greater than 3 and less than 10 — any snare count above 3 and hi-hat count below 10 shows a value in that range.",
+      },
+      C: {
+        prompt: "Solve the compound inequality: 7 < x < 15. Build a snare row with MORE than 7 quarter notes AND a hi-hat row with FEWER than 15 quarter notes, together showing a value of x between them.",
+        targets: [
+          { instrument: "snare", count: 7, comparison: "gt" },
+          { instrument: "hihatClosed", count: 15, comparison: "lt" },
+        ],
+        explanation: "x must be greater than 7 and less than 15 — any snare count above 7 and hi-hat count below 15 shows a value in that range.",
+      },
+      D: {
+        prompt: "Solve the compound inequality: 2 < x < 9. Build a snare row with MORE than 2 quarter notes AND a hi-hat row with FEWER than 9 quarter notes, together showing a value of x between them.",
+        targets: [
+          { instrument: "snare", count: 2, comparison: "gt" },
+          { instrument: "hihatClosed", count: 9, comparison: "lt" },
+        ],
+        explanation: "x must be greater than 2 and less than 9 — any snare count above 2 and hi-hat count below 9 shows a value in that range.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l14-systems-of-equations-by-graphing",
+    grade: 9,
+    lessonNumber: 14,
+    title: "Systems of Equations by Graphing",
+    mathSkill: "Solve Systems of Linear Equations Graphically (A-REI.C.6)",
+    teaches: "Every slot gives two lines that cross at one point — set them equal to find where, then build the x-coordinate on the bass drum and the y-coordinate on the snare.",
+    bpm: 132,
+    challenges: {
+      A: {
+        prompt: "The graphs of y = x + 2 and y = -x + 8 cross at one point. Set x + 2 = -x + 8 to find x, then find y. Build a bass drum row with the x-coordinate and a snare row with the y-coordinate, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 5 },
+        ],
+        explanation: "x + 2 = -x + 8 → 2x = 6 → x = 3. y = 3 + 2 = 5. The lines cross at (3, 5).",
+      },
+      B: {
+        prompt: "The graphs of y = 2x + 1 and y = x + 5 cross at one point. Set 2x + 1 = x + 5 to find x, then find y. Build a bass drum row with the x-coordinate and a snare row with the y-coordinate, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 9 },
+        ],
+        explanation: "2x + 1 = x + 5 → x = 4. y = 4 + 5 = 9. The lines cross at (4, 9).",
+      },
+      C: {
+        prompt: "The graphs of y = 3x - 2 and y = x + 4 cross at one point. Set 3x - 2 = x + 4 to find x, then find y. Build a bass drum row with the x-coordinate and a snare row with the y-coordinate, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 7 },
+        ],
+        explanation: "3x - 2 = x + 4 → 2x = 6 → x = 3. y = 3 + 4 = 7. The lines cross at (3, 7).",
+      },
+      D: {
+        prompt: "The graphs of y = 2x - 1 and y = -x + 11 cross at one point. Set 2x - 1 = -x + 11 to find x, then find y. Build a bass drum row with the x-coordinate and a snare row with the y-coordinate, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 7 },
+        ],
+        explanation: "2x - 1 = -x + 11 → 3x = 12 → x = 4. y = 2(4) - 1 = 7. The lines cross at (4, 7).",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l15-systems-of-equations-by-substitution",
+    grade: 9,
+    lessonNumber: 15,
+    title: "Systems of Equations by Substitution",
+    mathSkill: "Solve Systems of Linear Equations by Substitution (A-REI.C.6)",
+    teaches: "Every slot gives a system where one equation is already solved for y — substitute it into the other equation to find x, then find y, and build x on the bass drum, y on the snare.",
+    bpm: 132,
+    challenges: {
+      A: {
+        prompt: "y = x + 4 and 2x + y = 16. Substitute the first equation into the second to solve for x, then find y. Build a bass drum row with the x-value and a snare row with the y-value, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 8 },
+        ],
+        explanation: "2x + (x + 4) = 16 → 3x = 12 → x = 4. y = 4 + 4 = 8.",
+      },
+      B: {
+        prompt: "y = x + 2 and 3x + y = 22. Substitute the first equation into the second to solve for x, then find y. Build a bass drum row with the x-value and a snare row with the y-value, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 7 },
+        ],
+        explanation: "3x + (x + 2) = 22 → 4x = 20 → x = 5. y = 5 + 2 = 7.",
+      },
+      C: {
+        prompt: "y = 2x + 1 and x + y = 16. Substitute the first equation into the second to solve for x, then find y. Build a bass drum row with the x-value and a snare row with the y-value, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 11 },
+        ],
+        explanation: "x + (2x + 1) = 16 → 3x = 15 → x = 5. y = 2(5) + 1 = 11.",
+      },
+      D: {
+        prompt: "y = x + 1 and 4x + y = 21. Substitute the first equation into the second to solve for x, then find y. Build a bass drum row with the x-value and a snare row with the y-value, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 4 },
+          { instrument: "snare", count: 5 },
+        ],
+        explanation: "4x + (x + 1) = 21 → 5x = 20 → x = 4. y = 4 + 1 = 5.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l16-systems-of-equations-by-elimination",
+    grade: 9,
+    lessonNumber: 16,
+    title: "Systems of Equations by Elimination",
+    mathSkill: "Solve Systems of Linear Equations by Elimination (A-REI.C.6)",
+    teaches: "Every slot gives a system built to eliminate y when added — add the two equations to solve for x, then find y, and build x on the bass drum, y on the snare.",
+    bpm: 132,
+    challenges: {
+      A: {
+        prompt: "2x + y = 14 and x - y = 1. Add the two equations to eliminate y and solve for x, then find y. Build a bass drum row with the x-value and a snare row with the y-value, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 4 },
+        ],
+        explanation: "(2x + y) + (x - y) = 14 + 1 → 3x = 15 → x = 5. y = 14 - 2(5) = 4.",
+      },
+      B: {
+        prompt: "3x + y = 23 and x - y = 1. Add the two equations to eliminate y and solve for x, then find y. Build a bass drum row with the x-value and a snare row with the y-value, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "snare", count: 5 },
+        ],
+        explanation: "(3x + y) + (x - y) = 23 + 1 → 4x = 24 → x = 6. y = 23 - 3(6) = 5.",
+      },
+      C: {
+        prompt: "2x + y = 19 and x - y = 2. Add the two equations to eliminate y and solve for x, then find y. Build a bass drum row with the x-value and a snare row with the y-value, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 7 },
+          { instrument: "snare", count: 5 },
+        ],
+        explanation: "(2x + y) + (x - y) = 19 + 2 → 3x = 21 → x = 7. y = 19 - 2(7) = 5.",
+      },
+      D: {
+        prompt: "4x + y = 25 and x - y = 0. Add the two equations to eliminate y and solve for x, then find y. Build a bass drum row with the x-value and a snare row with the y-value, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 5 },
+        ],
+        explanation: "(4x + y) + (x - y) = 25 + 0 → 5x = 25 → x = 5. y = 25 - 4(5) = 5.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l17-properties-of-exponents",
+    grade: 9,
+    lessonNumber: 17,
+    title: "Properties of Exponents",
+    mathSkill: "Apply the Product and Power Rules for Exponents (A-SSE.A.2)",
+    teaches: "Every slot simplifies a power expression using the product rule (add exponents) or the power rule (multiply exponents), then evaluates it — build that many notes anywhere in the kit.",
+    bpm: 132,
+    challenges: {
+      A: {
+        prompt: "Simplify 2³ × 2² using the product rule (add the exponents), then evaluate. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "2³ × 2² = 2⁵ = 32.",
+      },
+      B: {
+        prompt: "Simplify 3² × 3¹ using the product rule (add the exponents), then evaluate. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 27 }],
+        explanation: "3² × 3¹ = 3³ = 27.",
+      },
+      C: {
+        prompt: "Simplify (2²)³ using the power rule (multiply the exponents), then evaluate. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 64 }],
+        explanation: "(2²)³ = 2⁶ = 64.",
+      },
+      D: {
+        prompt: "Simplify (3¹)⁴ using the power rule (multiply the exponents), then evaluate. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 81 }],
+        explanation: "(3¹)⁴ = 3⁴ = 81.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l18-adding-and-subtracting-polynomials",
+    grade: 9,
+    lessonNumber: 18,
+    title: "Adding and Subtracting Polynomials",
+    mathSkill: "Add and Subtract Polynomials (A-APR.A.1)",
+    teaches: "Every slot adds or subtracts two binomials — combine like terms, substitute the given x, then build that many notes anywhere in the kit.",
+    bpm: 132,
+    challenges: {
+      A: {
+        prompt: "Add (3x + 5) + (2x + 7), combine like terms, then evaluate the result when x = 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "(3x + 5) + (2x + 7) = 5x + 12. 5(4) + 12 = 20 + 12 = 32.",
+      },
+      B: {
+        prompt: "Add (4x + 2) + (x + 9), combine like terms, then evaluate the result when x = 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 26 }],
+        explanation: "(4x + 2) + (x + 9) = 5x + 11. 5(3) + 11 = 15 + 11 = 26.",
+      },
+      C: {
+        prompt: "Subtract (7x + 10) - (2x + 3), combine like terms, then evaluate the result when x = 5. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "(7x + 10) - (2x + 3) = 5x + 7. 5(5) + 7 = 25 + 7 = 32.",
+      },
+      D: {
+        prompt: "Subtract (6x + 8) - (3x + 2), combine like terms, then evaluate the result when x = 6. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "(6x + 8) - (3x + 2) = 3x + 6. 3(6) + 6 = 18 + 6 = 24.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l19-multiplying-binomials-foil",
+    grade: 9,
+    lessonNumber: 19,
+    title: "Multiplying Binomials — FOIL",
+    mathSkill: "Multiply Two Binomials (A-APR.A.1)",
+    teaches: "Every slot multiplies two binomials with FOIL (First, Outer, Inner, Last) — combine like terms, substitute the given x, then build that many notes anywhere in the kit.",
+    bpm: 132,
+    challenges: {
+      A: {
+        prompt: "Multiply (x + 3)(x + 5) using FOIL, then evaluate the result when x = 2. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35 }],
+        explanation: "(x + 3)(x + 5) = x² + 8x + 15. (2)² + 8(2) + 15 = 4 + 16 + 15 = 35.",
+      },
+      B: {
+        prompt: "Multiply (x + 2)(x + 6) using FOIL, then evaluate the result when x = 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 45 }],
+        explanation: "(x + 2)(x + 6) = x² + 8x + 12. (3)² + 8(3) + 12 = 9 + 24 + 12 = 45.",
+      },
+      C: {
+        prompt: "Multiply (x + 4)(x + 1) using FOIL, then evaluate the result when x = 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 40 }],
+        explanation: "(x + 4)(x + 1) = x² + 5x + 4. (4)² + 5(4) + 4 = 16 + 20 + 4 = 40.",
+      },
+      D: {
+        prompt: "Multiply (x + 1)(x + 7) using FOIL, then evaluate the result when x = 2. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 27 }],
+        explanation: "(x + 1)(x + 7) = x² + 8x + 7. (2)² + 8(2) + 7 = 4 + 16 + 7 = 27.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l20-factoring-trinomials",
+    grade: 9,
+    lessonNumber: 20,
+    title: "Factoring Trinomials",
+    mathSkill: "Factor Trinomials of the Form x² + bx + c (A-SSE.B.3a)",
+    teaches: "Every slot is a trinomial to factor into two binomials — find the two numbers that multiply to c and add to b, then build the smaller one on the low tom and the larger one on the mid tom.",
+    bpm: 134,
+    challenges: {
+      A: {
+        prompt: "Factor x² + 9x + 20 into (x + a)(x + b) — find a and b, the two numbers that multiply to 20 and add to 9. Build a low tom row with the smaller number and a mid tom row with the larger number, in quarter notes.",
+        targets: [
+          { instrument: "lowTom", count: 4 },
+          { instrument: "midTom", count: 5 },
+        ],
+        explanation: "4 × 5 = 20 and 4 + 5 = 9, so x² + 9x + 20 = (x + 4)(x + 5).",
+      },
+      B: {
+        prompt: "Factor x² + 7x + 12 into (x + a)(x + b) — find a and b, the two numbers that multiply to 12 and add to 7. Build a low tom row with the smaller number and a mid tom row with the larger number, in quarter notes.",
+        targets: [
+          { instrument: "lowTom", count: 3 },
+          { instrument: "midTom", count: 4 },
+        ],
+        explanation: "3 × 4 = 12 and 3 + 4 = 7, so x² + 7x + 12 = (x + 3)(x + 4).",
+      },
+      C: {
+        prompt: "Factor x² + 11x + 18 into (x + a)(x + b) — find a and b, the two numbers that multiply to 18 and add to 11. Build a low tom row with the smaller number and a mid tom row with the larger number, in quarter notes.",
+        targets: [
+          { instrument: "lowTom", count: 2 },
+          { instrument: "midTom", count: 9 },
+        ],
+        explanation: "2 × 9 = 18 and 2 + 9 = 11, so x² + 11x + 18 = (x + 2)(x + 9).",
+      },
+      D: {
+        prompt: "Factor x² + 8x + 15 into (x + a)(x + b) — find a and b, the two numbers that multiply to 15 and add to 8. Build a low tom row with the smaller number and a mid tom row with the larger number, in quarter notes.",
+        targets: [
+          { instrument: "lowTom", count: 3 },
+          { instrument: "midTom", count: 5 },
+        ],
+        explanation: "3 × 5 = 15 and 3 + 5 = 8, so x² + 8x + 15 = (x + 3)(x + 5).",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l21-solving-quadratics-by-factoring",
+    grade: 9,
+    lessonNumber: 21,
+    title: "Solving Quadratic Equations by Factoring",
+    mathSkill: "Solve Quadratic Equations by Factoring (A-REI.B.4b)",
+    teaches: "Every slot is a quadratic that factors into two binomials — factor it, then read off the two roots, and build the smaller one on the high tom and the larger one on the rimshot.",
+    bpm: 134,
+    challenges: {
+      A: {
+        prompt: "Solve x² - 7x + 10 = 0 by factoring into (x - 2)(x - 5) = 0. What are the two roots? Build a high tom row with the smaller root and a rimshot row with the larger root, in quarter notes.",
+        targets: [
+          { instrument: "highTom", count: 2 },
+          { instrument: "rimshot", count: 5 },
+        ],
+        explanation: "(x - 2)(x - 5) = 0 means x = 2 or x = 5.",
+      },
+      B: {
+        prompt: "Solve x² - 9x + 18 = 0 by factoring into (x - 3)(x - 6) = 0. What are the two roots? Build a high tom row with the smaller root and a rimshot row with the larger root, in quarter notes.",
+        targets: [
+          { instrument: "highTom", count: 3 },
+          { instrument: "rimshot", count: 6 },
+        ],
+        explanation: "(x - 3)(x - 6) = 0 means x = 3 or x = 6.",
+      },
+      C: {
+        prompt: "Solve x² - 6x + 8 = 0 by factoring into (x - 2)(x - 4) = 0. What are the two roots? Build a high tom row with the smaller root and a rimshot row with the larger root, in quarter notes.",
+        targets: [
+          { instrument: "highTom", count: 2 },
+          { instrument: "rimshot", count: 4 },
+        ],
+        explanation: "(x - 2)(x - 4) = 0 means x = 2 or x = 4.",
+      },
+      D: {
+        prompt: "Solve x² - 10x + 21 = 0 by factoring into (x - 3)(x - 7) = 0. What are the two roots? Build a high tom row with the smaller root and a rimshot row with the larger root, in quarter notes.",
+        targets: [
+          { instrument: "highTom", count: 3 },
+          { instrument: "rimshot", count: 7 },
+        ],
+        explanation: "(x - 3)(x - 7) = 0 means x = 3 or x = 7.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l22-the-quadratic-formula",
+    grade: 9,
+    lessonNumber: 22,
+    title: "The Quadratic Formula",
+    mathSkill: "Solve Quadratic Equations Using the Quadratic Formula (A-REI.B.4a)",
+    teaches: "Every slot solves x² + bx + c = 0 with the quadratic formula — work out the discriminant, take its square root, then build the larger root on the ride cymbal.",
+    bpm: 134,
+    challenges: {
+      A: {
+        prompt: "Use the quadratic formula to solve x² - 5x + 6 = 0. What is the larger root? Build a ride cymbal row with that many quarter notes.",
+        targets: [{ instrument: "ride", count: 3 }],
+        explanation: "x = (5 ± √(25 - 24)) ÷ 2 = (5 ± 1) ÷ 2 → x = 3 or x = 2. The larger root is 3.",
+      },
+      B: {
+        prompt: "Use the quadratic formula to solve x² - 7x + 10 = 0. What is the larger root? Build a ride cymbal row with that many quarter notes.",
+        targets: [{ instrument: "ride", count: 5 }],
+        explanation: "x = (7 ± √(49 - 40)) ÷ 2 = (7 ± 3) ÷ 2 → x = 5 or x = 2. The larger root is 5.",
+      },
+      C: {
+        prompt: "Use the quadratic formula to solve x² - 9x + 20 = 0. What is the larger root? Build a ride cymbal row with that many quarter notes.",
+        targets: [{ instrument: "ride", count: 5 }],
+        explanation: "x = (9 ± √(81 - 80)) ÷ 2 = (9 ± 1) ÷ 2 → x = 5 or x = 4. The larger root is 5.",
+      },
+      D: {
+        prompt: "Use the quadratic formula to solve x² - 11x + 30 = 0. What is the larger root? Build a ride cymbal row with that many quarter notes.",
+        targets: [{ instrument: "ride", count: 6 }],
+        explanation: "x = (11 ± √(121 - 120)) ÷ 2 = (11 ± 1) ÷ 2 → x = 6 or x = 5. The larger root is 6.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l23-arithmetic-sequences",
+    grade: 9,
+    lessonNumber: 23,
+    title: "Arithmetic Sequences",
+    mathSkill: "Find the nth Term of an Arithmetic Sequence (F-BF.A.2)",
+    teaches: "Every slot gives a sequence that adds the same amount each time — find the requested term, then build it using exactly that many blocks, so the term's position becomes the beat's own time signature.",
+    bpm: 136,
+    challenges: {
+      A: {
+        prompt: "An arithmetic sequence starts at 3 and adds 4 each time: 3, 7, 11, 15, ... What is the 6th term? Build a drum beat using exactly 6 blocks that add up to the 6th term in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 23, blocksUsed: 6 }],
+        explanation: "The 6th term is 3 + 5(4) = 23 — build it across exactly 6 blocks, one for each term up to the 6th.",
+      },
+      B: {
+        prompt: "An arithmetic sequence starts at 2 and adds 5 each time: 2, 7, 12, 17, ... What is the 5th term? Build a drum beat using exactly 5 blocks that add up to the 5th term in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 22, blocksUsed: 5 }],
+        explanation: "The 5th term is 2 + 4(5) = 22 — build it across exactly 5 blocks, one for each term up to the 5th.",
+      },
+      C: {
+        prompt: "An arithmetic sequence starts at 4 and adds 6 each time: 4, 10, 16, 22, ... What is the 5th term? Build a drum beat using exactly 5 blocks that add up to the 5th term in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 28, blocksUsed: 5 }],
+        explanation: "The 5th term is 4 + 4(6) = 28 — build it across exactly 5 blocks, one for each term up to the 5th.",
+      },
+      D: {
+        prompt: "An arithmetic sequence starts at 1 and adds 7 each time: 1, 8, 15, 22, ... What is the 6th term? Build a drum beat using exactly 6 blocks that add up to the 6th term in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 36, blocksUsed: 6 }],
+        explanation: "The 6th term is 1 + 5(7) = 36 — build it across exactly 6 blocks, one for each term up to the 6th.",
+      },
+    },
+  },
+  {
+    slug: "math-g9-l24-geometric-sequences-and-exponential-growth",
+    grade: 9,
+    lessonNumber: 24,
+    title: "Geometric Sequences and Exponential Growth",
+    mathSkill: "Find the nth Term of a Geometric Sequence (F-LE.A.1/A.2)",
+    teaches: "Freshman year's last lesson: every slot is a sequence that doubles each time — find the requested term, then build it using exactly that many blocks on the crash cymbal for the big finish. This is a great one to drop into a Stack (the ‘…’ menu's Stacks link) and hear the growth repeat and build — or swap in any other kit piece you like.",
+    bpm: 136,
+    challenges: {
+      A: {
+        prompt: "A geometric sequence starts at 1 and doubles each time: 1, 2, 4, 8, 16, ... What is the 5th term? Build a crash cymbal beat using exactly 5 blocks that add up to the 5th term in all.",
+        targets: [{ instrument: "crash", count: 16, blocksUsed: 5 }],
+        explanation: "The 5th term is 1 × 2⁴ = 16 — build it across exactly 5 blocks, one for each term up to the 5th.",
+      },
+      B: {
+        prompt: "A geometric sequence starts at 2 and doubles each time: 2, 4, 8, 16, ... What is the 4th term? Build a crash cymbal beat using exactly 4 blocks that add up to the 4th term in all.",
+        targets: [{ instrument: "crash", count: 16, blocksUsed: 4 }],
+        explanation: "The 4th term is 2 × 2³ = 16 — build it across exactly 4 blocks, one for each term up to the 4th.",
+      },
+      C: {
+        prompt: "A geometric sequence starts at 1 and doubles each time: 1, 2, 4, 8, 16, 32, ... What is the 6th term? Build a crash cymbal beat using exactly 6 blocks that add up to the 6th term in all.",
+        targets: [{ instrument: "crash", count: 32, blocksUsed: 6 }],
+        explanation: "The 6th term is 1 × 2⁵ = 32 — build it across exactly 6 blocks, one for each term up to the 6th.",
+      },
+      D: {
+        prompt: "A geometric sequence starts at 3 and doubles each time: 3, 6, 12, 24, ... What is the 4th term? Build a crash cymbal beat using exactly 4 blocks that add up to the 4th term in all.",
+        targets: [{ instrument: "crash", count: 24, blocksUsed: 4 }],
+        explanation: "The 4th term is 3 × 2³ = 24 — build it across exactly 4 blocks, one for each term up to the 4th.",
       },
     },
   },
