@@ -474,7 +474,20 @@ function drawMeasure(
   stave.setWidth(width);
   stave.draw();
 
-  formatter.formatToStave([voice], stave);
+  // formatToStave's positional `stave` only sizes the justification width —
+  // it doesn't reach Formatter.preFormat's own `voice.setStave(stave)` call
+  // unless the same stave is *also* echoed back in the options bag here.
+  // Skip that and every note keeps the placeholder y it was constructed
+  // with straight through the postFormat() call below, so a beam's
+  // slope/extension math (which works by comparing notes' real stem
+  // heights) sees every note as sitting at the same height and computes
+  // zero extension for all of them. Invisible when every note in the beat
+  // is already on the same line, but for a beat where one note is a much
+  // taller chord (e.g. hi-hat chorded onto a snare hit next to a plain
+  // snare hit), the beam draws at that tall note's real height while its
+  // neighbors' stems draw at their own real, never-extended height — a
+  // visible gap between the stem tip and the beam.
+  formatter.formatToStave([voice], stave, { stave });
   // A beam only extends its notes' stems to match its own slope inside
   // postFormat() — which VF.Beam otherwise defers until draw() is first
   // called. Left alone, that means voice.draw() below (which positions each
