@@ -36,6 +36,15 @@ export function MathProgressOverview({
 }) {
   const progress = useMathProgress(allLessonSlugs);
   const totalPossible = lessons.length * 4;
+  // This grade's own slice of progress.solved — progress.totalSolved and
+  // progress.lessonsCompleted are deliberately site-wide (they're what the
+  // gig badges below are earned against), so a grade section showing "how
+  // far along is THIS grade" has to add up its own lessons' solved counts
+  // rather than read those two totals directly, or every grade's card would
+  // display the same site-wide numbers regardless of which one you're
+  // looking at.
+  const gradeSolved = lessons.reduce((sum, l) => sum + progress.lessonSolvedCount(l.slug), 0);
+  const gradeLessonsCompleted = lessons.filter((l) => progress.lessonSolvedCount(l.slug) === 4).length;
 
   return (
     <section className="mt-6">
@@ -44,9 +53,9 @@ export function MathProgressOverview({
       <div className="mt-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm text-white/80">
-            <span className="font-bold text-yellow-400">{progress.totalSolved}</span> / {totalPossible} questions
-            solved · <span className="font-bold text-yellow-400">{progress.lessonsCompleted}</span> lesson
-            {progress.lessonsCompleted === 1 ? "" : "s"} completed
+            <span className="font-bold text-yellow-400">{gradeSolved}</span> / {totalPossible} questions
+            solved · <span className="font-bold text-yellow-400">{gradeLessonsCompleted}</span> lesson
+            {gradeLessonsCompleted === 1 ? "" : "s"} completed
           </p>
           {!progress.signedIn && progress.totalSolved > 0 && (
             <span className="text-xs text-white/40">Sign in to save this for good</span>
