@@ -37,6 +37,7 @@ for (const meta of MATH_LESSONS) {
     title: meta.title,
     mathSkill: meta.mathSkill,
     teaches: meta.teaches,
+    careerConnection: meta.careerConnection ?? null,
     challenges: meta.challenges,
     slotA: starterSlotForChallenge(meta.bpm, meta.challenges.A),
     slotB: starterSlotForChallenge(meta.bpm, meta.challenges.B),

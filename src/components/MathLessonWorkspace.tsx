@@ -158,6 +158,7 @@ export function MathLessonWorkspace({
     title: string;
     mathSkill: string;
     teaches: string;
+    careerConnection?: string | null;
     challenges: Record<SlotLetter, MathChallenge>;
     slotA: BoardSlotData | null;
     slotB: BoardSlotData | null;
@@ -361,7 +362,30 @@ export function MathLessonWorkspace({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4">
-              <h2 className="text-sm font-bold uppercase tracking-wide text-yellow-400">Slot {activeSlot} Question</h2>
+              <h2 className="flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-yellow-400">
+                Slot {activeSlot} Question
+                {lesson.careerConnection && (
+                  <span className="group relative inline-flex normal-case">
+                    <span
+                      tabIndex={0}
+                      role="button"
+                      aria-label="Who uses this math?"
+                      className="cursor-help text-sm leading-none outline-none"
+                    >
+                      💡
+                    </span>
+                    <span
+                      role="tooltip"
+                      className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-64 -translate-x-1/2 rounded-md border border-white/10 bg-slate-800 p-3 text-xs font-normal normal-case leading-relaxed text-white/90 opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+                    >
+                      <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-yellow-400">
+                        Who uses this?
+                      </span>
+                      {lesson.careerConnection}
+                    </span>
+                  </span>
+                )}
+              </h2>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}

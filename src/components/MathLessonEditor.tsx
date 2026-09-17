@@ -13,6 +13,7 @@ interface EditableLesson {
   title: string;
   mathSkill: string;
   teaches: string;
+  careerConnection: string | null;
   challenges: Record<SlotLetter, MathChallenge>;
   isPublished: boolean;
 }
@@ -36,6 +37,7 @@ export function MathLessonEditor({ lesson }: { lesson: EditableLesson }) {
   const [title, setTitle] = useState(lesson.title);
   const [mathSkill, setMathSkill] = useState(lesson.mathSkill);
   const [teaches, setTeaches] = useState(lesson.teaches);
+  const [careerConnection, setCareerConnection] = useState(lesson.careerConnection ?? "");
   const [isPublished, setIsPublished] = useState(lesson.isPublished);
   const [challenges, setChallenges] = useState(() => cloneChallenges(lesson.challenges));
   const [saving, setSaving] = useState(false);
@@ -73,7 +75,7 @@ export function MathLessonEditor({ lesson }: { lesson: EditableLesson }) {
       const res = await fetch(`/api/math-admin/lessons/${lesson.slug}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, mathSkill, teaches, challenges, isPublished }),
+        body: JSON.stringify({ title, mathSkill, teaches, careerConnection, challenges, isPublished }),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -119,6 +121,18 @@ export function MathLessonEditor({ lesson }: { lesson: EditableLesson }) {
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-white/50">Teaches (shown under the lesson)</span>
           <textarea value={teaches} onChange={(e) => setTeaches(e.target.value)} rows={2} className={fieldClass} />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-white/50">
+            💡 Who uses this? (behind the light bulb icon — leave blank to hide it)
+          </span>
+          <textarea
+            value={careerConnection}
+            onChange={(e) => setCareerConnection(e.target.value)}
+            rows={3}
+            placeholder="e.g. Lumber traders and freight dispatchers solve this exact equation to figure out how many truckloads they need..."
+            className={fieldClass}
+          />
         </label>
       </div>
 

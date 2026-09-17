@@ -42,6 +42,14 @@ export interface MathLesson {
   // idea A introduces. See src/components/MathLessonWorkspace.tsx for the
   // client-side grading.
   challenges: Record<SlotLetter, MathChallenge>;
+  // "Who uses this?" — real occupations that lean on this lesson's specific
+  // skill day to day, and why, written for a student who's never connected
+  // the math to a paycheck (a lumber trader dividing a truckload, a game
+  // developer's physics engine). Shown behind the 💡 icon in
+  // MathLessonWorkspace.tsx. Optional because it's being backfilled grade by
+  // grade (Grade 9 first) rather than required for every lesson at once — a
+  // lesson without one simply doesn't show the button.
+  careerConnection?: string;
 }
 
 // One instrument (or, when an answer is too big for one 8-block row, a
@@ -178,6 +186,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1, 2, 3, 4, 5 — 5 notes means 5 quarter notes.",
       },
     },
+    careerConnection:
+      "A grocery store worker counts apples one at a time as she bags them for a shopper, just like counting the pictures in this lesson.",
   },
   {
     slug: "math-g0-l02-what-comes-next",
@@ -209,6 +219,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7, 8 — 8 comes right after 7.",
       },
     },
+    careerConnection:
+      "A movie theater usher hands out numbered tickets in order and always needs to know what number comes next.",
   },
   {
     slug: "math-g0-l03-which-number-is-bigger",
@@ -240,6 +252,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "6 is bigger than 1, so you build 6 quarter notes.",
       },
     },
+    careerConnection:
+      "A scorekeeper at a basketball game watches two numbers on the board and calls out which team is ahead.",
   },
   {
     slug: "math-g0-l04-missing-numbers-in-a-row",
@@ -271,6 +285,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2, 3, 4, 5, 6 — the missing number is 3.",
       },
     },
+    careerConnection:
+      "A mail carrier walking down a street of numbered houses can tell which house is missing its number just by knowing what comes between the ones on either side.",
   },
   {
     slug: "math-g0-l05-counting-bigger-groups",
@@ -302,6 +318,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1, 2, 3, 4, 5 — 5 hearts.",
       },
     },
+    careerConnection:
+      "A farmer counts a whole flock of chickens the exact same way she'd count 3 of them — one at a time — just with more to go.",
   },
   {
     slug: "math-g0-l06-what-comes-before",
@@ -334,6 +352,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2, 3, 4 — 3 comes right before 4.",
       },
     },
+    careerConnection:
+      "A school bus driver watches for the stop number right before hers so she knows exactly when to start slowing down.",
   },
   {
     slug: "math-g0-l07-counting-backward",
@@ -365,6 +385,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "6, 5, 4, 3 — three steps back from 6 lands on 3.",
       },
     },
+    careerConnection:
+      "A coach counting down before the start of a race, or a launch crew counting down before liftoff, both use this same backward count to know exactly when to go.",
   },
   {
     slug: "math-g0-l08-which-group-has-more",
@@ -408,6 +430,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7 is more than 2 — the snare drum row has more quarter notes.",
       },
     },
+    careerConnection:
+      "A pet store worker looks at two baskets of new puppies and can tell right away which litter has more just by comparing the groups.",
   },
   {
     slug: "math-g0-l09-adding-one-more",
@@ -439,6 +463,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1 and 3 more makes 4.",
       },
     },
+    careerConnection:
+      "A librarian shelving a stack of books adds one more every time a returned book comes in, keeping a running count in her head.",
   },
   {
     slug: "math-g0-l10-take-away-how-many-are-left",
@@ -470,6 +496,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4 take away 2 leaves 2.",
       },
     },
+    careerConnection:
+      "A zookeeper watching ducks swim off a pond one by one keeps track of exactly how many are left in the water.",
   },
   {
     slug: "math-g0-l11-adding-within-5",
@@ -501,6 +529,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "0 + 4 = 4 — adding 0 changes nothing.",
       },
     },
+    careerConnection:
+      "An ice cream shop worker adds up scoops as she builds a cone — one scoop, plus one more, plus one more — to know the final count before she hands it over.",
   },
   {
     slug: "math-g0-l12-subtracting-within-5",
@@ -532,6 +562,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5 - 4 = 1.",
       },
     },
+    careerConnection:
+      "A crossing guard watches a line of kids and notices how many are left waiting after a few cross the street.",
   },
   {
     slug: "math-g0-l13-addition-word-problems-within-5",
@@ -563,6 +595,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4 + 1 = 5.",
       },
     },
+    careerConnection:
+      "A drum teacher counts along with a beginner student the exact same way — some beats played, then a few more, to reach the total for the exercise.",
   },
   {
     slug: "math-g0-l14-ways-to-make-5",
@@ -606,6 +640,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4 and 2 also make 6 (4+2=6).",
       },
     },
+    careerConnection:
+      "A cashier making change splits a handful of coins into two piles — some for the register, some for the customer — the same way this lesson splits a number into two parts.",
   },
   {
     slug: "math-g0-l15-subtraction-word-problems-within-5",
@@ -637,6 +673,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3 - 2 = 1.",
       },
     },
+    careerConnection:
+      "A drum teacher listening to a student stop partway through a pattern can hear exactly how many beats are left before the pattern ends.",
   },
   {
     slug: "math-g0-l16-adding-within-10",
@@ -670,6 +708,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7 + 2 = 9.",
       },
     },
+    careerConnection:
+      "A birthday party helper counting balloons keeps adding up the total every time a new bunch arrives, right up until the room is full.",
   },
   {
     slug: "math-g0-l17-subtracting-within-10",
@@ -701,6 +741,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "10 - 6 = 4.",
       },
     },
+    careerConnection:
+      "A parking lot attendant watching cars pull out one by one keeps track of how many are left in the lot.",
   },
   {
     slug: "math-g0-l18-subtraction-word-problems-within-10",
@@ -732,6 +774,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "10 - 6 = 4.",
       },
     },
+    careerConnection:
+      "A beekeeper watching bees fly off toward the flowers keeps a rough count of how many are still around the hive.",
   },
   {
     slug: "math-g0-l19-doubling-numbers",
@@ -764,6 +808,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2 + 2 = 4 — a double.",
       },
     },
+    careerConnection:
+      "A toy store worker filling a matching order doubles it exactly — if a customer wants 2 of a toy, then doubling that means grabbing 2 more of the same one.",
   },
   {
     slug: "math-g0-l20-more-subtracting-within-10",
@@ -795,6 +841,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "9 - 5 = 4.",
       },
     },
+    careerConnection:
+      "A school lunch worker counting trays left on the cart after kids grab theirs keeps track of subtraction just like this all through lunch period.",
   },
   {
     slug: "math-g0-l21-making-teen-numbers",
@@ -830,6 +878,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "10 + 2 = 12.",
       },
     },
+    careerConnection:
+      "A crayon factory worker packing a full box of 10 crayons plus a few extras uses the exact same idea to know the total count in the box.",
   },
   {
     slug: "math-g0-l22-teen-numbers-tens-and-ones",
@@ -873,6 +923,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "18 = 1 ten + 8 ones.",
       },
     },
+    careerConnection:
+      "A candy shop worker bagging an order sorts it into a full bag of 10 pieces plus a few loose ones, the same tens-and-ones split as a teen number.",
   },
   {
     slug: "math-g0-l23-counting-by-tens",
@@ -904,6 +956,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "10, 20, 30 — the missing number is 10, which is 1 ten.",
       },
     },
+    careerConnection:
+      "A bank teller counting a stack of dimes counts by tens the exact same way, since each dime is worth 10 cents.",
   },
   {
     slug: "math-g0-l24-shapes-counting-sides",
@@ -947,6 +1001,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "A hexagon has 6 sides; a triangle has 3 — the hexagon has more.",
       },
     },
+    careerConnection:
+      "A carpenter cutting wood into shapes for a bookshelf counts each shape's sides to know exactly how many pieces of wood to cut.",
   },
 
   // ============================================================
@@ -992,6 +1048,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "13, 14, 15, 16 — the missing number is 14.",
       },
     },
+    careerConnection:
+      "A movie theater usher walking down a row of numbered seats can spot a missing seat number just by knowing what should come next.",
   },
   {
     slug: "math-g1-l02-addition-facts-within-10",
@@ -1024,6 +1082,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3 + 3 = 6.",
       },
     },
+    careerConnection:
+      "A cashier ringing up a few small items adds them up in her head the exact same way to tell a customer the total.",
   },
   {
     slug: "math-g1-l03-the-number-after",
@@ -1067,6 +1127,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "77, 78 — 78 is 7 tens and 8 ones.",
       },
     },
+    careerConnection:
+      "A hotel front-desk worker assigning the next room down the hallway always knows exactly which number comes after the last one given out.",
   },
   {
     slug: "math-g1-l04-subtraction-facts-within-10",
@@ -1098,6 +1160,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7 - 5 = 2.",
       },
     },
+    careerConnection:
+      "A restaurant host looks at how many seats are already filled and subtracts to know how many are still empty for the next guests.",
   },
   {
     slug: "math-g1-l05-skip-counting-by-10s-to-100",
@@ -1129,6 +1193,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "10, 20, 30, 40 — the missing number is 10, which is 1 ten.",
       },
     },
+    careerConnection:
+      "A bank teller counting a stack of ten-dollar bills skip-counts by tens the exact same way to reach the total fast.",
   },
   {
     slug: "math-g1-l06-addition-within-20",
@@ -1164,6 +1230,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5+9 = 5+5+4 = 10+4 = 14.",
       },
     },
+    careerConnection:
+      "A cashier making change bridges through a round number the same way — counting up from a price to the nearest dollar first, then adding the rest.",
   },
   {
     slug: "math-g1-l07-subtraction-within-20",
@@ -1195,6 +1263,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "15 - 8 = 7.",
       },
     },
+    careerConnection:
+      "A ticket seller looks at how many seats have already sold and subtracts to know how many tickets are still left for the show.",
   },
   {
     slug: "math-g1-l08-missing-addend",
@@ -1226,6 +1296,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "6 + 8 = 14, so the missing number is 6.",
       },
     },
+    careerConnection:
+      "A construction worker who knows a wall needs 12 boards and already has 7 up figures out the missing addend to know how many more to grab.",
   },
   {
     slug: "math-g1-l09-adding-three-numbers",
@@ -1261,6 +1333,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2 + 5 + 4 = 11.",
       },
     },
+    careerConnection:
+      "A basketball scorekeeper adding up points from three different quarters to get a running game total adds them one at a time in any order, just like this.",
   },
   {
     slug: "math-g1-l10-fact-families",
@@ -1304,6 +1378,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "14 - 6 = 8 — 6 and 8 are the fact family's two parts.",
       },
     },
+    careerConnection:
+      "A baker splitting a batch of 14 muffins between two trays knows the same fact both ways — how many go on each tray, and how many are left once one tray is filled.",
   },
   {
     slug: "math-g1-l11-place-value-tens-and-ones",
@@ -1347,6 +1423,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "28 = 2 tens (20) + 8 ones.",
       },
     },
+    careerConnection:
+      "A bank teller counting out cash sorts it into ten-dollar bills and one-dollar bills, the exact same tens-and-ones split as this lesson.",
   },
   {
     slug: "math-g1-l12-comparing-two-digit-numbers",
@@ -1378,6 +1456,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "89 has more tens than 76 (8 vs. 7), so 89 is greater. 8 or more quarter notes here beats 76.",
       },
     },
+    careerConnection:
+      "A race official comparing two runners' bib numbers or finish times uses the same digit-by-digit comparing to decide who ranks higher.",
   },
   {
     slug: "math-g1-l13-adding-tens-and-ones",
@@ -1421,6 +1501,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "40 + 2 = 42 — 4 tens and 2 ones.",
       },
     },
+    careerConnection:
+      "A grocery store stocker adding a few loose cans onto shelves that already hold full ten-packs keeps track of the new total the same way.",
   },
   {
     slug: "math-g1-l14-building-numbers-from-tens-and-ones",
@@ -1464,6 +1546,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5 tens (50) + 8 ones = 58.",
       },
     },
+    careerConnection:
+      "A toy store worker packing an order of full ten-packs plus a few loose extras builds the final total the exact same way this lesson does.",
   },
   {
     slug: "math-g1-l15-ten-more",
@@ -1507,6 +1591,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "10 less than 56 is 46 — the tens go from 5 to 4, the ones stay at 6.",
       },
     },
+    careerConnection:
+      "A warehouse worker restocking a shelf by one full case of ten items adds ten more without needing to recount anything else, the same shortcut this lesson teaches.",
   },
   {
     slug: "math-g1-l16-adding-within-100",
@@ -1538,6 +1624,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "The 5 tens stay put; just add the ones: 4 + 2 = 6, so 54 + 2 = 56.",
       },
     },
+    careerConnection:
+      "A cashier ringing up a purchase that's already at an even dollar amount just adds a few more cents to the total, the same way this lesson only touches the ones.",
   },
   {
     slug: "math-g1-l17-subtraction-word-problems-within-20",
@@ -1570,6 +1658,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "12 - 5 = 7.",
       },
     },
+    careerConnection:
+      "A birthday party host who started with a bunch of balloons and lost a few to popping figures out how many are left the same way this lesson does.",
   },
   {
     slug: "math-g1-l18-addition-word-problems-within-20",
@@ -1605,6 +1695,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "9 + 4 = 13.",
       },
     },
+    careerConnection:
+      "A sticker or trading card collector who keeps getting more added to their collection adds up their new total the same way this word problem does.",
   },
   {
     slug: "math-g1-l19-adding-two-digit-numbers",
@@ -1648,6 +1740,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "24 + 40 = 64 — the ones stay at 4, and the tens add: 2 + 4 = 6.",
       },
     },
+    careerConnection:
+      "A moving company worker loading boxes onto two trucks adds up how many are on each truck to get the total load, the same way this lesson adds two two-digit numbers.",
   },
   {
     slug: "math-g1-l20-bridging-through-ten-to-subtract",
@@ -1679,6 +1773,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "16-8 = 16-6-2 = 10-2 = 8.",
       },
     },
+    careerConnection:
+      "A cashier counting back change from a bill bridges through the nearest dollar first, the exact same trick this lesson uses for subtraction.",
   },
   {
     slug: "math-g1-l21-telling-time-to-the-hour",
@@ -1711,6 +1807,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Hour hand on 5, minute hand on 12, means 5:00.",
       },
     },
+    careerConnection:
+      "A school bus driver checking a clock on the dashboard reads the hour the same way to know exactly when to leave for the next stop.",
   },
   {
     slug: "math-g1-l22-comparing-lengths",
@@ -1758,6 +1856,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1 < 3 < 5 — shortest to longest.",
       },
     },
+    careerConnection:
+      "A carpenter lining up three boards to find the shortest, medium, and longest one before cutting compares lengths the same way as this lesson.",
   },
   {
     slug: "math-g1-l23-fractions-halves",
@@ -1789,6 +1889,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Halves means 2 equal pieces.",
       },
     },
+    careerConnection:
+      "A pizza shop worker cutting a pizza in half for two customers to share splits it into halves the exact same way this lesson does.",
   },
   {
     slug: "math-g1-l24-shapes-and-fourths",
@@ -1823,6 +1925,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "A square's 4 sides and a shape's 4 fourths are both just the number 4, showing up in two different math ideas.",
       },
     },
+    careerConnection:
+      "A bakery worker cutting a cake into fourths for four friends splits it into 4 equal pieces, the same number of pieces — and the same number of sides — as a square.",
   },
 
   // ============================================================
@@ -1868,6 +1972,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7 + 6 = 13.",
       },
     },
+    careerConnection:
+      "A cashier ringing up two items that add past 10 does this exact fast addition in her head before telling the customer the total.",
   },
   {
     slug: "math-g2-l02-subtraction-facts-within-20",
@@ -1899,6 +2005,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "11 - 3 = 8.",
       },
     },
+    careerConnection:
+      "A movie theater ticket seller who knows how many seats have sold subtracts to tell the next customer how many are still open.",
   },
   {
     slug: "math-g2-l03-skip-counting-by-5s",
@@ -1930,6 +2038,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5, 10, 15, 20 — the missing number is 5, which is 1 five.",
       },
     },
+    careerConnection:
+      "A bank teller counting a stack of nickels skip-counts by fives to reach the total value fast, without counting one coin at a time.",
   },
   {
     slug: "math-g2-l04-ten-more-mentally",
@@ -1973,6 +2083,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "10 more than 66 is 76 — 7 tens and 6 ones.",
       },
     },
+    careerConnection:
+      "A store stocker who gets one more full box of 10 items bumps the shelf total up mentally without recounting everything already there.",
   },
   {
     slug: "math-g2-l05-place-value-hundreds-tens-ones",
@@ -2020,6 +2132,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "6 hundreds (600) + 3 tens (30) + 8 ones = 638.",
       },
     },
+    careerConnection:
+      "A bank teller counting out cash sorts it into hundred-dollar, ten-dollar, and one-dollar piles, the exact same three places this lesson builds.",
   },
   {
     slug: "math-g2-l06-adding-within-100",
@@ -2063,6 +2177,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "38 + 29 = 67 — 6 tens and 7 ones.",
       },
     },
+    careerConnection:
+      "A grocery store manager combining a shipment of 33 boxes with another of 25 adds the two two-digit counts to find the new total on the shelf.",
   },
   {
     slug: "math-g2-l07-subtracting-within-100",
@@ -2106,6 +2222,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "63 - 19 = 44 — 4 tens and 4 ones.",
       },
     },
+    careerConnection:
+      "A librarian who knows how many books are checked out subtracts the ones returned to know exactly how many are still out.",
   },
   {
     slug: "math-g2-l08-odd-and-even-numbers",
@@ -2149,6 +2267,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "10 is even: 5 + 5 = 10 — every even number splits into two equal groups; an odd number always has one left over.",
       },
     },
+    careerConnection:
+      "A gym teacher splitting a class into two even teams for a game checks that the total splits into two equal groups the same way this lesson checks for even numbers.",
   },
   {
     slug: "math-g2-l09-repeated-addition-and-arrays",
@@ -2184,6 +2304,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5 rows means 3 added 5 times: 3+3+3+3+3 = 15 — 5 blocks holding 15 notes in all.",
       },
     },
+    careerConnection:
+      "An event planner setting up rows of chairs for a wedding counts the total the same way this lesson does — rows times how many chairs are in each row.",
   },
   {
     slug: "math-g2-l10-subtraction-word-problems-within-100",
@@ -2227,6 +2349,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "62 - 38 = 24 — 2 tens and 4 ones.",
       },
     },
+    careerConnection:
+      "A bakery owner who baked 62 muffins and sold 38 subtracts to know exactly how many are left in the case at the end of the day.",
   },
   {
     slug: "math-g2-l11-comparing-three-digit-numbers",
@@ -2258,6 +2382,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "719 has fewer tens than 732 (1 vs. 3), so 719 is less.",
       },
     },
+    careerConnection:
+      "A sports league comparing two teams' season point totals looks at matching digits the same way to see which team ranks higher in the standings.",
   },
   {
     slug: "math-g2-l12-hundred-more-mentally",
@@ -2305,6 +2431,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "100 more than 647 is 747 — the hundreds go from 6 to 7.",
       },
     },
+    careerConnection:
+      "A bank customer who deposits an even hundred-dollar bill sees the account balance's hundreds digit go up by one, with the rest of the balance staying exactly the same.",
   },
   {
     slug: "math-g2-l13-building-three-digit-numbers",
@@ -2352,6 +2480,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3 hundreds (300) + 4 tens (40) + 6 ones = 346.",
       },
     },
+    careerConnection:
+      "A warehouse manager building an inventory count from full pallets of 100, boxes of 10, and loose items combines all three the exact same way this lesson does.",
   },
   {
     slug: "math-g2-l14-adding-a-hundred",
@@ -2399,6 +2529,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "248 + 100 = 348 — 3 hundreds, 4 tens, 8 ones.",
       },
     },
+    careerConnection:
+      "A librarian who adds a whole new shipment of 100 books to the shelves updates the collection total by just bumping up the hundreds, the same shortcut this lesson uses.",
   },
   {
     slug: "math-g2-l15-skip-counting-by-100s",
@@ -2430,6 +2562,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "100, 200, 300 — the missing number is 100, which is 1 hundred.",
       },
     },
+    careerConnection:
+      "A cashier counting a stack of hundred-dollar bills skip-counts by hundreds the same way to reach a large total quickly.",
   },
   {
     slug: "math-g2-l16-adding-within-1000",
@@ -2477,6 +2611,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "432 + 256 = 688 — 6 hundreds, 8 tens, 8 ones.",
       },
     },
+    careerConnection:
+      "A store manager adding up two days' worth of sales combines both three-digit totals into one grand total the same way this lesson does.",
   },
   {
     slug: "math-g2-l17-subtracting-within-1000",
@@ -2524,6 +2660,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "593 - 271 = 322 — 3 hundreds, 2 tens, 2 ones.",
       },
     },
+    careerConnection:
+      "A small-business owner who spends part of a budget subtracts the expense from the total to know exactly how much money is left to spend.",
   },
   {
     slug: "math-g2-l18-money-counting-coins",
@@ -2567,6 +2705,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4 dimes (40 cents) + 3 nickels (15 cents) = 55 cents — 5 tens and 5 ones.",
       },
     },
+    careerConnection:
+      "A cashier counting the coins in a register drawer at closing time adds up quarters, dimes, and nickels the exact same way this lesson does.",
   },
   {
     slug: "math-g2-l19-adding-within-200",
@@ -2614,6 +2754,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "154 + 27 = 181 — 1 hundred, 8 tens, 1 one.",
       },
     },
+    careerConnection:
+      "A stadium usher adding up how many seats are filled across two sections combines the two counts the same way this lesson combines a three-digit and a two-digit number.",
   },
   {
     slug: "math-g2-l20-subtracting-across-hundreds",
@@ -2661,6 +2803,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "700 - 458 = 242 — 2 hundreds, 4 tens, 2 ones.",
       },
     },
+    careerConnection:
+      "A cashier giving change from a round bill like a five hundred dollar amount subtracts the price from that round number the same way this lesson subtracts from a round hundred.",
   },
   {
     slug: "math-g2-l21-telling-time-to-the-half-hour",
@@ -2698,6 +2842,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Hour hand on 5, minute hand on 12, means 5:00 exactly.",
       },
     },
+    careerConnection:
+      "A TV station scheduler lining up shows to start on the hour or the half hour reads a clock the exact same way this lesson does.",
   },
   {
     slug: "math-g2-l22-comparing-lengths-and-differences",
@@ -2745,6 +2891,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "8 - 5 = 3 — the pencil is 3 inches longer.",
       },
     },
+    careerConnection:
+      "A tailor comparing two lengths of fabric measures both, then subtracts to know exactly how much longer one piece is than the other before cutting.",
   },
   {
     slug: "math-g2-l23-fractions-thirds",
@@ -2776,6 +2924,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Thirds means 3 equal parts.",
       },
     },
+    careerConnection:
+      "A restaurant server splitting a dessert evenly for three people to share cuts it into thirds, the same 3 equal pieces as this lesson.",
   },
   {
     slug: "math-g2-l24-reading-bar-graphs",
@@ -2823,6 +2973,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Basketball had the most votes (8); basketball beat tennis by 8 - 4 = 4.",
       },
     },
+    careerConnection:
+      "A market researcher reading a bar graph of survey answers looks at each bar's height to see which answer was the most popular, exactly like this lesson.",
   },
 
   // ============================================================
@@ -2870,6 +3022,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2 groups of 4 is 2 × 4 = 8 — 2 blocks holding 8 notes in all.",
       },
     },
+    careerConnection:
+      "A baker packs cupcakes into equal-size trays and multiplies groups by group size to know how many trays an order needs. A party planner arranges chairs into equal rows the same way instead of counting every single seat one at a time.",
   },
   {
     slug: "math-g3-l02-multiplication-facts",
@@ -2901,6 +3055,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2 × 4 = 8 — 2 blocks holding 8 notes in all.",
       },
     },
+    careerConnection:
+      "A grocery store stocker fills a shelf with a set number of rows and a set number of cans in each row, and multiplies the two to know the shelf's total without counting cans one at a time. A gym teacher splits a class into equal teams the same way when planning a game.",
   },
   {
     slug: "math-g3-l03-division-as-equal-groups",
@@ -2932,6 +3088,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "18 ÷ 3 = 6 — 3 blocks (bowls), 6 in each, 18 in all.",
       },
     },
+    careerConnection:
+      "A birthday party host divides a big bag of candy evenly among the goodie bags so every guest gets the same amount. A teacher splits a class into equal reading groups the same way, dividing the total number of students by how many groups she wants.",
   },
   {
     slug: "math-g3-l04-multiplication-and-division-fact-families",
@@ -2975,6 +3133,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "14 ÷ 2 = 7.",
       },
     },
+    careerConnection:
+      "A chef scaling a recipe up or down uses the same multiplication and division facts in reverse of each other — double the eggs to double the batch, or divide the batch to shrink it back down. A toy store worker restocking a shelf uses one fact to know how many boxes to order and the other to know how many toys are in each box.",
   },
   {
     slug: "math-g3-l05-rounding-to-the-nearest-ten",
@@ -3006,6 +3166,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "55 rounds to 60 (round up at the halfway point), which is 6 tens.",
       },
     },
+    careerConnection:
+      "A cashier at a farmers market rounds prices to the nearest ten cents in her head to quickly guess a customer's total before ringing it up exactly. A school office worker rounds a headcount to the nearest ten when calling the cafeteria to say about how many kids are coming to lunch.",
   },
   {
     slug: "math-g3-l06-rounding-to-the-nearest-hundred",
@@ -3037,6 +3199,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "420 rounds to 400, which is 4 hundreds.",
       },
     },
+    careerConnection:
+      "A school event planner rounds a ticket count to the nearest hundred to decide how many chairs to order for an assembly. A stadium usher rounds the crowd size to the nearest hundred when reporting attendance to the announcer.",
   },
   {
     slug: "math-g3-l07-adding-within-1000",
@@ -3084,6 +3248,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "431 + 124 = 555 = 5 hundreds + 5 tens + 5 ones.",
       },
     },
+    careerConnection:
+      "A warehouse worker adds up boxes arriving from two different trucks to keep a running inventory count in the hundreds. A scorekeeper at a school fundraiser adds each class's donation total to the running grand total the same way, hundreds, tens, and ones at a time.",
   },
   {
     slug: "math-g3-l08-subtracting-within-1000",
@@ -3131,6 +3297,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "927 - 504 = 423 = 4 hundreds + 2 tens + 3 ones.",
       },
     },
+    careerConnection:
+      "A store manager subtracts the number of items sold from the number in stock to know how many are left on the shelf. A librarian subtracts checked-out books from the total collection to know how many are still on the shelves.",
   },
   {
     slug: "math-g3-l09-multiplying-by-multiples-of-ten",
@@ -3162,6 +3330,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4 × 10 = 4 tens (40).",
       },
     },
+    careerConnection:
+      "A school cafeteria worker multiplies the number of classes by ten snacks each to quickly know how many snacks to set out for the whole grade. A stadium vendor multiplies the number of boxes by ten hot dogs each the same way to restock in a hurry.",
   },
   {
     slug: "math-g3-l10-two-step-word-problems",
@@ -3195,6 +3365,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3 × 4 = 12, then 12 + 3 = 15.",
       },
     },
+    careerConnection:
+      "A toy store manager figures out how many toys are on a shelf (rows times toys per row) and then adds a new shipment, doing both steps in order to get the final count. A birthday party host does the same two steps backward — start with bags of favors, multiply for the total, then subtract how many were already handed out.",
   },
   {
     slug: "math-g3-l11-properties-of-multiplication",
@@ -3226,6 +3398,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1×6=6 and 6×1=6.",
       },
     },
+    careerConnection:
+      "A farmer planting a field gets the same total number of plants whether the rows run one way or the other, so knowing this property means never having to recount. A marching band director arranging musicians into rows and columns uses the same idea to double check a formation's headcount either way it's counted.",
   },
   {
     slug: "math-g3-l12-unit-fractions",
@@ -3257,6 +3431,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "The denominator, 3, is how many equal parts make the whole.",
       },
     },
+    careerConnection:
+      "A pizza shop owner cuts every pizza into the same number of equal slices so customers always know exactly what one slice is worth of the whole pie. A baker cutting a sheet cake into equal squares for a party uses the same idea to make sure every guest gets a fair share.",
   },
   {
     slug: "math-g3-l13-fractions-on-a-number-line",
@@ -3288,6 +3464,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2/3 lands after 2 of the 3 equal steps.",
       },
     },
+    careerConnection:
+      "A track coach marks a race course into equal fractional segments to tell a runner exactly how far along they are during practice. A carpenter reads fractions on a tape measure's number line the same way to mark exactly where to cut a board.",
   },
   {
     slug: "math-g3-l14-equivalent-fractions",
@@ -3331,6 +3509,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3/4 = 6/8.",
       },
     },
+    careerConnection:
+      "A drummer reading sheet music knows that two eighth notes take up the same amount of time as one quarter note — the exact same equal-amount idea as equivalent fractions, just written in rhythm instead of pizza slices. A cook measuring ingredients knows a half cup and two quarter cups fill a measuring cup to the same line.",
   },
   {
     slug: "math-g3-l15-comparing-fractions",
@@ -3362,6 +3542,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Same denominator — 3/4 > 1/4.",
       },
     },
+    careerConnection:
+      "A chef comparing two recipes' fraction measurements needs to know instantly which one calls for more of an ingredient before doubling a batch. A runner tracking a race in fractions of a mile compares how far they've gone against a teammate the same way.",
   },
   {
     slug: "math-g3-l16-telling-time-to-the-minute",
@@ -3405,6 +3587,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5:10 is 5 o'clock plus 10 minutes, which is 2 groups of 5.",
       },
     },
+    careerConnection:
+      "A school bus driver reads a clock down to the minute to keep an entire route of pickup stops running on schedule. A TV show host reads the studio clock the same way to know exactly when a segment needs to end and the next one begins.",
   },
   {
     slug: "math-g3-l17-elapsed-time",
@@ -3436,6 +3620,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4:00 to 4:20 is 20 minutes = 4 groups of 5.",
       },
     },
+    careerConnection:
+      "A movie theater manager figures out elapsed time between a movie's start and end to know exactly when to have the next showing's doors open for cleaning. A soccer coach times a practice drill's elapsed minutes to keep every station running on schedule.",
   },
   {
     slug: "math-g3-l18-area-counting-unit-squares",
@@ -3467,6 +3653,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Counting the unit squares one at a time gives an area of 7.",
       },
     },
+    careerConnection:
+      "A quilt maker counts the fabric squares needed to cover a quilt top before cutting any fabric. A tile installer counts individual floor tiles one by one on a small job to know exactly how many boxes to buy.",
   },
   {
     slug: "math-g3-l19-area-multiplying-side-lengths",
@@ -3498,6 +3686,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Area = 4 × 1 = 4 — 4 blocks, 1 note in each, 4 in all.",
       },
     },
+    careerConnection:
+      "A flooring installer multiplies a room's length by its width to know exactly how many square feet of tile or carpet to order, without ever counting one tile at a time. A landscaper multiplies a lawn's two side lengths the same way to know how much sod or grass seed to buy.",
   },
   {
     slug: "math-g3-l20-perimeter",
@@ -3529,6 +3719,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Perimeter = 2 × (4 + 3) = 14.",
       },
     },
+    careerConnection:
+      "A fence installer adds up all four sides of a yard to know exactly how many feet of fencing to buy before starting the job. A picture framer measures all the way around a photo's edge the same way to cut a frame that fits perfectly.",
   },
   {
     slug: "math-g3-l21-liquid-volume-and-mass",
@@ -3560,6 +3752,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "8 - 3 = 5 kilograms.",
       },
     },
+    careerConnection:
+      "A grocery store worker weighs bags of produce in kilograms and adds or subtracts amounts as customers buy more or return items. A baker measures liquid ingredients like milk in liters to keep a recipe's proportions exactly right when scaling it up for a big order.",
   },
   {
     slug: "math-g3-l22-picture-graphs-and-bar-graphs",
@@ -3603,6 +3797,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Sunny: 5, Rainy: 2.",
       },
     },
+    careerConnection:
+      "A zookeeper keeps a bar graph of how many animals of each kind are in the zoo to spot at a glance which habitats need more space. A TV weather reporter builds a bar graph of sunny versus rainy days over a month to show viewers the pattern in one simple picture.",
   },
   {
     slug: "math-g3-l23-categorizing-shapes",
@@ -3634,6 +3830,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Every hexagon has 6 sides.",
       },
     },
+    careerConnection:
+      "A sign maker cutting a stop sign knows it always needs exactly 8 equal sides (an octagon) no matter the size of the sign. A toy designer sorting shape blocks by category (all the triangles together, all the squares together) uses the same side-counting rule to know which bin a new block belongs in.",
   },
   {
     slug: "math-g3-l24-partitioning-shapes-into-equal-areas",
@@ -3665,6 +3863,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3 equal parts — each part is 1/3 of the whole.",
       },
     },
+    careerConnection:
+      "A pizza shop owner splits a pizza into equal-area slices so every customer gets a fair-sized piece no matter the shape of the pan. A quilter cuts fabric into equal-area pieces to keep a quilt's pattern balanced across the whole blanket.",
   },
 
   // ============================================================
@@ -3720,6 +3920,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3 × 21 = 63 = 6 tens + 3 ones.",
       },
     },
+    careerConnection:
+      "A shipping clerk multiplies the number of boxes on a pallet by the number of pallets on a truck to know the total shipment size before it leaves the warehouse. A vending machine restocker multiplies rows of snacks by how many fit in each row the same way to know how much stock to bring along.",
   },
   {
     slug: "math-g4-l02-factors-and-multiples",
@@ -3751,6 +3953,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2, 4, 6, 8 — the 4th multiple of 2 is 8.",
       },
     },
+    careerConnection:
+      "An event planner arranging banquet tables needs to know a room's factors so every table seats the same number of guests with none left standing. A school scheduler looks for a common multiple of two class periods to find a time slot that lines up for both.",
   },
   {
     slug: "math-g4-l03-division-with-remainders",
@@ -3794,6 +3998,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "19 ÷ 3 = 6 remainder 1 — 3 blocks holding 18 notes in all (3×6=18), then 19-18=1 left over.",
       },
     },
+    careerConnection:
+      "A school bus dispatcher fills each bus with the same number of students and knows exactly how many kids are left over needing one more bus. A candy shop worker bagging pieces into equal-size bags sets aside whatever remainder is too few to fill one more bag.",
   },
   {
     slug: "math-g4-l04-multi-step-word-problems",
@@ -3825,6 +4031,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "6 × 2 = 12, then 12 + 3 = 15.",
       },
     },
+    careerConnection:
+      "A restaurant manager figures out how much food to order by multiplying servings per case by cases, then adding or subtracting for a catering order's exact headcount. A farmer figures out a harvest total the same two-step way — multiply rows by plants per row, then add in whatever was picked separately by hand.",
   },
   {
     slug: "math-g4-l05-place-value-to-the-thousands",
@@ -3876,6 +4084,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4,156 = 4 thousands + 1 hundred + 5 tens + 6 ones.",
       },
     },
+    careerConnection:
+      "A bank teller reads a four-digit account balance place by place to make sure a deposit or withdrawal is entered exactly right. A stadium manager reads a four-digit attendance number the same way when reporting tonight's crowd size to the team.",
   },
   {
     slug: "math-g4-l06-rounding-multi-digit-numbers",
@@ -3907,6 +4117,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5,590 rounds to 6,000 (round up at the halfway point), which is 6 thousands.",
       },
     },
+    careerConnection:
+      "A newspaper reporter rounds a big number, like the size of a crowd at a parade, to the nearest thousand so a headline is easy for readers to picture at a glance. A charity organizer rounds a fundraiser's total to the nearest thousand when announcing it to a cheering crowd.",
   },
   {
     slug: "math-g4-l07-comparing-multi-digit-numbers",
@@ -3938,6 +4150,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7,265 > 7,256 — the tens digit (6 vs 5) decides it.",
       },
     },
+    careerConnection:
+      "A store manager compares this month's sales total against last month's, digit by digit from the left, to see at a glance which one was bigger. A sports league compares two teams' season ticket sales the same way to decide which one gets a bigger stadium section.",
   },
   {
     slug: "math-g4-l08-multi-digit-addition",
@@ -3989,6 +4203,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4,121 + 1,234 = 5,355 = 5 thousands + 3 hundreds + 5 tens + 5 ones.",
       },
     },
+    careerConnection:
+      "An accountant adds up thousands of dollars in expenses from several receipts to get an exact running total for a business's books. A moving company estimator adds up the weight of dozens of boxes, thousands of pounds at a time, to know how big a truck to send.",
   },
   {
     slug: "math-g4-l09-multi-digit-subtraction",
@@ -4040,6 +4256,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7,468 - 3,134 = 4,334 = 4 thousands + 3 hundreds + 3 tens + 4 ones.",
       },
     },
+    careerConnection:
+      "A bank teller subtracts a withdrawal from an account balance to know exactly how much money is left, thousands of dollars at a time. A concert venue manager subtracts tickets already sold from total seats available to know how many are still left to sell.",
   },
   {
     slug: "math-g4-l10-prime-and-composite-numbers",
@@ -4071,6 +4289,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "8 is composite — 1, 2, 4, 8, so 4 factors.",
       },
     },
+    careerConnection:
+      "A candy maker packing pieces into equal bags with none left over relies on knowing which numbers (composite ones) split evenly and which prime numbers can only be split one way. Computer security experts use much bigger prime numbers the same basic way to build the secret codes that keep passwords and online payments safe.",
   },
   {
     slug: "math-g4-l11-number-and-shape-patterns",
@@ -4102,6 +4322,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1, 4, 7 — add 3 each time.",
       },
     },
+    careerConnection:
+      "A textile designer repeats a shape pattern across a whole bolt of fabric by following the same rule over and over, row after row. A drummer builds a beat the exact same way — a simple pattern rule repeated over and over is literally what a drum groove is.",
   },
   {
     slug: "math-g4-l12-equivalent-fractions",
@@ -4145,6 +4367,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2/6 = 1/3.",
       },
     },
+    careerConnection:
+      "A LEGO set instruction writer knows that a 2/4 turn and a 1/2 turn on a rotating piece mean the exact same thing, so directions can use whichever is clearer. A cook substituting measuring cups knows two 1/4 cups equals one 1/2 cup without needing to measure it out twice.",
   },
   {
     slug: "math-g4-l13-comparing-fractions-with-unlike-denominators",
@@ -4176,6 +4400,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1/2 > 3/8 (0.5 > 0.375).",
       },
     },
+    careerConnection:
+      "A nutritionist reading two food labels compares fractions like 3/4 cup of one cereal against 1/2 cup of another to tell a client which serving is bigger. A chef comparing two recipes decides which one uses more butter by figuring out which fraction is larger, even with different-size measuring cups.",
   },
   {
     slug: "math-g4-l14-adding-fractions-with-like-denominators",
@@ -4207,6 +4433,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2/5 + 2/5 = 4/5.",
       },
     },
+    careerConnection:
+      "A carpenter adds two fraction-of-an-inch measurements on a tape measure, like 1/8 and 4/8 of an inch, to mark exactly where two boards meet. A seamstress adds fractional lengths of fabric the same way to know how much material a project needs in all.",
   },
   {
     slug: "math-g4-l15-subtracting-fractions-with-like-denominators",
@@ -4238,6 +4466,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4/5 - 1/5 = 3/5.",
       },
     },
+    careerConnection:
+      "A carpenter subtracts a fraction of an inch from a board's length when trimming it down to fit a specific space exactly. A baker subtracts a fraction of a cup of sugar already used from a recipe's total to know how much is left in the bag.",
   },
   {
     slug: "math-g4-l16-multiplying-a-fraction-by-a-whole-number",
@@ -4269,6 +4499,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5 × 1/6 = 5/6 — 5 blocks holding 5 notes in all.",
       },
     },
+    careerConnection:
+      "A distance runner training in 1/4-mile laps multiplies the fraction by the number of laps run to know the total distance covered. A baker making several small batches multiplies a fraction of a cup of an ingredient by the number of batches to know how much to buy in total.",
   },
   {
     slug: "math-g4-l17-decimals-as-fractions",
@@ -4300,6 +4532,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "0.6 = 6/10 — 6 tenths.",
       },
     },
+    careerConnection:
+      "A cashier making change thinks of cents as hundredths of a dollar, so 30 cents is really 30/100 of one dollar. A baseball statistician writes a batting average as a decimal that's really a fraction underneath — hits out of times at bat.",
   },
   {
     slug: "math-g4-l18-comparing-decimals",
@@ -4331,6 +4565,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "0.7 > 0.68 — 7 tenths beats 6 tenths.",
       },
     },
+    careerConnection:
+      "A track and field timer compares two runners' race times down to a hundredth of a second to know exactly who finished first. A grocery store shopper compares two products' prices, like $2.35 and $2.53 per pound, to find the better deal.",
   },
   {
     slug: "math-g4-l19-measurement-conversions",
@@ -4362,6 +4598,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3 yards × 3 feet = 9 feet.",
       },
     },
+    careerConnection:
+      "A carpenter converts yards into feet and inches constantly when a blueprint gives one unit but a tape measure reads in another. A chef converts gallons into quarts and cups when scaling a restaurant recipe down to a single serving at home.",
   },
   {
     slug: "math-g4-l20-area-and-perimeter-word-problems",
@@ -4395,6 +4633,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Perimeter = 2 × (3 + 3) = 12.",
       },
     },
+    careerConnection:
+      "A rug seller calculates a rug's area to price it by the square foot, and its perimeter separately to know how much binding trim goes around the edge. A landscaper does the same two calculations for a garden bed — area for how much soil to buy, perimeter for how much edging to install.",
   },
   {
     slug: "math-g4-l21-angle-measurement",
@@ -4426,6 +4666,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "60° is 6 tens of degrees.",
       },
     },
+    careerConnection:
+      "A skateboarder naming a trick like a 360 is naming the exact number of degrees their board spins in the air. A carpenter building a roof measures the angle where two boards meet in degrees to make sure the frame is cut and built correctly.",
   },
   {
     slug: "math-g4-l22-classifying-two-dimensional-shapes",
@@ -4457,6 +4699,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "A parallelogram has 2 pairs of parallel sides.",
       },
     },
+    careerConnection:
+      "A road sign maker needs to know a stop sign is an octagon and a yield sign is a triangle, since drivers instantly recognize a shape faster than they can read a word. An architect classifies the shapes in a building's floor plan the same way to make sure every room's angles and sides work together.",
   },
   {
     slug: "math-g4-l23-lines-of-symmetry",
@@ -4488,6 +4732,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "A non-square rectangle has 2 lines of symmetry — through the middle each way, but not diagonally.",
       },
     },
+    careerConnection:
+      "A logo designer checks how many lines of symmetry a new logo has to make sure it looks balanced no matter which way someone glances at it. A butterfly researcher photographing wing patterns notes their symmetry to help tell one species apart from another.",
   },
   {
     slug: "math-g4-l24-interpreting-line-plots",
@@ -4531,6 +4777,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2 plants: 5 kids. 4 plants: 3 kids.",
       },
     },
+    careerConnection:
+      "A youth sports coach keeps a line plot of which jersey sizes the team needs before placing an equipment order, so no size gets forgotten. An animal shelter worker plots how many pets fall into each age group to help plan adoption events around the ones that need it most.",
   },
 
   // ============================================================
@@ -4579,6 +4827,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(12 - 4) × 2 = 8 × 2 = 16.",
       },
     },
+    careerConnection:
+      "A store manager calculating a sale price knows to apply a discount inside the parentheses before adding tax on top, or the total comes out wrong. A game developer writing a scoring formula uses parentheses the same way to force certain bonuses to combine before the final multiplier is applied.",
   },
   {
     slug: "math-g5-l02-writing-numerical-expressions",
@@ -4610,6 +4860,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(6 × 2) - 3 = 12 - 3 = 9.",
       },
     },
+    careerConnection:
+      "A spreadsheet app developer translates a plain-language request like add these two numbers then multiply by the tax rate into an actual formula the software can calculate. A project manager does the same translation by hand when turning a client's spoken request into a cost estimate.",
   },
   {
     slug: "math-g5-l03-powers-of-ten",
@@ -4641,6 +4893,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7 × 10^1 = 70, which is 7 tens.",
       },
     },
+    careerConnection:
+      "An astronomer uses powers of ten to write distances between stars, since regular numbers would have far too many digits to read comfortably. A computer engineer uses powers of ten (and powers of two) to describe how much data a phone or computer can store, from thousands of bytes up to billions.",
   },
   {
     slug: "math-g5-l04-multiplying-multi-digit-numbers",
@@ -4672,6 +4926,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7 × 5 = 35 — 7 blocks holding 35 notes in all.",
       },
     },
+    careerConnection:
+      "A catering manager multiplies the number of trays by servings per tray to know exactly how much food a big event needs. A factory production planner multiplies units made per shift by the number of shifts to forecast a full week's output.",
   },
   {
     slug: "math-g5-l05-dividing-multi-digit-numbers",
@@ -4703,6 +4959,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "35 ÷ 7 = 5 — 7 blocks, 5 in each, 35 in all.",
       },
     },
+    careerConnection:
+      "A nonprofit director divides a large grant evenly across several programs to decide how much each one gets to spend. A field trip coordinator divides a big group of students evenly across a fleet of buses the same way.",
   },
   {
     slug: "math-g5-l06-rounding-decimals",
@@ -4734,6 +4992,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "6.38 rounds to 6.4 — 6 and 4 tenths.",
       },
     },
+    careerConnection:
+      "A scientist recording a measurement rounds a long decimal reading to the precision the instrument can actually be trusted for, instead of writing down digits that aren't meaningful. A store owner rounds a price like $4.996 per unit to $5.00 so the register and the price tag agree.",
   },
   {
     slug: "math-g5-l07-adding-decimals",
@@ -4765,6 +5025,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1.8 + 4.6 = 6.4, which is 64 tenths.",
       },
     },
+    careerConnection:
+      "A runner adds up decimal split times from each lap of a race to know their total finishing time down to the tenth of a second. A cashier adds up decimal prices on a receipt, item by item, to reach the exact total a customer owes.",
   },
   {
     slug: "math-g5-l08-subtracting-decimals",
@@ -4796,6 +5058,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "6.1 - 2.4 = 3.7, which is 37 tenths.",
       },
     },
+    careerConnection:
+      "A gas station attendant subtracts a decimal odometer reading from an earlier one to know exactly how many miles a rental car was driven. A pharmacist subtracts a decimal dose already given from a bottle's total volume to track exactly how much medicine is left.",
   },
   {
     slug: "math-g5-l09-multiplying-decimals",
@@ -4827,6 +5091,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "0.2 × 7 = 1.4 — 7 blocks, 2 tenths in each, 14 tenths in all.",
       },
     },
+    careerConnection:
+      "A gas station attendant multiplies the price per gallon by the number of gallons pumped to charge a customer the exact right amount. A grocery store cashier multiplies a decimal price per pound by the weight of produce to ring up the total.",
   },
   {
     slug: "math-g5-l10-dividing-decimals",
@@ -4858,6 +5124,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "9.6 ÷ 8 = 1.2, which is 12 tenths.",
       },
     },
+    careerConnection:
+      "A restaurant owner divides a decimal total bill by the number of diners to split the check evenly. A carpenter divides a board's decimal length by the number of equal pieces needed to know exactly where each cut goes.",
   },
   {
     slug: "math-g5-l11-comparing-decimals-to-thousandths",
@@ -4889,6 +5157,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "0.843 > 0.834 — the tenths match (8), so the hundredths digit (4 vs 3) decides it.",
       },
     },
+    careerConnection:
+      "An Olympic timing official compares two swimmers' times down to the thousandth of a second to determine who touched the wall first. A lab scientist compares two decimal measurements at that same level of precision to tell whether an experiment's result actually changed.",
   },
   {
     slug: "math-g5-l12-adding-fractions-unlike-denominators",
@@ -4920,6 +5190,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1/2 + 2/5 = 5/10 + 4/10 = 9/10.",
       },
     },
+    careerConnection:
+      "A carpenter adding a 1/2-inch measurement to a 1/3-inch measurement on a tape measure has to convert both to a common denominator before combining them, exactly like this lesson. A seamstress joining two pieces of fabric measured in different fractions of a yard does the same conversion before adding their lengths together.",
   },
   {
     slug: "math-g5-l13-subtracting-fractions-unlike-denominators",
@@ -4951,6 +5223,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7/8 - 1/2 = 7/8 - 4/8 = 3/8.",
       },
     },
+    careerConnection:
+      "A carpenter trimming a board subtracts a 1/2-inch cut from a 7/8-inch measurement, converting to a common denominator first to know exactly how much length remains. A baker figuring out how much flour is left after using part of a bag does the same conversion with fractional cup measurements.",
   },
   {
     slug: "math-g5-l14-multiplying-fractions",
@@ -4982,6 +5256,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1/3 × 3/5 = (1×3)/(3×5) = 3/15.",
       },
     },
+    careerConnection:
+      "A baker making 2/3 of a recipe that itself calls for 3/4 cup of sugar multiplies the two fractions together to know exactly how much sugar the smaller batch needs. A contractor calculating a fraction of a fraction of a material order (like 1/2 of a 2/3-full pallet) uses the same multiplication.",
   },
   {
     slug: "math-g5-l15-area-with-fractional-side-lengths",
@@ -5013,6 +5289,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Area = 2/3 × 1/4 = 2/12.",
       },
     },
+    careerConnection:
+      "A tile installer working on an oddly measured room multiplies fractional side lengths, like 2/3 of a foot by 3/4 of a foot, to find the exact area of an awkward corner piece. A picture framer multiplies fractional inch measurements the same way to cut a mat that fits a photo perfectly.",
   },
   {
     slug: "math-g5-l16-dividing-a-unit-fraction-by-a-whole-number",
@@ -5044,6 +5322,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1/5 ÷ 2 = 1/10 — the denominator becomes 5 × 2 = 10.",
       },
     },
+    careerConnection:
+      "A caterer splitting 1/3 of a leftover cake evenly among 4 staff members divides a unit fraction by a whole number to know each person's fair share. A hardware store worker splitting 1/2 of a roll of wire evenly among several customers does the same calculation at the counter.",
   },
   {
     slug: "math-g5-l17-dividing-a-whole-number-by-a-unit-fraction",
@@ -5075,6 +5355,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3 ÷ 1/5 = 15 — 3 blocks, each split into 5 fifths, 15 in all.",
       },
     },
+    careerConnection:
+      "A fabric store worker figures out how many 1/3-yard pieces can be cut from several whole yards of fabric by dividing the total by that unit fraction. A distance runner figures out how many 1/4-mile laps make up a several-mile training run the exact same way.",
   },
   {
     slug: "math-g5-l18-converting-measurement-units",
@@ -5106,6 +5388,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2 feet × 12 inches = 24 inches.",
       },
     },
+    careerConnection:
+      "A nurse converts a prescription written in ounces into cups or milliliters to measure out the correct dose of liquid medicine. A shipping company converts a package's weight from pounds into ounces to calculate the exact postage rate.",
   },
   {
     slug: "math-g5-l19-volume-of-rectangular-prisms",
@@ -5137,6 +5421,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Volume = 3 × 3 × 2 = 18.",
       },
     },
+    careerConnection:
+      "A moving company estimator multiplies a box's length, width, and height to know its volume, then adds up boxes to figure out what size truck a move needs. An aquarium designer multiplies a fish tank's three dimensions to know exactly how many gallons of water it will hold.",
   },
   {
     slug: "math-g5-l20-line-plots-with-fractional-data",
@@ -5180,6 +5466,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1 in: 5 leaves. 1 1/2 in: 3 leaves.",
       },
     },
+    careerConnection:
+      "A plant nursery scientist records seedling heights in fractional inches on a line plot to track which batch is growing fastest. A woodworker plots the measurements of a stack of cut boards the same way to spot mistakes before assembling a project.",
   },
   {
     slug: "math-g5-l21-coordinate-plane-plotting-points",
@@ -5223,6 +5511,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(2, 7) — x = 2, y = 7.",
       },
     },
+    careerConnection:
+      "A video game developer places every object on screen using an x and y coordinate, exactly like plotting a point — it's literally how a character, a coin, or an enemy knows where it is on the map. A cartographer plots cities and landmarks on a grid map using the same x and y coordinate system.",
   },
   {
     slug: "math-g5-l22-classifying-shapes-in-a-hierarchy",
@@ -5254,6 +5544,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "A rhombus inherits every parallelogram property, including 2 pairs of parallel sides.",
       },
     },
+    careerConnection:
+      "An engineer checking a design part knows that if it's certified as one shape category (like a square), it automatically meets every rule required of the broader categories it belongs to (rectangle, then parallelogram). A biologist classifying an animal into a species, then genus, then family uses the exact same nested-category thinking, just with living things instead of shapes.",
   },
   {
     slug: "math-g5-l23-multi-step-word-problems",
@@ -5285,6 +5577,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7 × 6 = 42, then 42 + 10 = 52.",
       },
     },
+    careerConnection:
+      "A small business owner figures out weekly profit by multiplying units sold by price, then subtracting expenses, doing both steps in order to get the real bottom line. A charity event organizer multiplies ticket price by tickets sold, then subtracts venue costs, to know how much money actually goes to the cause.",
   },
   {
     slug: "math-g5-l24-patterns-two-rules-ordered-pairs",
@@ -5316,6 +5610,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Rule 2: 10, 20, 30 — after 3 steps, 30.",
       },
     },
+    careerConnection:
+      "A video game animator syncs two moving objects that follow different speed rules (a background scrolling slower than the foreground) by tracking both rules step by step, exactly like this lesson's two rules from the same starting point. A mechanical engineer comparing two gears spinning at different rates uses the same side-by-side rule tracking to predict where each one will be after a given number of turns.",
   },
 
   // ============================================================
@@ -5362,6 +5658,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "6 groups of a 2:1 ratio means 6 × 2 = 12 apples.",
       },
     },
+    careerConnection:
+      "Baristas and smoothie shop workers measure drinks by ratio all day, like 2 parts juice to 3 parts sparkling water, scaled up for however many drinks are ordered. Animal shelter workers describe their adoptable pets the same way, reporting something like a 2:3 ratio of cats to dogs currently available.",
   },
   {
     slug: "math-g6-l02-ratio-tables",
@@ -5393,6 +5691,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4 hours × 5 miles = 20 miles.",
       },
     },
+    careerConnection:
+      "Professional bakers and caterers scale a recipe up or down constantly, using a ratio table to figure out exactly how much flour or icing a bigger batch needs. Hardware store employees mixing custom paint use the same ratio table to scale a small test batch up to a full gallon.",
   },
   {
     slug: "math-g6-l03-unit-rates",
@@ -5424,6 +5724,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "150 ÷ 5 = 30 words per minute.",
       },
     },
+    careerConnection:
+      "Truck drivers and delivery dispatchers calculate miles per hour to plan how long a route will take. Grocery shoppers and price-comparison apps calculate a unit price, like dollars per ounce, to find the better deal between two package sizes.",
   },
   {
     slug: "math-g6-l04-solving-unit-rate-problems",
@@ -5455,6 +5757,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4 hours × 5 toys = 20 toys.",
       },
     },
+    careerConnection:
+      "Gas stations and grocery stores price by unit rate, then multiply by however many gallons or pounds a customer buys to get the final total. Factory production planners use the same multiplication to predict how many units a line will produce in a full shift once they know its per-hour rate.",
   },
   {
     slug: "math-g6-l05-percent-of-a-quantity",
@@ -5486,6 +5790,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "20% of 35 = 0.2 × 35 = 7.",
       },
     },
+    careerConnection:
+      "Retail store managers calculate a percent off a price to run a sale, and servers calculate a percent tip on a bill the exact same way. Bank loan officers calculate a percent of a balance to figure out an interest charge.",
   },
   {
     slug: "math-g6-l06-dividing-fractions-by-fractions",
@@ -5517,6 +5823,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1/3 ÷ 1/6 = 1/3 × 6/1 = 6/3 = 2.",
       },
     },
+    careerConnection:
+      "Tailors and seamstresses divide a fraction of fabric they have on hand by the fraction each garment piece needs, to figure out how many pieces they can cut. Nurses divide a fractional total dose by the fraction contained in each pill to know exactly how many pills to give a patient.",
   },
   {
     slug: "math-g6-l07-multi-digit-division",
@@ -5548,6 +5856,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "48 ÷ 8 = 6 — 8 blocks, 6 in each, 48 in all (every block completely full).",
       },
     },
+    careerConnection:
+      "Warehouse managers divide a large shipment evenly across a fixed number of trucks or pallets to plan a loading dock's day. Event planners divide a total budget evenly across a fixed number of vendors to know exactly how much each one gets.",
   },
   {
     slug: "math-g6-l08-operations-with-decimals",
@@ -5579,6 +5889,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "8.1 ÷ 9 = 0.9, which is 9 tenths.",
       },
     },
+    careerConnection:
+      "Cashiers and bank tellers work with money in decimals constantly, multiplying a per-item decimal price by a quantity or dividing a total bill evenly among a group. Pharmacists multiply and divide decimal doses, like 0.5 milligrams per pound of body weight, to calculate exact medication amounts.",
   },
   {
     slug: "math-g6-l09-greatest-common-factor",
@@ -5610,6 +5922,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "9 = 3×3, 24 = 2×2×2×3 — the GCF is 3.",
       },
     },
+    careerConnection:
+      "A party planner packing identical gift bags without any treats left over finds the greatest common factor of what she has on hand to figure out the biggest number of bags she can make. Packaging engineers use GCF the same way to find the largest identical box size that divides evenly into two different product batch sizes.",
   },
   {
     slug: "math-g6-l10-least-common-multiple",
@@ -5641,6 +5955,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Multiples of 4: 4, 8, 12, 16, 20. Multiples of 10: 10, 20 — the LCM is 20.",
       },
     },
+    careerConnection:
+      "Bus and train schedulers use the least common multiple to figure out when two vehicles running on different schedules will arrive at the same stop again. Event planners coordinating recurring meetings, like one team meeting every 4 days and another every 6, use LCM to find the next day both groups are free.",
   },
   {
     slug: "math-g6-l11-positive-and-negative-numbers",
@@ -5672,6 +5988,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "-8 + 20 = 12 feet above sea level.",
       },
     },
+    careerConnection:
+      "Meteorologists report temperature changes that cross zero, adding and subtracting positive and negative numbers to forecast a day's high and low. Submarine navigators and pilots track a vehicle's position relative to sea level the same way, calculating how depth or altitude changes as it rises and falls.",
   },
   {
     slug: "math-g6-l12-absolute-value",
@@ -5703,6 +6021,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "|-12| = 12 — its distance from zero.",
       },
     },
+    careerConnection:
+      "Air traffic controllers care about the absolute distance between two planes' altitudes, not which one is higher, to keep them safely spaced apart. Golf scorers track how far above or below par a player is using the same distance-from-zero idea, since finishing 3 over or 3 under both count as a difference of 3.",
   },
   {
     slug: "math-g6-l13-exponents",
@@ -5734,6 +6054,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2^5 = 2×2×2×2×2 = 32.",
       },
     },
+    careerConnection:
+      "Computer scientists use exponents to describe how storage or memory capacity doubles as a device gets bigger, like a hard drive's gigabytes. Epidemiologists use exponents to describe how fast a virus spreads when the number of cases doubles again and again.",
   },
   {
     slug: "math-g6-l14-evaluating-expressions-with-variables",
@@ -5765,6 +6087,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4^2 = 16.",
       },
     },
+    careerConnection:
+      "Video game developers plug a player's own level or stat into a formula like 3x + 2 to calculate their character's power the instant a level-up happens. Shipping and e-commerce apps use the same substitution to calculate a delivery cost once a customer's specific order size is known.",
   },
   {
     slug: "math-g6-l15-writing-expressions",
@@ -5796,6 +6120,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "x/2 + 3 = 10/2 + 3 = 5 + 3 = 8.",
       },
     },
+    careerConnection:
+      "Contract writers and insurance adjusters translate a plain-English rule, like 6 less than 5 times a number, into a written formula so it gets calculated the same way every single time. App developers do the same translation constantly, turning a business's spoken pricing rule into an actual formula in their code.",
   },
   {
     slug: "math-g6-l16-one-step-equations-addition-subtraction",
@@ -5827,6 +6153,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "x - 6 = 11, so x = 11 + 6 = 17.",
       },
     },
+    careerConnection:
+      "A warehouse worker who knows how many boxes are left after some were shipped out solves an equation just like this backward to find out how many there were to start. Budgeting apps solve the same shape of equation to show a user how much they spent, given their starting and ending balance.",
   },
   {
     slug: "math-g6-l17-one-step-equations-multiplication-division",
@@ -5858,6 +6186,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "x ÷ 4 = 8, so x = 8 × 4 = 32.",
       },
     },
+    careerConnection:
+      "A recipe blogger scaling a dish for a dinner party solves an equation like x ÷ 3 = 6 to find the original serving size once they know how much the scaled-up batch needs. Manufacturing planners solve the same equations to figure out how many days of production it takes to fill an order of a known size at a known daily rate.",
   },
   {
     slug: "math-g6-l18-independent-and-dependent-variables",
@@ -5889,6 +6219,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "y = 4(3) - 2 = 12 - 2 = 10.",
       },
     },
+    careerConnection:
+      "Ride-share and delivery apps use a rule like this to calculate a fare the instant a rider enters their trip distance. Fitness trackers use the same kind of rule to calculate calories burned based on the number of steps someone has taken.",
   },
   {
     slug: "math-g6-l19-area-of-triangles",
@@ -5920,6 +6252,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Area = (7 × 2) ÷ 2 = 7 — 7 blocks holding 7 notes in all, one per block.",
       },
     },
+    careerConnection:
+      "Construction framers calculate a triangular roof section's area to know how much roofing material to order for a job. Sailmakers calculate the area of a triangular sail from its base and height to determine exactly how much fabric to cut.",
   },
   {
     slug: "math-g6-l20-area-of-parallelograms-and-trapezoids",
@@ -5951,6 +6285,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Area = ((5 + 7) ÷ 2) × 2 = 6 × 2 = 12.",
       },
     },
+    careerConnection:
+      "Landscapers calculate the area of an oddly-angled yard section, like a parallelogram-shaped garden bed or a trapezoid-shaped lot, to know how much sod or mulch to order. Civil engineers calculate a trapezoidal road cross-section's area to estimate how much asphalt a paving job will require.",
   },
   {
     slug: "math-g6-l21-surface-area",
@@ -5982,6 +6318,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Surface area = 2×(3×3 + 3×2 + 3×2) = 2×(9 + 6 + 6) = 2×21 = 42.",
       },
     },
+    careerConnection:
+      "Packaging designers calculate a box's total surface area to know exactly how much cardboard or printed material it takes to build one. Painters and interior designers calculate a room's surface area, walls and ceiling included, to estimate how much paint or wallpaper to buy.",
   },
   {
     slug: "math-g6-l22-volume-with-fractional-edge-lengths",
@@ -6013,6 +6351,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Volume = 4 × 3 × 1/4 = 3.",
       },
     },
+    careerConnection:
+      "Furniture makers calculate a piece's volume using precise fractional measurements, like a half-inch-thick shelf, to know exactly how much material a cut requires. Concrete contractors calculate volume with fractional dimensions to order the exact amount of concrete a job needs, since ordering too little means an expensive second delivery.",
   },
   {
     slug: "math-g6-l23-mean-and-median",
@@ -6044,6 +6384,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Sorted: 4, 8, 10, 12, 16 — the middle number is 10.",
       },
     },
+    careerConnection:
+      "Sports analysts calculate a player's mean batting average or scoring average across a season to compare performance. Real estate agents report a neighborhood's median home price instead of its mean, since one very expensive house can skew a mean but not a median.",
   },
   {
     slug: "math-g6-l24-range",
@@ -6075,6 +6417,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Range = 25 - 5 = 20.",
       },
     },
+    careerConnection:
+      "Meteorologists report a day's temperature range, the high minus the low, to describe how much a day's weather will vary. Quality control inspectors calculate the range of measurements across a batch of manufactured parts to check how consistent a production line is.",
   },
   // ============================================================
   // GRADE 7 — proportional relationships open the fall (unit rates with
@@ -6120,6 +6464,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(4/5) ÷ (1/5) = 4 miles per hour.",
       },
     },
+    careerConnection:
+      "Sports scientists calculate an athlete's pace in miles per hour from split times that are often a fraction of an hour, to compare performance across races. Delivery and courier services calculate a rider's speed from fractional-hour GPS data to estimate arrival times.",
   },
   {
     slug: "math-g7-l02-constant-of-proportionality",
@@ -6151,6 +6497,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "36 ÷ 4 = 9.",
       },
     },
+    careerConnection:
+      "Manufacturing engineers find the constant of proportionality between a machine's runtime and its output to predict production totals without waiting for a full shift to finish. Nutritionists find the constant of proportionality between serving size and calories to build the numbers on a nutrition label.",
   },
   {
     slug: "math-g7-l03-using-y-equals-kx",
@@ -6182,6 +6530,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "y = 6(5) = 30 — 5 blocks holding 30 notes in all.",
       },
     },
+    careerConnection:
+      "Ride-share apps calculate a fare using y = kx, where k is the per-mile rate and x is trip distance, the instant a ride is requested. Manufacturing plants calculate total output with the same kind of equation, where k is units produced per hour and x is hours worked.",
   },
   {
     slug: "math-g7-l04-percent-increase",
@@ -6213,6 +6563,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "30 + (0.50 × 30) = 30 + 15 = $45.",
       },
     },
+    careerConnection:
+      "Retail buyers and real estate agents calculate a percent increase to describe how much a price or a home's value has climbed since last year. Human resources managers calculate a percent increase to figure out an employee's new salary after a raise.",
   },
   {
     slug: "math-g7-l05-percent-decrease",
@@ -6244,6 +6596,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "60 - (0.20 × 60) = 60 - 12 = $48.",
       },
     },
+    careerConnection:
+      "Retail managers calculate a percent decrease to set the exact sale price during a discount event. Car dealerships calculate a percent decrease off the sticker price to arrive at a negotiated deal.",
   },
   {
     slug: "math-g7-l06-simple-interest",
@@ -6275,6 +6629,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "$200 × 2% = $4 per year × 6 years = $24.",
       },
     },
+    careerConnection:
+      "Bank loan officers calculate simple interest to tell a customer exactly how much a loan will cost over its full term. Investors calculating a savings bond's growth use the same simple interest formula to project how much a fixed deposit will earn.",
   },
   {
     slug: "math-g7-l07-adding-integers",
@@ -6306,6 +6662,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "9 + (-30) = -21, which is 21 away from zero.",
       },
     },
+    careerConnection:
+      "Accountants add positive income and negative expenses constantly to track a running bank balance. Football and hockey statisticians add positive and negative yardage or scoring plays to track a team's net progress.",
   },
   {
     slug: "math-g7-l08-subtracting-integers",
@@ -6337,6 +6695,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "12 - 20 = -8, which is 8 away from zero.",
       },
     },
+    careerConnection:
+      "Meteorologists subtract signed temperatures to report how much colder or warmer today is compared to yesterday. Stock market analysts subtract a stock's opening price from its closing price, often getting a negative number, to report a daily loss.",
   },
   {
     slug: "math-g7-l09-multiplying-integers",
@@ -6368,6 +6728,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "-6 × (-6) = 36 — 6 blocks holding 36 notes in all.",
       },
     },
+    careerConnection:
+      "Video game developers multiply negative integers to apply repeated damage-over-time effects or stat penalties to a character. Meteorologists multiply a negative wind-chill factor by increments of wind speed to build the wind chill charts used in weather forecasts.",
   },
   {
     slug: "math-g7-l10-dividing-integers",
@@ -6399,6 +6761,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "56 ÷ (-7) = -8, which is 8 away from zero.",
       },
     },
+    careerConnection:
+      "Accountants divide a total negative loss evenly across several months to report an average monthly deficit. Scuba dive instructors divide a negative depth by a descent rate to calculate how many minutes it took a diver to reach a certain depth.",
   },
   {
     slug: "math-g7-l11-operations-with-rational-numbers",
@@ -6430,6 +6794,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "-6.5 - 1.5 = -8, which is 8 away from zero.",
       },
     },
+    careerConnection:
+      "Chemists add and subtract signed decimal measurements, like temperature changes or pH differences, constantly while recording lab data. Personal finance apps add and subtract fractional and decimal dollar amounts across a bank statement to show a running balance.",
   },
   {
     slug: "math-g7-l12-multi-step-rational-number-problems",
@@ -6461,6 +6827,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "-50 + 30 - 10 = -30, a net change of $30.",
       },
     },
+    careerConnection:
+      "Submarine navigators chain together several depth changes, both positive and negative, to calculate a vessel's final depth below the surface. Personal finance apps chain together several transactions, deposits and withdrawals alike, to calculate a final account balance.",
   },
   {
     slug: "math-g7-l13-combining-like-terms",
@@ -6492,6 +6860,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "9x - 3x + 2x = 8x, and 8(4) = 32.",
       },
     },
+    careerConnection:
+      "Small business owners combine several similar expense line items into one simplified budget category before totaling a monthly report. Software developers simplify repeated variables in their code the exact same way, to make a program run faster and read more clearly.",
   },
   {
     slug: "math-g7-l14-the-distributive-property",
@@ -6523,6 +6893,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5(7 - 1) = 5(6) = 30.",
       },
     },
+    careerConnection:
+      "Retail managers apply a storewide percent-off to every item in a cart using the distributive property in one single step instead of discounting each item separately. Electrical engineers use the same idea to expand circuit equations that distribute a voltage across several resistors.",
   },
   {
     slug: "math-g7-l15-two-step-equations",
@@ -6554,6 +6926,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5x - 3 = 32, so 5x = 35, and x = 7.",
       },
     },
+    careerConnection:
+      "A rideshare driver figuring out how many trips it takes to hit a nightly earnings goal, once a base pay and a per-trip rate are known, solves a two-step equation exactly like this. Personal trainers solve two-step equations to figure out how many workout sessions it takes a client to reach a calorie-burn goal from a starting point.",
   },
   {
     slug: "math-g7-l16-equations-with-variables-on-both-sides",
@@ -6585,6 +6959,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "6x - 5 = 2x + 27 → 4x = 32 → x = 8.",
       },
     },
+    careerConnection:
+      "Business analysts find the point where two pricing plans, like two phone plans with different base fees and per-gigabyte rates, cost the same by putting the variable on both sides. Ride-share companies compare a driver's flat-rate pay plan against a per-mile plan the same way, to see which one earns more at a given number of trips.",
   },
   {
     slug: "math-g7-l17-inequalities",
@@ -6616,6 +6992,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3x ≤ 27 → x ≤ 9, so the largest whole number is 9.",
       },
     },
+    careerConnection:
+      "Elevator engineers set a maximum passenger count using a weight inequality, so the smallest number of people that would exceed the safe limit is never reached. Nutrition label writers use inequalities to state a minimum recommended daily amount of a vitamin.",
   },
   {
     slug: "math-g7-l18-scale-drawings",
@@ -6647,6 +7025,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7 inches × 3 miles/inch = 21 miles.",
       },
     },
+    careerConnection:
+      "Architects and interior designers convert a scale drawing's measured inches into a room's real-world dimensions before construction ever begins. Cartographers and city planners use the exact same map-scale math to convert a map's measured distance into real miles.",
   },
   {
     slug: "math-g7-l19-circumference-of-a-circle",
@@ -6678,6 +7058,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "C = πd = (22/7)(3.5) = 11.",
       },
     },
+    careerConnection:
+      "Tire manufacturers calculate a wheel's circumference to know exactly how far it travels in one full rotation, which is the basis for how a car's speedometer works. Track and field coaches calculate the circumference of a circular running lane to mark exact race distances.",
   },
   {
     slug: "math-g7-l20-area-of-a-circle",
@@ -6709,6 +7091,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "A = πr² ≈ 3(2²) = 3(4) = 12.",
       },
     },
+    careerConnection:
+      "Pizza shop owners calculate a pizza's area to justify pricing a large pizza fairly against a medium one. Irrigation engineers calculate the area a circular sprinkler covers to plan out how many sprinklers a field needs.",
   },
   {
     slug: "math-g7-l21-complementary-and-supplementary-angles",
@@ -6740,6 +7124,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "180 - 145 = 35°.",
       },
     },
+    careerConnection:
+      "Carpenters and furniture makers calculate a missing angle when cutting two pieces that need to fit together at a corner, using complementary or supplementary angle relationships. Billiards players and instructors calculate a ball's rebound angle off a rail using that same angle-pair relationship.",
   },
   {
     slug: "math-g7-l22-area-of-composite-figures",
@@ -6771,6 +7157,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(8×3) + (1/2 × 6 × 4) = 24 + 12 = 36.",
       },
     },
+    careerConnection:
+      "Architects calculate a floor plan's total area by breaking an irregularly-shaped room into simpler rectangles and triangles, then adding the pieces together. Flooring installers do that same breakdown to calculate exactly how much material an oddly-shaped room requires.",
   },
   {
     slug: "math-g7-l23-probability-of-simple-events",
@@ -6802,6 +7190,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(1/2) × 50 = 25.",
       },
     },
+    careerConnection:
+      "Meteorologists use this exact math when they forecast a 30 percent chance of rain — it means rain has shown up in about 3 out of every 10 days with that same weather pattern. Quality control inspectors use expected frequency to predict how many defective parts should turn up in a large batch, based on a known defect rate.",
   },
   {
     slug: "math-g7-l24-multi-step-percent-problems",
@@ -6833,6 +7223,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "30 + (0.10 × 30) + (0.20 × 30) = 30 + 3 + 6 = $39.",
       },
     },
+    careerConnection:
+      "Restaurant servers and diners calculate tax and tip on a bill constantly, adding both percentages onto the original price to know the true total. Retail cashiers calculate sales tax on every transaction rung up at checkout the same way.",
   },
   // ============================================================
   // GRADE 8 — exponents and radicals (integer exponent rules, square and
@@ -6877,6 +7269,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5³ ÷ 5¹ = 5² = 25.",
       },
     },
+    careerConnection:
+      "Computer scientists apply these same laws of exponents to simplify Big-O expressions when comparing how efficiently two algorithms scale. Cybersecurity engineers rely on exponent rules constantly, since encryption key strength is measured in powers of two.",
   },
   {
     slug: "math-g8-l02-square-roots",
@@ -6908,6 +7302,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "15 × 15 = 225, so √225 = 15.",
       },
     },
+    careerConnection:
+      "Structural engineers use square roots to calculate the exact length of a diagonal brace or support beam from squared measurements. Screen manufacturers use square roots to relate a display's diagonal size to its width and height.",
   },
   {
     slug: "math-g8-l03-cube-roots",
@@ -6939,6 +7335,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4 × 4 × 4 = 64, so ∛64 = 4.",
       },
     },
+    careerConnection:
+      "Packaging engineers use cube roots to find the side length of a cube-shaped box that must hold a specific required volume. Materials scientists use cube roots to relate a sample's measured volume back to a single edge length during testing.",
   },
   {
     slug: "math-g8-l04-comparing-numbers-in-scientific-notation",
@@ -6970,6 +7368,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(6×10⁷) ÷ (2×10⁶) = 30.",
       },
     },
+    careerConnection:
+      "Astronomers compare distances between stars and planets, numbers so large they're always written in scientific notation, to figure out how many times farther one object is than another. Microbiologists compare the sizes of cells and viruses, numbers so small they're written in scientific notation, the exact same way.",
   },
   {
     slug: "math-g8-l05-operations-with-scientific-notation",
@@ -7001,6 +7401,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3 × 3 = 9, so the product's coefficient is 9.",
       },
     },
+    careerConnection:
+      "Astronomers add, subtract, and multiply distances and masses written in scientific notation constantly, since real values in space are almost never ordinary numbers. Computer engineers multiply numbers in scientific notation to calculate a processor's operations per second or a network's data throughput.",
   },
   {
     slug: "math-g8-l06-slope-of-a-proportional-relationship",
@@ -7032,6 +7434,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "slope = 60/10 = 6.",
       },
     },
+    careerConnection:
+      "Economists graph a company's cost as a proportional relationship through the origin, then read its slope as a cost-per-unit rate. Fitness apps graph calories burned as proportional to a workout's duration, reading the slope as a calorie-burn rate.",
   },
   {
     slug: "math-g8-l07-slope-from-two-points",
@@ -7063,6 +7467,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "slope = (37 - 1)/(7 - 1) = 36/6 = 6.",
       },
     },
+    careerConnection:
+      "Civil engineers and road designers calculate the slope between two elevation points to set the grade of a road, ramp, or drainage pipe, since building codes cap exactly how steep each one is allowed to be. Roofers use the same rise-over-run math to describe a roof's pitch before ordering materials.",
   },
   {
     slug: "math-g8-l08-two-step-linear-equations",
@@ -7094,6 +7500,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5x + 9 = 39 → 5x = 30 → x = 6.",
       },
     },
+    careerConnection:
+      "Small business owners solve two-step equations to find a break-even point, given a fixed cost and a per-unit cost. Personal trainers solve the same shape of equation to figure out how many reps of an exercise close the gap to a calorie target.",
   },
   {
     slug: "math-g8-l09-equations-with-variables-on-both-sides",
@@ -7125,6 +7533,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "6x - 9 = x + 21 → 5x = 30 → x = 6.",
       },
     },
+    careerConnection:
+      "Business analysts find the exact usage level where two pricing plans, like two phone plans with different base fees and per-gigabyte rates, cost the same by putting the variable on both sides. Ride-share companies compare a driver's flat-rate pay plan against a per-mile plan the same way to see which earns more.",
   },
   {
     slug: "math-g8-l10-systems-of-equations",
@@ -7156,6 +7566,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "x + 1 = 2x - 5 → 6 = x, so x = 6.",
       },
     },
+    careerConnection:
+      "Economists find market equilibrium, the price where supply and demand match, by solving a system of two equations exactly this way. Chemists and pharmacists solve systems to figure out exactly how much of two solutions to combine to hit a target concentration.",
   },
   {
     slug: "math-g8-l11-evaluating-functions",
@@ -7187,6 +7599,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "f(7) = 4(7) - 2 = 26.",
       },
     },
+    careerConnection:
+      "Game developers evaluate a function like f(x) = 2x + 3 to calculate a character's stat instantly once a level or gear value is known. Streaming services evaluate a function to calculate a recommended video quality from a user's measured internet speed.",
   },
   {
     slug: "math-g8-l12-rate-of-change",
@@ -7218,6 +7632,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(46 - 10)/(9 - 3) = 36/6 = 6.",
       },
     },
+    careerConnection:
+      "Economists calculate a company's rate of change in revenue over time to judge whether growth is speeding up or slowing down. Epidemiologists calculate a disease's rate of change in case counts to judge whether an outbreak is accelerating.",
   },
   {
     slug: "math-g8-l13-pythagorean-theorem-hypotenuse",
@@ -7249,6 +7665,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "√(9² + 12²) = √225 = 15.",
       },
     },
+    careerConnection:
+      "Construction workers use the Pythagorean theorem, often called the 3-4-5 rule on a job site, to check that a wall or foundation corner is perfectly square. Aerospace engineers use it to calculate the straight-line distance a drone or aircraft travels between two waypoints.",
   },
   {
     slug: "math-g8-l14-pythagorean-theorem-a-leg",
@@ -7280,6 +7698,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "√(25² - 7²) = √576 = 24.",
       },
     },
+    careerConnection:
+      "Ladder safety standards are built on this exact theorem, calculating how far a ladder's base must sit from a wall to safely reach a certain height. Carpenters use the same theorem in reverse to find a missing rafter length once a roof's height and slope length are known.",
   },
   {
     slug: "math-g8-l15-distance-between-two-points",
@@ -7311,6 +7731,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "√(9² + 12²) = √225 = 15.",
       },
     },
+    careerConnection:
+      "GPS and mapping apps calculate the straight-line distance between two coordinates using the Pythagorean theorem every time they estimate a trip's distance. Video game developers use the same distance formula to calculate how far a character is from an enemy or objective on a coordinate-based map.",
   },
   {
     slug: "math-g8-l16-volume-of-cylinders",
@@ -7342,6 +7764,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "V = πr²h ≈ 3(1²)(7) = 21.",
       },
     },
+    careerConnection:
+      "Beverage companies calculate a can or bottle's volume to determine exactly how much liquid it holds before printing that number on the label. Civil engineers calculate the volume of a cylindrical water tank or pipe to plan a water system's capacity.",
   },
   {
     slug: "math-g8-l17-volume-of-cones",
@@ -7373,6 +7797,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "V = (1/3)πr²h ≈ (2²)(7) = 28.",
       },
     },
+    careerConnection:
+      "Ice cream shop owners calculate a cone's volume to know exactly how much ice cream fits inside before it overflows. Civil engineers calculate the volume of conical stockpiles, like a pile of gravel or sand, to estimate material quantities from aerial drone scans.",
   },
   {
     slug: "math-g8-l18-volume-of-spheres",
@@ -7404,6 +7830,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "32 ÷ 4 = 8.",
       },
     },
+    careerConnection:
+      "Sporting goods manufacturers calculate a ball's volume to determine exactly how much air or rubber a basketball or soccer ball requires. Astronomers calculate the volume of planets and stars, modeled as spheres, to estimate mass alongside a known density.",
   },
   {
     slug: "math-g8-l19-translations",
@@ -7435,6 +7863,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "10 - 6 = 4.",
       },
     },
+    careerConnection:
+      "Video game and animation developers translate objects on a coordinate grid constantly, sliding a character or sprite a set distance in some direction every frame. Robotics engineers translate a robotic arm's coordinates the same way to move it a precise distance across a workspace.",
   },
   {
     slug: "math-g8-l20-reflections-and-rotations",
@@ -7466,6 +7896,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Reflecting over the x-axis flips y to -4, a distance of 4 from zero.",
       },
     },
+    careerConnection:
+      "Video game developers reflect and rotate sprites and 3D models on a coordinate plane to flip a character's direction or spin an object without redrawing it from scratch. Manufacturing engineers use reflections and rotations to check whether a mirrored part, like a left and right shoe sole, matches its counterpart exactly.",
   },
   {
     slug: "math-g8-l21-similar-figures-and-scale-factor",
@@ -7497,6 +7929,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "30 ÷ 5 = 6.",
       },
     },
+    careerConnection:
+      "Architects and model makers calculate a scale factor to shrink a building's real dimensions down to a physical scale model. Movie and video game visual effects artists calculate scale factors to resize a 3D model consistently in every dimension.",
   },
   {
     slug: "math-g8-l22-angle-relationships-in-triangles-and-parallel-lines",
@@ -7528,6 +7962,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Co-interior angles sum to 180°, so the other angle is 180 - 100 = 80°.",
       },
     },
+    careerConnection:
+      "Surveyors and civil engineers use parallel-line angle relationships to verify that two roads or property lines are truly parallel using a single measured angle. Carpenters use the triangle angle sum to calculate a missing roof truss angle once the other two are known.",
   },
   {
     slug: "math-g8-l23-scatter-plots-and-lines-of-best-fit",
@@ -7559,6 +7995,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "y = 5(5) + 4 = 29.",
       },
     },
+    careerConnection:
+      "Data scientists and economists fit a line of best fit to real-world data, like sales over time or temperature versus energy use, to make predictions about future values. Sports analysts use a line of best fit to predict how a stat, like home runs, might trend for the rest of a season.",
   },
   {
     slug: "math-g8-l24-two-way-tables",
@@ -7590,6 +8028,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "50 - 18 = 32.",
       },
     },
+    careerConnection:
+      "Market researchers build two-way tables to analyze survey results, like how many customers like one product but not another, to guide business decisions. Public health researchers use two-way tables to study whether two conditions, like a treatment and an outcome, are related in a group of patients.",
   },
 
   // ============================================================
@@ -7650,6 +8090,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5² = 25, then 3 × 5 = 15. 25 + 15 = 40.",
       },
     },
+    careerConnection:
+      "Software engineers and game developers evaluate expressions exactly like these thousands of times a second — a damage formula, a physics update, a compound-interest calculator all live or die on doing the exponent before the multiplication and the multiplication before the addition. Financial analysts hit the same order when a spreadsheet formula mixes percentages with flat fees, and any programming language's own calculator follows this rule under the hood.",
   },
   {
     slug: "math-g9-l02-evaluating-algebraic-expressions",
@@ -7681,6 +8123,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4(3)² - 3 = 4(9) - 3 = 36 - 3 = 33.",
       },
     },
+    careerConnection:
+      "Game developers substitute a player's own stats into a formula like this constantly — a character's attack power might literally be 2x² + 3, where x is a level or gear stat the player controls. Civil and mechanical engineers do the same thing with real-world formulas (plugging a measured length, load, or voltage into an equation to get a safe design value), and actuaries substitute a person's age or risk score into a pricing formula to set an insurance premium.",
   },
   {
     slug: "math-g9-l03-combining-like-terms",
@@ -7712,6 +8156,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "9x - 4x + 2x = 7x. 7(4) = 28.",
       },
     },
+    careerConnection:
+      "Bookkeepers and small-business owners combine like terms every time they roll several similar expense lines (three separate supply purchases, say) into one budget category before totaling a report. Compilers and the software engineers who build them simplify code expressions the same way to make programs run faster, and construction estimators combine repeated material costs (so many boards at so much each, bought across several trips) into a single line before quoting a job.",
   },
   {
     slug: "math-g9-l04-the-distributive-property",
@@ -7743,6 +8189,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5(x + 1) = 5x + 5. 5(3) + 5 = 15 + 5 = 20.",
       },
     },
+    careerConnection:
+      "Retail managers use the distributive property to apply a storewide discount across every item in a cart in one step instead of discounting each item separately, and payroll and tax software distributes a tax rate across every line of a paycheck the same way. Electrical engineers lean on it to expand circuit equations (voltage distributed across resistors in a network), and it's also the algebra rule that lets a compiler rewrite (a + b) × c into a faster set of instructions on a chip.",
   },
   {
     slug: "math-g9-l05-one-step-equations-addition-and-subtraction",
@@ -7774,6 +8222,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "x - 9 = 6 → x = 6 + 9 = 15.",
       },
     },
+    careerConnection:
+      "Warehouse and inventory managers solve exactly this kind of equation when they know how many units they've already shipped and how many are left on an order, and need the original total. Bakers and chefs use it to scale a recipe (this batch used 8 more cups of flour than I have left — how much did I start with?), and it's the same one-step reasoning a personal budgeter uses to back out how much they spent from a starting and ending bank balance.",
   },
   {
     slug: "math-g9-l06-one-step-equations-multiplication-and-division",
@@ -7805,6 +8255,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "9x = 27 → x = 27 ÷ 9 = 3 — 3 blocks holding 27 notes in all, 9 in each.",
       },
     },
+    careerConnection:
+      "Lumber traders and freight dispatchers solve this exact equation to figure out how many truckloads they need: if a customer orders 30 boards and each truck carries 6, that's 6x = 30 — the same equation this lesson's blocks-as-groups trick makes literal. Moving-company and shipping logistics coordinators split a total shipment into equal loads the same way, and it's also how a manufacturing line calculates how many identical boxes a batch of product will fill.",
   },
   {
     slug: "math-g9-l07-two-step-equations",
@@ -7836,6 +8288,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4x - 3 = 29 → 4x = 32 → x = 8.",
       },
     },
+    careerConnection:
+      "Small-business owners solve two-step equations to find a break-even point — if a food truck has a $4 fixed cost per day plus $3 per meal to make, and they want $19 in ingredients budgeted, this is the equation. Electricians and plumbers solve the same shape of equation for an unknown resistance or pipe length once a fixed cost and a per-unit rate are known, and personal trainers use it to work backward from a calorie target to figure out how many reps of an exercise close the gap.",
   },
   {
     slug: "math-g9-l08-multi-step-equations-variables-on-both-sides",
@@ -7867,6 +8321,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "10x - 8 = 4x + 46 → 6x = 54 → x = 9.",
       },
     },
+    careerConnection:
+      "Business analysts find the exact point where two cost or pricing plans cross by putting the variable on both sides just like this — one phone plan's cost (a flat fee plus a per-gigabyte rate) set equal to another's, solved for the usage where they cost the same. Ride-share companies compare a driver's pay-per-mile plan against a flat-rate plan the same way, and it's the same algebra a rideshare or delivery app runs to tell a driver which pay structure earns more at a given number of trips.",
   },
   {
     slug: "math-g9-l09-slope-from-two-points",
@@ -7910,6 +8366,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Rise = 11 - 2 = 9. Run = 5 - 2 = 3. Slope = rise ÷ run = 9 ÷ 3 = 3.",
       },
     },
+    careerConnection:
+      "Civil engineers and road designers calculate slope (rise over run) to set the grade of a highway, a wheelchair ramp, or a drainage pipe, since building codes cap exactly how steep each one is allowed to be. Roofers use the same rise-over-run math to describe a roof's pitch before ordering materials, and game developers use it to program the incline of a ramp or hill so a character's physics feel right when running or driving over it.",
   },
   {
     slug: "math-g9-l10-slope-intercept-form",
@@ -7941,6 +8399,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "y = 5(5) - 3 = 25 - 3 = 22.",
       },
     },
+    careerConnection:
+      "Rideshare and delivery apps price a trip with a formula in exactly this shape: y = mx + b, where b is a flat pickup fee and m is a per-mile rate. Cell-phone carriers and gyms price monthly plans the same way (a base fee plus a per-use rate), and economists and business analysts use y = mx + b as the simplest model for predicting cost or revenue as a quantity like production volume changes.",
   },
   {
     slug: "math-g9-l11-writing-an-equation-of-a-line",
@@ -7972,6 +8432,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "b = y - mx = 16 - 5(2) = 16 - 10 = 6.",
       },
     },
+    careerConnection:
+      "Scientists and engineers calibrate sensors this exact way — take two known readings (say, a thermometer's voltage at two known temperatures), find the rate of change between them, then solve for the equation that converts any future raw reading into a real-world value. Real-estate appraisers build a similar linear model from two comparable home sales to estimate how price changes with square footage, and data analysts use the same two-point method to write a quick trendline before fitting anything fancier.",
   },
   {
     slug: "math-g9-l12-linear-inequalities-in-one-variable",
@@ -8003,6 +8465,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3x < 21 → x < 7. Any count of 6 or fewer satisfies it.",
       },
     },
+    careerConnection:
+      "Manufacturing quality-control inspectors solve inequalities like this to define a part's acceptable range (a bolt must measure more than a minimum length to fit) and reject anything outside it. Nutritionists and dietitians set a client's daily calorie or protein target as an inequality (at least this many grams), and budget analysts use the same idea in reverse — spending must stay under a cap — to flag a department going over.",
   },
   {
     slug: "math-g9-l13-compound-inequalities",
@@ -8046,6 +8510,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "x must be greater than 2 and less than 9 — any snare count above 2 and hi-hat count below 9 shows a value in that range.",
       },
     },
+    careerConnection:
+      "Pilots and air-traffic controllers work inside a compound inequality every flight — an aircraft has to stay above a minimum altitude and below a maximum ceiling at the same time, exactly like the two boundaries this lesson builds on two different rows. Machinists rely on the same idea for a part's tolerance (a measurement has to fall between two limits to pass inspection), and pharmacists use compound inequalities to keep a patient's dosage within a safe range that's neither too little nor too much.",
   },
   {
     slug: "math-g9-l14-systems-of-equations-by-graphing",
@@ -8089,6 +8555,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2x - 1 = -x + 11 → 3x = 12 → x = 4. y = 2(4) - 1 = 7. The lines cross at (4, 7).",
       },
     },
+    careerConnection:
+      "Economists and business analysts find market equilibrium — the price where supply and demand curves cross — by graphing both as lines and reading off their intersection, exactly like these two lines finding one meeting point. Urban planners graph a bus route and a walking route the same way to find where they'd meet up, and it's the same visual approach an app designer uses to show a break-even chart where cost and revenue lines cross.",
   },
   {
     slug: "math-g9-l15-systems-of-equations-by-substitution",
@@ -8132,6 +8600,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4x + (x + 1) = 21 → 5x = 20 → x = 4. y = 4 + 1 = 5.",
       },
     },
+    careerConnection:
+      "Chemists and pharmacists use substitution to solve mixture problems — if one solution's concentration is defined in terms of another, substituting lets them figure out exactly how much of each to combine to hit a target strength. Nutritionists solve meal-planning systems the same way (one food's serving size expressed in terms of another to hit a calorie and protein target together), and it's a core technique software engineers use when simplifying systems of constraints in optimization code.",
   },
   {
     slug: "math-g9-l16-systems-of-equations-by-elimination",
@@ -8175,6 +8645,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(4x + y) + (x - y) = 25 + 0 → 5x = 25 → x = 5. y = 25 - 4(5) = 5.",
       },
     },
+    careerConnection:
+      "Network engineers and logistics planners use elimination to solve systems with many competing constraints at once (routing traffic or freight so multiple limits are all satisfied together), which is exactly the technique behind the route-planning software in a GPS or a delivery company's dispatch system. Agricultural scientists use elimination to solve for two unknown nutrient amounts in a fertilizer mix from two known outcome equations, and it's a foundational tool in the linear algebra that powers computer graphics and machine learning models.",
   },
   {
     slug: "math-g9-l17-properties-of-exponents",
@@ -8206,6 +8678,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(3¹)⁴ = 3⁴ = 81.",
       },
     },
+    careerConnection:
+      "Computer scientists use the properties of exponents to reason about how fast an algorithm slows down as data grows (an algorithm that's 2ⁿ gets dramatically worse than one that's n², and exponent rules are how they compare them). Epidemiologists apply the same product and power rules when modeling how a virus's case count multiplies over repeated time periods, and cybersecurity engineers rely on exponent rules constantly since encryption strength is measured in powers of 2 (a 256-bit key is 2²⁵⁶ possible combinations).",
   },
   {
     slug: "math-g9-l18-adding-and-subtracting-polynomials",
@@ -8237,6 +8711,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(6x + 8) - (3x + 2) = 3x + 6. 3(6) + 6 = 18 + 6 = 24.",
       },
     },
+    careerConnection:
+      "Structural engineers add polynomials together when combining the separate load equations from multiple beams into one total-stress formula for a bridge or building. Game developers add and subtract polynomial expressions when combining several physics forces (gravity, thrust, drag) acting on the same object into one net-motion equation, and economists combine separate cost and revenue polynomials into a single profit polynomial the same way.",
   },
   {
     slug: "math-g9-l19-multiplying-binomials-foil",
@@ -8268,6 +8744,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(x + 1)(x + 7) = x² + 8x + 7. (2)² + 8(2) + 7 = 4 + 16 + 7 = 27.",
       },
     },
+    careerConnection:
+      "Architects and interior designers multiply two binomials like this to find the area of a room whose length and width are each an expression (one dimension is x + 3 feet, the other x + 5 feet) before a design is finalized to exact numbers. Packaging designers use FOIL the same way to work out a box's surface area or volume when two of its dimensions are still variable during early design, and landscape architects multiply expressions like these to size a garden bed or patio.",
   },
   {
     slug: "math-g9-l20-factoring-trinomials",
@@ -8311,6 +8789,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3 × 5 = 15 and 3 + 5 = 8, so x² + 8x + 15 = (x + 3)(x + 5).",
       },
     },
+    careerConnection:
+      "Architects and engineers factor a trinomial area expression to recover the two original side lengths of a design once only the total area is known — the reverse of the FOIL problem in the last lesson. Factoring is also the foundation of RSA encryption, the technology that secures online banking and messaging: cybersecurity engineers and cryptographers rely on the fact that factoring a huge number (rather than a small trinomial) is hard enough to keep data safe.",
   },
   {
     slug: "math-g9-l21-solving-quadratics-by-factoring",
@@ -8354,6 +8834,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(x - 3)(x - 7) = 0 means x = 3 or x = 7.",
       },
     },
+    careerConnection:
+      "Game developers solve quadratic equations to answer questions like 'when does this thrown grenade or launched ball hit the ground,' since height under gravity is a quadratic function of time — the two roots are literally the moment it launches and the moment it lands. Sports scientists analyze a basketball or football's arc the same way, and civil engineers solving for where a parabolic cable or arch meets its supports use this exact factoring technique.",
   },
   {
     slug: "math-g9-l22-the-quadratic-formula",
@@ -8385,6 +8867,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "x = (11 ± √(121 - 120)) ÷ 2 = (11 ± 1) ÷ 2 → x = 6 or x = 5. The larger root is 6.",
       },
     },
+    careerConnection:
+      "Aerospace engineers reach for the quadratic formula whenever a projectile's path doesn't factor neatly — plugging a rocket or missile's launch numbers into it gives the exact time it reaches a target height even when the numbers are messy. Game developers program the same formula into a physics engine so any launch angle or speed a player chooses still produces an accurate landing point, and structural engineers use it to find where the forces on a parabolic arch or suspension cable balance out.",
   },
   {
     slug: "math-g9-l23-arithmetic-sequences",
@@ -8416,6 +8900,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "The 6th term is 1 + 5(7) = 36 — build it across exactly 6 blocks, one for each term up to the 6th.",
       },
     },
+    careerConnection:
+      "Loan officers and financial planners use arithmetic sequences to project a fixed monthly payment or savings deposit forward term by term (the same amount added every month), and event planners use the same idea to figure out how many seats a row-by-row theater layout holds when each row adds a fixed number of seats. Construction crews rely on arithmetic sequences to calculate the rise of a staircase, where each step adds the same fixed height as the last.",
   },
   {
     slug: "math-g9-l24-geometric-sequences-and-exponential-growth",
@@ -8447,6 +8933,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "The 4th term is 3 × 2³ = 24 — build it across exactly 4 blocks, one for each term up to the 4th.",
       },
     },
+    careerConnection:
+      "Game developers use geometric growth to design difficulty curves and in-game currency rewards that ramp up smoothly (score doubling every level keeps a game feeling exciting without needing to hand-tune every stage). Epidemiologists model early disease spread as geometric growth (each infected person spreading it to a fixed number more), and bankers and investors rely on the exact same math for compound interest, where a balance multiplies by the same factor every period.",
   },
 
   // ============================================================
@@ -8488,6 +8976,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Supplementary angles sum to 180°. 180 - 145 = 35.",
       },
     },
+    careerConnection:
+      "Carpenters and machinists find a missing angle exactly this way when cutting a miter joint or fitting two parts together, since the pieces have to sum to a clean 90° or 180° to close correctly. Surveyors and drafters lean on the same complementary and supplementary relationships when laying out a property boundary or reading angle callouts on a blueprint.",
   },
   {
     slug: "math-g10-l02-vertical-angles-and-linear-pairs",
@@ -8519,6 +9009,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Vertical angles are always congruent, so the other angle is also 83°.",
       },
     },
+    careerConnection:
+      "Land surveyors and civil engineers use vertical-angle and linear-pair relationships to double-check angle measurements while triangulating a plot of land, since one measured angle instantly hands them another. Air-traffic controllers reason about two crossing flight paths the same way, because intersecting lines always create a matching pair of vertical angles.",
   },
   {
     slug: "math-g10-l03-parallel-lines-and-transversals",
@@ -8550,6 +9042,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4x - 5 = 2x + 25 → 2x = 30 → x = 15. The angle is 4(15) - 5 = 55°.",
       },
     },
+    careerConnection:
+      "Architects and structural engineers rely on parallel-lines angle relationships whenever a design has repeated parallel beams, rafters, or lanes cut by a diagonal support, since one measured angle tells them every other angle in the pattern. Road engineers use the same rules to design an on-ramp that merges smoothly into a parallel highway at a safe angle.",
   },
   {
     slug: "math-g10-l04-triangle-angle-sum-with-expressions",
@@ -8581,6 +9075,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(2x + 5) + (3x - 5) + 90 = 180 → 5x = 90 → x = 18. The angles are 2(18)+5=41° and 3(18)-5=49° — the smaller is 41°.",
       },
     },
+    careerConnection:
+      "Architects and engineers solving for an unknown angle in a triangular truss or roof frame use exactly this triangle-angle-sum algebra to make sure every joint closes at the right angle. Land surveyors verify a triangular parcel's three angles the same way before signing off on a property survey.",
   },
   {
     slug: "math-g10-l05-exterior-angle-theorem",
@@ -8612,6 +9108,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "35 + 95 = 130°.",
       },
     },
+    careerConnection:
+      "Structural engineers and drafters use the exterior angle theorem to check a truss's geometry without measuring every angle directly, since two known angles instantly hand them the third. Robotics engineers programming a robotic arm's joint angles rely on the same triangle relationship to calculate exactly how far the arm can reach.",
   },
   {
     slug: "math-g10-l06-interior-angle-sum-of-polygons",
@@ -8643,6 +9141,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4 - 2 = 2 triangles, so a quadrilateral's angles sum to 2 × 180° = 360° — build it across exactly 4 blocks, one for each side.",
       },
     },
+    careerConnection:
+      "Architects designing a building with an unusual floor plan (a pentagon-shaped room, an octagonal gazebo) use the interior angle sum formula to cut every wall to the exact angle that closes the shape correctly. Game developers and 3D modelers building level geometry rely on the same formula to make sure a custom polygon's angles actually add up and close.",
   },
   {
     slug: "math-g10-l07-triangle-congruence-and-cpctc",
@@ -8674,6 +9174,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "9 + 12 + 15 = 36.",
       },
     },
+    careerConnection:
+      "Manufacturing engineers use congruence to guarantee that two parts built from the same triangular template come out identical down to every side and angle, exactly what interchangeable machined parts require. Structural engineers rely on CPCTC to confirm that a duplicated truss design carries the same load-bearing properties as the original it was copied from.",
   },
   {
     slug: "math-g10-l08-similar-triangles-scale-factor",
@@ -8705,6 +9207,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "EF = 5 × 7 = 35.",
       },
     },
+    careerConnection:
+      "Architects and model makers scale a building's blueprint up or down using a scale factor, multiplying every measurement by the same number so proportions stay accurate at any size. Cartographers convert a map's tiny distances into real-world distances the same way, and film crews use scale factor to relate a miniature model set to its full-size counterpart.",
   },
   {
     slug: "math-g10-l09-similar-triangles-proportions",
@@ -8736,6 +9240,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3/12 = 5/EF → EF = 5 × 12 ÷ 3 = 20.",
       },
     },
+    careerConnection:
+      "Surveyors and foresters use similar-triangle proportions to measure a tall object's height, like a tree or a building, from the length of its shadow, without ever having to climb it. Photographers and cinematographers use the same proportion to work out how an object's size in a shot relates to its actual size at a given distance from the camera.",
   },
   {
     slug: "math-g10-l10-pythagorean-theorem-hypotenuse",
@@ -8767,6 +9273,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7² + 24² = 49 + 576 = 625 = 25², so the hypotenuse is 25.",
       },
     },
+    careerConnection:
+      "Carpenters and construction workers use the Pythagorean theorem constantly to square up a wall, deck, or foundation, checking that a diagonal measurement matches a² + b² = c² (the classic 3-4-5 trick every job site uses). Game developers and computer graphics engineers use the exact same formula to calculate the straight-line distance between two points in a 2D or 3D world.",
   },
   {
     slug: "math-g10-l11-pythagorean-theorem-a-leg",
@@ -8798,6 +9306,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "29² - 20² = 841 - 400 = 441 = 21², so the other leg is 21.",
       },
     },
+    careerConnection:
+      "Ladder-safety inspectors and roofers use this exact calculation to figure out how far a ladder's base must sit from a wall to safely reach a given height, given the ladder's own length. Structural engineers solve for an unknown leg the same way when only a diagonal brace's length and one side of a frame are already known.",
   },
   {
     slug: "math-g10-l12-45-45-90-triangles",
@@ -8829,6 +9339,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Each leg is 8.",
       },
     },
+    careerConnection:
+      "Woodworkers and picture framers use the 45-45-90 relationship every time they cut a mitered corner, since squaring off a corner diagonally always produces this exact triangle. Game and graphics programmers use the same ratio to calculate diagonal movement distance on a grid, which is why moving diagonally in a game isn't simply twice as far as moving straight.",
   },
   {
     slug: "math-g10-l13-trig-ratios-sine",
@@ -8872,6 +9384,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "sin(A) = 5/13 — already in lowest terms.",
       },
     },
+    careerConnection:
+      "Surveyors, aerospace engineers, and roboticists use sine constantly to relate an angle to a vertical height, like finding how high a zipline or crane arm rises for a given cable angle and length. Game developers and VFX artists use the same sine ratio to calculate a character's or camera's vertical position while moving along an angled path.",
   },
   {
     slug: "math-g10-l14-trig-ratios-cosine",
@@ -8915,6 +9429,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "cos(A) = 12/13 — already in lowest terms.",
       },
     },
+    careerConnection:
+      "Civil engineers and architects use cosine to find a horizontal distance given an angle and a diagonal support beam or cable's length, essential when designing a sloped roof or a cable-stayed bridge. Game developers rely on cosine just as often as sine for computing horizontal movement, lighting angles, and character rotation inside a 3D engine.",
   },
   {
     slug: "math-g10-l15-trig-ratios-tangent",
@@ -8958,6 +9474,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "tan(A) = 5/12 — already in lowest terms.",
       },
     },
+    careerConnection:
+      "Surveyors and foresters use tangent to find a building's or tree's height from a measured angle of elevation and a known distance away, all without climbing anything. Aerospace and robotics engineers use tangent the same way to calculate an aircraft's or a robotic arm's angle of approach to a target.",
   },
   {
     slug: "math-g10-l16-arc-length",
@@ -8989,6 +9507,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "270° is 270/360 = 3/4 of the circle. 96 × 3/4 = 72.",
       },
     },
+    careerConnection:
+      "Machinists programming a CNC router to cut a curved groove calculate arc length exactly this way, so the software knows how far the cutting tool has to travel along the curve. Track and stadium designers use arc length to lay out the correct distance for a curved lane on a racetrack so every lane covers a fair distance.",
   },
   {
     slug: "math-g10-l17-area-of-a-sector",
@@ -9020,6 +9540,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "60° is 60/360 = 1/6 of the circle. 210 × 1/6 = 35.",
       },
     },
+    careerConnection:
+      "Landscape architects calculate sector area to design a curved garden bed or a pie-shaped section of a plaza, and manufacturing engineers use it to figure out how much material is wasted when cutting a wedge-shaped part from circular stock. Restaurant and food-service planners even use sector area to size a fair pie or cake slice for a set number of guests.",
   },
   {
     slug: "math-g10-l18-equation-of-a-circle",
@@ -9051,6 +9573,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "r² = 100, so r = 10.",
       },
     },
+    careerConnection:
+      "Robotics engineers and game developers define a circle's equation as a collision or detection boundary, so a character's or sensor's detection radius is exactly this formula, letting code instantly check whether another point falls inside it. GPS and radar engineers use the same circle equation to define a coverage or search radius around a fixed location.",
   },
   {
     slug: "math-g10-l19-distance-formula",
@@ -9082,6 +9606,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "The gaps are 9 across and 12 up — a 9-12-15 triangle, so the distance is 15.",
       },
     },
+    careerConnection:
+      "GPS software engineers and mapping-app developers use the distance formula, which is really the Pythagorean theorem on a coordinate grid, to calculate exactly how far apart two locations are. Game developers use it constantly too, powering everything from collision detection to how close an enemy character has gotten to the player.",
   },
   {
     slug: "math-g10-l20-midpoint-formula",
@@ -9125,6 +9651,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Midpoint = ((2+10)/2, (6+2)/2) = (6, 4).",
       },
     },
+    careerConnection:
+      "Urban planners and delivery-logistics software use the midpoint formula to pick a fair meeting point or a central distribution hub between two locations. Architects use the same formula to find the exact center of a wall or lot when a support beam or utility line needs to land precisely halfway between two fixed points.",
   },
   {
     slug: "math-g10-l21-perpendicular-slopes",
@@ -9168,6 +9696,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Flip 7/3 to 3/7 and negate: the perpendicular slope is -3/7.",
       },
     },
+    careerConnection:
+      "Architects and structural engineers use perpendicular slopes to design a support beam or wall that meets another one at a true right angle, which is critical for a stable structure. Road engineers designing an off-ramp that has to cross a highway perpendicularly rely on this exact negative-reciprocal relationship.",
   },
   {
     slug: "math-g10-l22-volume-of-prisms-and-pyramids",
@@ -9199,6 +9729,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1/3 × 48 × 6 = 96.",
       },
     },
+    careerConnection:
+      "Construction estimators and concrete contractors calculate volume before pouring a foundation or filling a container, since it tells them exactly how much material to order down to the cubic foot. Architects designing a pyramid-roofed structure, or a game developer modeling one, use the same 1/3 times base times height formula to compute usable interior space.",
   },
   {
     slug: "math-g10-l23-surface-area-of-prisms",
@@ -9230,6 +9762,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2(3×3 + 3×8 + 3×8) = 2(9 + 24 + 24) = 2(57) = 114.",
       },
     },
+    careerConnection:
+      "Manufacturers and packaging designers calculate a box's surface area to figure out exactly how much cardboard or metal sheeting is needed to build it, minimizing wasted material on every run. HVAC engineers use the same surface area calculation to size the material needed to wrap or insulate a rectangular duct.",
   },
   {
     slug: "math-g10-l24-composite-figures",
@@ -9261,6 +9795,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Rectangle: 9 × 6 = 54. Triangle: 1/2 × 9 × 4 = 18. Total: 54 + 18 = 72.",
       },
     },
+    careerConnection:
+      "Architects and construction estimators break a real building's floor plan (rarely one clean rectangle) into simple shapes exactly like this house-shaped figure, adding up each piece's area to order the right amount of flooring or roofing material. Land surveyors do the same with an irregularly shaped property lot, splitting it into triangles and rectangles to compute total acreage.",
   },
 
   // ============================================================
@@ -9302,6 +9838,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4(2)² - 3(2) + 2 = 16 - 6 + 2 = 12.",
       },
     },
+    careerConnection:
+      "Engineers and scientists write real relationships as functions in exactly this notation, f(temperature) giving a pressure reading or f(time) giving a rocket's position, so any input instantly produces a precise output. Game developers use the same notation to define stat-scaling formulas, where a character's level goes in and their health or damage output comes out.",
   },
   {
     slug: "math-g11-l02-function-composition",
@@ -9333,6 +9871,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "g(3) = 7. f(7) = 2(7) - 1 = 13.",
       },
     },
+    careerConnection:
+      "Software engineers chain functions together constantly, feeding one function's output straight into the next as data moves through a processing pipeline. Manufacturing engineers model an entire production line the same way, where the raw output of one machine becomes the exact input the next machine needs.",
   },
   {
     slug: "math-g11-l03-inverse-functions",
@@ -9364,6 +9904,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "f⁻¹(x) = (x + 10) ÷ 5. f⁻¹(30) = (30 + 10) ÷ 5 = 8.",
       },
     },
+    careerConnection:
+      "Cryptographers rely on inverse functions to decrypt a message, undoing the exact operations an encryption function performed to recover the original text. Scientists and engineers use inverse functions to convert a sensor's raw voltage reading back into a real-world unit, like turning a thermometer's output back into an actual temperature.",
   },
   {
     slug: "math-g11-l04-polynomial-long-division",
@@ -9395,6 +9937,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "At x = 6: 6 + 4 = 10.",
       },
     },
+    careerConnection:
+      "Electrical and control-systems engineers use polynomial division when simplifying a transfer function, the equation describing exactly how a circuit or system responds to an input signal. Computer graphics programmers rely on the same technique when working with the rational curves that model complex, smooth shapes in animation and design software.",
   },
   {
     slug: "math-g11-l05-synthetic-division",
@@ -9426,6 +9970,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "At x = 6: 6 + 2 = 8.",
       },
     },
+    careerConnection:
+      "Control-systems engineers use synthetic division as a fast way to factor a system's transfer function when checking whether an aircraft's autopilot or a factory robot's control loop will stay stable. Actuaries and quantitative analysts running repeated polynomial evaluations inside financial modeling software rely on synthetic division's speed over full long division.",
   },
   {
     slug: "math-g11-l06-remainder-theorem",
@@ -9457,6 +10003,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "p(3) = 27 + 9 - 15 + 6 = 27.",
       },
     },
+    careerConnection:
+      "Software engineers use the remainder theorem's shortcut, evaluating a polynomial without doing full division, to speed up numerical algorithms that would otherwise be too slow to run in real time. Cryptographers build entire encryption schemes like RSA on the closely related idea of a remainder left after dividing enormous numbers.",
   },
   {
     slug: "math-g11-l07-simplifying-radicals",
@@ -9488,6 +10036,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "200 = 100 × 2, and √100 = 10, so √200 = 10√2.",
       },
     },
+    careerConnection:
+      "Engineers and physicists simplify radicals constantly when computing quantities like a projectile's launch velocity or a circuit's impedance, since a simplified radical is far easier to compare and combine with other terms. Architects simplify radicals the same way when computing a diagonal brace or hypotenuse measurement in an irregular building design.",
   },
   {
     slug: "math-g11-l08-powers-of-i",
@@ -9519,6 +10069,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "100 ÷ 4 divides evenly (a full cycle), which lands on the 4th position: 1.",
       },
     },
+    careerConnection:
+      "Electrical engineers use imaginary numbers and their repeating cycle to analyze AC circuits, where the imaginary unit represents a 90-degree phase shift between voltage and current. Signal-processing engineers, the ones behind audio equalizers, image compression, and wireless communications, use the same cyclical property of imaginary numbers in the Fourier transforms their software runs.",
   },
   {
     slug: "math-g11-l09-adding-subtracting-complex-numbers",
@@ -9562,6 +10114,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(10-4) + (2-1)i = 6 + 1i.",
       },
     },
+    careerConnection:
+      "Electrical engineers add and subtract complex numbers to combine voltages or currents from different branches of a circuit, since each one carries both a real and an imaginary (phase) part. Aerospace engineers use the same complex-number arithmetic to combine signals inside navigation and radar systems.",
   },
   {
     slug: "math-g11-l10-multiplying-complex-numbers",
@@ -9605,6 +10159,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(6×2 - 1×3) + (6×3 + 1×2)i = (12-3) + (18+2)i = 9 + 20i.",
       },
     },
+    careerConnection:
+      "Electrical engineers multiply complex numbers representing impedances to calculate a circuit's total resistance to alternating current, a calculation done constantly when designing power systems. Game and graphics programmers use complex-number multiplication as a fast, elegant way to compute 2D rotations on screen.",
   },
   {
     slug: "math-g11-l11-quadratics-with-complex-roots",
@@ -9648,6 +10204,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Discriminant = 64 - 164 = -100. √-100 = 10i. Roots = (8 ± 10i) ÷ 2 = 4 ± 5i.",
       },
     },
+    careerConnection:
+      "Electrical engineers solving for a circuit's resonant frequency often land on complex roots, which describe oscillation and decay rather than a point where a graph simply crosses zero. Control-systems engineers designing an aircraft's autopilot analyze complex roots the same way, to determine whether the system oscillates wildly or settles down smoothly.",
   },
   {
     slug: "math-g11-l12-completing-the-square",
@@ -9679,6 +10237,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(18 ÷ 2)² = 9² = 81.",
       },
     },
+    careerConnection:
+      "Physicists and engineers complete the square to convert a quadratic motion equation into vertex form, instantly revealing a projectile's maximum height and the exact moment it happens. Satellite dish and antenna designers use the same technique to find a parabola's vertex, which is precisely where the reflector focuses incoming signals.",
   },
   {
     slug: "math-g11-l13-exponential-growth-and-decay",
@@ -9710,6 +10270,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "50 × 3² = 450.",
       },
     },
+    careerConnection:
+      "Epidemiologists and public-health officials model disease spread with exponential growth exactly like this, which is how they project case counts and plan a response before an outbreak gets out of hand. Nuclear engineers and radiologists use exponential decay to calculate how quickly a radioactive substance or medical isotope loses potency over time, and investors rely on the same growth model for compounding returns.",
   },
   {
     slug: "math-g11-l14-evaluating-logarithms",
@@ -9741,6 +10303,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4⁴ = 256, so log₄(256) = 4.",
       },
     },
+    careerConnection:
+      "Audio engineers use logarithms because human hearing perceives loudness logarithmically, which is exactly what a decibel is, and seismologists use logarithms to measure an earthquake's magnitude on the Richter scale. Data scientists rely on logarithms to compress a huge range of values into a manageable scale for charts and analysis.",
   },
   {
     slug: "math-g11-l15-properties-of-logarithms",
@@ -9772,6 +10336,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "log₅(25) + log₅(5) = log₅(125) = 3.",
       },
     },
+    careerConnection:
+      "Audio engineers use this exact product rule to combine decibel levels from multiple sound sources correctly, since decibels are logarithmic and don't simply add together. Chemists use the same logarithm properties in pH calculations, because pH is itself a logarithmic measure of hydrogen ion concentration.",
   },
   {
     slug: "math-g11-l16-solving-exponential-equations",
@@ -9803,6 +10369,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "6³ = 216, so x = 3.",
       },
     },
+    careerConnection:
+      "Epidemiologists solve exponential equations like this to predict when an outbreak will reach a certain case count, and financial planners solve the same shape of equation to calculate how long an investment takes to double or hit a savings goal. Population biologists use the identical technique to project when a species' population will cross a given threshold.",
   },
   {
     slug: "math-g11-l17-solving-logarithmic-equations",
@@ -9834,6 +10402,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "x = 4³ = 64.",
       },
     },
+    careerConnection:
+      "Seismologists solve logarithmic equations like this to relate two earthquakes' relative energy release given their Richter magnitudes. Sound engineers solve for an unknown sound intensity given a target decibel level the exact same way, rewriting a log equation back into exponential form to isolate the answer.",
   },
   {
     slug: "math-g11-l18-compound-interest",
@@ -9865,6 +10435,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "A = 50 × 1.2² = 72. Interest earned = 72 - 50 = 22.",
       },
     },
+    careerConnection:
+      "Financial planners and bankers calculate compound interest to project exactly how a savings account or loan balance grows over time, a formula underlying every retirement and investment projection they run. Personal finance apps use this exact A = P(1 + r)ᵗ formula behind their future-value projections and loan calculators.",
   },
   {
     slug: "math-g11-l19-simplifying-rational-expressions",
@@ -9896,6 +10468,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(x²-36) ÷ (x-6) = x+6. At x=4: 4+6=10.",
       },
     },
+    careerConnection:
+      "Electrical engineers simplify rational expressions when reducing a circuit's transfer function to its simplest form before analyzing how it responds to a signal. Economists simplify rational cost and revenue expressions the same way to find a company's average cost per unit as production scales up.",
   },
   {
     slug: "math-g11-l20-adding-rational-expressions",
@@ -9927,6 +10501,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "14/(x+2) + 21/(x+2) = 35/(x+2). At x=3: 35/5 = 7.",
       },
     },
+    careerConnection:
+      "Chemical engineers add rational expressions when combining flow rates or concentrations from multiple pipelines feeding into one shared system. Electrical engineers add rational expressions the same way when combining the effects of several resistors or components wired into a single circuit.",
   },
   {
     slug: "math-g11-l21-solving-rational-equations",
@@ -9958,6 +10534,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5 × 3 = x - 2 → 15 = x - 2 → x = 17.",
       },
     },
+    careerConnection:
+      "Mechanical and chemical engineers solve rational equations to find an unknown time, rate, or concentration in a process, like how long two pumps working together take to fill a shared tank. Photographers solve a rational equation called the thin lens equation the same way to determine the correct focal length or focus distance for a shot.",
   },
   {
     slug: "math-g11-l22-arithmetic-series",
@@ -9989,6 +10567,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Sum = 8 ÷ 2 × (1 + 8) = 36 — build it across exactly 8 blocks, one per term.",
       },
     },
+    careerConnection:
+      "Loan officers and financial planners calculate the total of a series of fixed payments, like a loan's total interest paid or a savings plan's total contributions, using arithmetic series formulas exactly like this. Event and construction planners use the same formula to total up seats or materials across rows that increase by a fixed amount each time.",
   },
   {
     slug: "math-g11-l23-geometric-series",
@@ -10020,6 +10600,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "1 + 3 + 9 = 13 — build it across exactly 3 blocks, one per term.",
       },
     },
+    careerConnection:
+      "Investors and bankers calculate the total value of a series of compounding investments using a geometric series, and epidemiologists sum a geometric series to project a disease's total spread across several generations of transmission. Game designers use geometric series to calculate the total in-game currency a player earns across a run of doubling level rewards.",
   },
   {
     slug: "math-g11-l24-linear-vs-exponential-growth",
@@ -10051,6 +10633,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "L(3) = 20. E(3) = 2×8 = 16. Here the line is STILL bigger, by 20 - 16 = 4 — exponential growth needs a bit more time before it overtakes.",
       },
     },
+    careerConnection:
+      "Public-health officials explain why a disease outbreak that starts small can suddenly overtake every linear prediction using exactly this linear-vs-exponential comparison. Investors and economists use the same comparison to explain why compounding investments eventually beat a fixed, linearly growing savings plan, and game designers use it to balance an in-game economy so exponential rewards don't break the game too early.",
   },
 
   // ============================================================
@@ -10094,6 +10678,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5π/6 × 180/π = 900/6 = 150°.",
       },
     },
+    careerConnection:
+      "Aerospace and mechanical engineers work in radians natively because angular velocity formulas require them, so converting to degrees becomes a routine step whenever a result has to appear on a degree-based display or instrument. Game developers and graphics programmers convert between the two constantly, since a programming language's trig functions run on radians while a designer usually thinks in degrees.",
   },
   {
     slug: "math-g12-l02-arc-length-in-radians",
@@ -10125,6 +10711,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "s = 6 × 4 = 24.",
       },
     },
+    careerConnection:
+      "Robotics engineers programming a robotic arm's joint use s = rθ directly, converting a planned rotation in radians straight into the physical distance a tool at the end of the arm will travel. Astronomers use the same formula to find the true physical size of a distant object from its angular size and distance away, and game developers use it to compute how far a point on a spinning wheel or gear moves each frame.",
   },
   {
     slug: "math-g12-l03-unit-circle-reference-angles",
@@ -10156,6 +10744,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "In quadrant III, the reference angle is 250° - 180° = 70°.",
       },
     },
+    careerConnection:
+      "Electrical engineers analyzing an AC waveform use reference angles to quickly find a sine or cosine value at any point in the cycle without redoing a full calculation from scratch. Game developers and animators use reference angles the same way to calculate a rotating object's exact position at any angle around a full circle.",
   },
   {
     slug: "math-g12-l04-30-60-90-triangles",
@@ -10187,6 +10777,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "2 × 15 = 30.",
       },
     },
+    careerConnection:
+      "Architects and engineers use the 30-60-90 relationship whenever a design calls for a hexagonal or equilateral-triangle element, since a hexagon splits neatly into six of these triangles, letting them find every measurement from just one known length. Optical engineers designing prisms use the same special-triangle ratios, since many prism cuts are built at exactly 30-60-90 or 45-45-90.",
   },
   {
     slug: "math-g12-l05-law-of-sines",
@@ -10218,6 +10810,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "a = 30 × 0.5 = 15.",
       },
     },
+    careerConnection:
+      "Surveyors and navigators use the Law of Sines to find an otherwise unreachable distance, across a river, a canyon, or out to a ship at sea, by measuring two angles and one accessible side from a triangle. Aviation and marine navigators use the same law to triangulate a position from two known landmarks and the angles between them.",
   },
   {
     slug: "math-g12-l06-law-of-cosines",
@@ -10249,6 +10843,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "c² = 7²+40²-7×40 = 49+1600-280 = 1369, so c = 37.",
       },
     },
+    careerConnection:
+      "Surveyors and civil engineers use the Law of Cosines when a triangular parcel or truss's angle between two known sides is known but the third side isn't, letting them compute a missing distance without needing a right angle anywhere. GPS and navigation systems use the Law of Cosines internally to calculate the real-world distance between two points from known angles and distances.",
   },
   {
     slug: "math-g12-l07-transformations-shifts",
@@ -10280,6 +10876,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "g(4) = (4+2)² - 3 = 36 - 3 = 33.",
       },
     },
+    careerConnection:
+      "Game developers and UI engineers shift a function's graph constantly, moving a menu, a camera, or an object's path by adding an offset to its base position formula. Signal-processing engineers shift a waveform in time the same way when synchronizing audio and video signals so they play back in step.",
   },
   {
     slug: "math-g12-l08-transformations-stretches",
@@ -10311,6 +10909,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "g(2) = 4 × 4 - 10 = 6.",
       },
     },
+    careerConnection:
+      "Audio engineers stretch and reflect waveforms to build effects like flangers, reverbs, and pitch-shifters, each one a transformed version of an original sound function. Game developers scale and flip a character's movement or animation curve the same way to speed it up, slow it down, or mirror it for a different direction.",
   },
   {
     slug: "math-g12-l09-polynomial-zeros",
@@ -10342,6 +10942,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "The zeros are 6, 8, and -3. The largest is 8.",
       },
     },
+    careerConnection:
+      "Electrical engineers find a filter's zeros to identify frequencies where the circuit blocks a signal completely, a key step in designing audio equalizers and radio receivers. Structural engineers find a beam's zero-deflection points, where it doesn't bend under load, using this same factored-polynomial approach.",
   },
   {
     slug: "math-g12-l10-rational-root-theorem",
@@ -10373,6 +10975,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(x-1)(x-3)(x-4) = x³-8x²+19x-12. The largest root is 4.",
       },
     },
+    careerConnection:
+      "Engineers debugging a physical system's model equation use the Rational Root Theorem as a fast first pass to find likely solutions before turning to slower numerical methods. Cryptographers and computer scientists testing whether a large number has small factors rely on a version of this same systematic small-candidate testing idea.",
   },
   {
     slug: "math-g12-l11-vertical-asymptotes",
@@ -10404,6 +11008,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "5x - 40 = 0 → x = 8.",
       },
     },
+    careerConnection:
+      "Electrical engineers identify a circuit's vertical asymptote, its resonant frequency, to know exactly which frequency would theoretically spike the response toward infinity, informing real safety limits on the design. Economists identify asymptotes in supply, demand, or cost models the same way to understand a price or quantity a market can approach but never actually reach.",
   },
   {
     slug: "math-g12-l12-piecewise-functions",
@@ -10435,6 +11041,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "7 ≥ 4, so use x²-3: 7²-3 = 46.",
       },
     },
+    careerConnection:
+      "Tax accountants and payroll software model income tax brackets as a piecewise function, since each bracket's rate applies only within its own range of income. App and game developers use piecewise functions to define different behavior at different distances, speeds, or levels, like a difficulty curve that changes shape before and after a boss fight.",
   },
   {
     slug: "math-g12-l13-matrix-addition",
@@ -10466,6 +11074,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "The result is [[3,2],[3,1]]. 3+2+3+1 = 9.",
       },
     },
+    careerConnection:
+      "Game and graphics engineers add and subtract matrices to combine multiple transformations, like movement plus rotation, applied to an object in a 3D scene. Data scientists add matrices representing whole datasets element by element when merging or comparing two spreadsheets of numbers.",
   },
   {
     slug: "math-g12-l14-matrix-scalar-multiplication",
@@ -10497,6 +11107,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "The result is [[10,5],[5,15]]. 10+5+5+15 = 35.",
       },
     },
+    careerConnection:
+      "Image-editing software scales every pixel value in an image's matrix by a scalar to brighten or darken an entire photo uniformly in one operation. Game developers scale a matrix representing an object's size or speed by a scalar to build power-ups or difficulty settings that affect everything proportionally.",
   },
   {
     slug: "math-g12-l15-matrix-multiplication",
@@ -10528,6 +11140,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Top-left = 1×4 + 3×2 = 4 + 6 = 10.",
       },
     },
+    careerConnection:
+      "Computer graphics engineers multiply matrices constantly, since every rotation, scale, and movement applied to a 3D character or object in a video game or animated film is a matrix multiplication happening under the hood. Machine learning engineers rely on matrix multiplication as the core operation that powers neural networks.",
   },
   {
     slug: "math-g12-l16-vector-magnitude",
@@ -10559,6 +11173,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "√(5²+12²) = √169 = 13.",
       },
     },
+    careerConnection:
+      "Physicists and engineers calculate a vector's magnitude to find an object's actual speed when it's moving in two directions at once, like a plane fighting a crosswind, combining component velocities into one real speed. Game developers calculate vector magnitude constantly to know exactly how fast a character or projectile is really moving.",
   },
   {
     slug: "math-g12-l17-vector-addition",
@@ -10590,6 +11206,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Sum = (5, 12). Magnitude = √(5²+12²) = 13.",
       },
     },
+    careerConnection:
+      "Pilots and air-traffic controllers add velocity vectors to calculate a plane's true ground speed and direction once wind gets added to its own heading. Game physics engineers add force vectors, gravity, thrust, and collision impacts, together every single frame to determine an object's net motion.",
   },
   {
     slug: "math-g12-l18-determinant-of-a-matrix",
@@ -10621,6 +11239,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "8×6 - 2×3 = 48 - 6 = 42.",
       },
     },
+    careerConnection:
+      "Computer graphics engineers use a matrix's determinant to check whether a 3D transformation flips or collapses an object's shape, since a determinant of zero signals a degenerate, unusable transformation. Economists and data scientists use determinants when solving systems of equations that model multiple interacting markets or variables at once.",
   },
   {
     slug: "math-g12-l19-mean-of-a-data-set",
@@ -10652,6 +11272,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "(3+6+9+12+15) ÷ 5 = 45 ÷ 5 = 9.",
       },
     },
+    careerConnection:
+      "Sports analysts and coaches calculate a player's mean performance to compare talent objectively across an entire season instead of judging by a single highlight. Quality-control engineers calculate the mean of a batch of manufactured parts to check whether a production line is centered exactly on its target specification.",
   },
   {
     slug: "math-g12-l20-standard-deviation",
@@ -10683,6 +11305,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Mean = 8. Every point is 6 away, so variance = 6² = 36, and standard deviation = √36 = 6.",
       },
     },
+    careerConnection:
+      "Sports analysts use standard deviation to measure how consistent a player or team's performance is, not just their average, which matters just as much when scouting talent. Financial analysts use standard deviation to measure how volatile, or risky, an investment is, and quality-control engineers use it to check whether manufactured parts are consistent enough to pass tolerance checks.",
   },
   {
     slug: "math-g12-l21-combinations-and-permutations",
@@ -10714,6 +11338,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "4P2 = 4×3 = 12.",
       },
     },
+    careerConnection:
+      "Game designers calculate combinations and permutations to balance loot tables and card games, figuring out the exact odds of a specific hand or a rare item drop. Cybersecurity engineers use permutations to calculate how many possible passwords or encryption keys exist, a core part of measuring how hard a system is to crack.",
   },
   {
     slug: "math-g12-l22-probability-of-independent-events",
@@ -10757,6 +11383,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "3/4 × 1/3 = 3/12 = 1/4.",
       },
     },
+    careerConnection:
+      "Game designers calculate the probability of two independent in-game events, like a rare item drop combined with a critical hit, to balance exactly how often a jackpot moment happens. Insurance actuaries multiply independent probabilities together the same way to price a policy that covers several unrelated risks at once.",
   },
   {
     slug: "math-g12-l23-expected-value",
@@ -10788,6 +11416,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "60 × 1/4 = 15.",
       },
     },
+    careerConnection:
+      "Casino and game designers calculate expected value to make sure a game of chance stays profitable for the house, or fair and balanced for players, over thousands of plays. Investors and actuaries use expected value to decide whether a risky investment or insurance policy is worth it on average, weighing every possible outcome by how likely it is.",
   },
   {
     slug: "math-g12-l24-introduction-to-limits",
@@ -10819,6 +11449,8 @@ export const MATH_LESSONS: MathLesson[] = [
         explanation: "Simplifies to x+11. The limit as x→11 is 11+11 = 22.",
       },
     },
+    careerConnection:
+      "Physicists and engineers use limits to define instantaneous rates like velocity and acceleration, the entire foundation calculus-based physics and engineering is built on. Computer scientists use limits when analyzing how an algorithm's performance behaves as the input size grows without bound, and economists use them to model what a system approaches in the long run.",
   },
 ];
 

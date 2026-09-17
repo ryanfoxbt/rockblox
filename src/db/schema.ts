@@ -141,6 +141,11 @@ export const mathLessons = pgTable("math_lessons", {
   title: text("title").notNull(),
   mathSkill: text("math_skill").notNull(),
   teaches: text("teaches").notNull(),
+  // "Who uses this?" — real occupations that lean on this lesson's skill and
+  // why, shown behind the 💡 icon in MathLessonWorkspace.tsx. Nullable
+  // because it's being backfilled grade by grade (see MathLesson in
+  // src/lib/mathSchool.ts) rather than required for every lesson at once.
+  careerConnection: text("career_connection"),
   // One real, checkable question per slot (A-D) — see MathChallenge in
   // src/lib/mathSchool.ts for the shape and
   // src/components/MathLessonWorkspace.tsx for the interactive UI that

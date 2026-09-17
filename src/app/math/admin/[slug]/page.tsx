@@ -19,6 +19,7 @@ export default async function MathAdminLessonPage({ params }: { params: Promise<
       title: mathLessons.title,
       mathSkill: mathLessons.mathSkill,
       teaches: mathLessons.teaches,
+      careerConnection: mathLessons.careerConnection,
       challenges: mathLessons.challenges,
       isPublished: mathLessons.isPublished,
     })

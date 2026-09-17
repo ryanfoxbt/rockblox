@@ -38,6 +38,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         title?: unknown;
         mathSkill?: unknown;
         teaches?: unknown;
+        careerConnection?: unknown;
         challenges?: unknown;
         isPublished?: unknown;
       }
@@ -48,6 +49,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     title: string;
     mathSkill: string;
     teaches: string;
+    careerConnection: string | null;
     challenges: Record<SlotLetter, MathChallenge>;
     isPublished: boolean;
   }> = {};
@@ -69,6 +71,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: "teaches must be a non-empty string" }, { status: 400 });
     }
     updates.teaches = body.teaches.trim();
+  }
+  if (body.careerConnection !== undefined) {
+    if (typeof body.careerConnection !== "string") {
+      return NextResponse.json({ error: "careerConnection must be a string" }, { status: 400 });
+    }
+    // Blank clears it — an empty light bulb tooltip doesn't make sense, so an
+    // empty string maps to null rather than being stored as "".
+    updates.careerConnection = body.careerConnection.trim() || null;
   }
   if (body.challenges !== undefined) {
     if (!isValidChallenges(body.challenges)) {
