@@ -105,7 +105,7 @@ export interface MathGrade {
   label: string;
 }
 
-// Kindergarten through Grade 9 exist today — index/list pages derive their
+// Kindergarten through Grade 12 exist today — index/list pages derive their
 // grade sections from this, not a hardcoded grade string. Kindergarten is
 // grade 0 (so it sorts first via asc(grade) everywhere) but is never shown
 // as "Grade 0" — see gradeLabel below, which every page uses instead of
@@ -121,6 +121,9 @@ export const MATH_GRADES: MathGrade[] = [
   { grade: 7, label: "Grade 7" },
   { grade: 8, label: "Grade 8" },
   { grade: 9, label: "Grade 9" },
+  { grade: 10, label: "Grade 10" },
+  { grade: 11, label: "Grade 11" },
+  { grade: 12, label: "Grade 12" },
 ];
 
 // The human-facing name for a grade level — "Kindergarten" for grade 0,
@@ -8442,6 +8445,2378 @@ export const MATH_LESSONS: MathLesson[] = [
         prompt: "A geometric sequence starts at 3 and doubles each time: 3, 6, 12, 24, ... What is the 4th term? Build a crash cymbal beat using exactly 4 blocks that add up to the 4th term in all.",
         targets: [{ instrument: "crash", count: 24, blocksUsed: 4 }],
         explanation: "The 4th term is 3 × 2³ = 24 — build it across exactly 4 blocks, one for each term up to the 4th.",
+      },
+    },
+  },
+
+  // ============================================================
+  // Grade 10 = Geometry, the second course in the same four-course high
+  // school sequence Grade 9 started (see that section's header comment).
+  // Same 24-lesson shape; leans further into the kit for the course's
+  // naturally two-part answers (a triangle's two legs, a trig ratio's
+  // numerator and denominator, a segment's rise and run) and keeps using
+  // blocksUsed as a literal time signature — this grade's clearest example
+  // is lesson 6, where a polygon's own side count IS the block count.
+  // ============================================================
+  {
+    slug: "math-g10-l01-complementary-and-supplementary-angles",
+    grade: 10,
+    lessonNumber: 1,
+    title: "Complementary and Supplementary Angles",
+    mathSkill: "Find a Missing Complementary or Supplementary Angle (G-CO.C.9)",
+    teaches: "Every slot gives one angle in a complementary (sum to 90°) or supplementary (sum to 180°) pair — subtract to find the other angle, then build that many notes anywhere in the kit.",
+    bpm: 138,
+    challenges: {
+      A: {
+        prompt: "Two angles are complementary. One measures 34°. What is the other? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 56 }],
+        explanation: "Complementary angles sum to 90°. 90 - 34 = 56.",
+      },
+      B: {
+        prompt: "Two angles are supplementary. One measures 112°. What is the other? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 68 }],
+        explanation: "Supplementary angles sum to 180°. 180 - 112 = 68.",
+      },
+      C: {
+        prompt: "Two angles are complementary. One measures 57°. What is the other? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 33 }],
+        explanation: "Complementary angles sum to 90°. 90 - 57 = 33.",
+      },
+      D: {
+        prompt: "Two angles are supplementary. One measures 145°. What is the other? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35 }],
+        explanation: "Supplementary angles sum to 180°. 180 - 145 = 35.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l02-vertical-angles-and-linear-pairs",
+    grade: 10,
+    lessonNumber: 2,
+    title: "Vertical Angles and Linear Pairs",
+    mathSkill: "Find a Missing Angle Using Vertical Angles or a Linear Pair (G-CO.C.9)",
+    teaches: "Every slot gives one angle and says how it's paired with another — vertical angles are equal, a linear pair sums to 180° — find the other angle, then build that many notes anywhere in the kit.",
+    bpm: 138,
+    challenges: {
+      A: {
+        prompt: "Two angles form a linear pair. One measures 72°. What is the other? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 108 }],
+        explanation: "A linear pair sums to 180°. 180 - 72 = 108.",
+      },
+      B: {
+        prompt: "Two angles are vertical angles. One measures 65°. What is the other? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 65 }],
+        explanation: "Vertical angles are always congruent, so the other angle is also 65°.",
+      },
+      C: {
+        prompt: "Two angles form a linear pair. One measures 129°. What is the other? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 51 }],
+        explanation: "A linear pair sums to 180°. 180 - 129 = 51.",
+      },
+      D: {
+        prompt: "Two angles are vertical angles. One measures 83°. What is the other? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 83 }],
+        explanation: "Vertical angles are always congruent, so the other angle is also 83°.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l03-parallel-lines-and-transversals",
+    grade: 10,
+    lessonNumber: 3,
+    title: "Parallel Lines Cut by a Transversal",
+    mathSkill: "Solve for x Using Angle Relationships from a Transversal (G-CO.C.9)",
+    teaches: "Every slot gives two angles as expressions in x, related by a parallel-lines rule (equal or supplementary) — solve for x, then find the angle measure, then build that many notes anywhere in the kit.",
+    bpm: 138,
+    challenges: {
+      A: {
+        prompt: "Two alternate interior angles are (3x + 10)° and (5x - 20)°. Since alternate interior angles are equal, solve for x, then find the angle measure. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 55 }],
+        explanation: "3x + 10 = 5x - 20 → 30 = 2x → x = 15. The angle is 3(15) + 10 = 55°.",
+      },
+      B: {
+        prompt: "Two corresponding angles are (4x + 5)° and (6x - 15)°. Since corresponding angles are equal, solve for x, then find the angle measure. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 45 }],
+        explanation: "4x + 5 = 6x - 15 → 20 = 2x → x = 10. The angle is 4(10) + 5 = 45°.",
+      },
+      C: {
+        prompt: "Two co-interior (same-side interior) angles are (2x + 10)° and (3x + 20)°, and they are supplementary. Solve for x, then find the smaller angle. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 70 }],
+        explanation: "(2x + 10) + (3x + 20) = 180 → 5x + 30 = 180 → x = 30. The smaller angle is 2(30) + 10 = 70°.",
+      },
+      D: {
+        prompt: "Two alternate exterior angles are (4x - 5)° and (2x + 25)°. Since alternate exterior angles are equal, solve for x, then find the angle measure. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 55 }],
+        explanation: "4x - 5 = 2x + 25 → 2x = 30 → x = 15. The angle is 4(15) - 5 = 55°.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l04-triangle-angle-sum-with-expressions",
+    grade: 10,
+    lessonNumber: 4,
+    title: "Triangle Angle Sum with Algebraic Expressions",
+    mathSkill: "Solve for a Triangle's Angles Given as Expressions (G-CO.C.10)",
+    teaches: "Every slot gives a triangle's three angles as expressions in x — they always sum to 180°, so solve for x, then find the requested angle, then build that many notes anywhere in the kit.",
+    bpm: 138,
+    challenges: {
+      A: {
+        prompt: "A triangle's angles are (2x)°, (3x)°, and (4x)°. Solve for x, then find the largest angle. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 80 }],
+        explanation: "2x + 3x + 4x = 180 → 9x = 180 → x = 20. The largest angle is 4(20) = 80°.",
+      },
+      B: {
+        prompt: "A triangle's angles are 40°, 60°, and (x)°. Solve for x. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 80 }],
+        explanation: "40 + 60 + x = 180 → x = 80.",
+      },
+      C: {
+        prompt: "A triangle's angles are (x + 10)°, (x + 20)°, and (x + 30)°. Solve for x, then find the largest angle. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 70 }],
+        explanation: "3x + 60 = 180 → x = 40. The largest angle is 40 + 30 = 70°.",
+      },
+      D: {
+        prompt: "A triangle's angles are (2x + 5)°, (3x - 5)°, and 90°. Solve for x, then find the smaller of the two unknown angles. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 41 }],
+        explanation: "(2x + 5) + (3x - 5) + 90 = 180 → 5x = 90 → x = 18. The angles are 2(18)+5=41° and 3(18)-5=49° — the smaller is 41°.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l05-exterior-angle-theorem",
+    grade: 10,
+    lessonNumber: 5,
+    title: "The Exterior Angle Theorem",
+    mathSkill: "Find an Exterior Angle from the Two Remote Interior Angles (G-CO.C.10)",
+    teaches: "Every slot gives a triangle's two angles that aren't next to the exterior angle you want — add them, then build that many notes anywhere in the kit.",
+    bpm: 138,
+    challenges: {
+      A: {
+        prompt: "A triangle has remote interior angles of 50° and 65°. What is the measure of the exterior angle at the third vertex? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 115 }],
+        explanation: "The Exterior Angle Theorem: an exterior angle equals the sum of the two remote interior angles. 50 + 65 = 115°.",
+      },
+      B: {
+        prompt: "A triangle has remote interior angles of 40° and 80°. What is the measure of the exterior angle at the third vertex? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 120 }],
+        explanation: "40 + 80 = 120°.",
+      },
+      C: {
+        prompt: "A triangle has remote interior angles of 55° and 70°. What is the measure of the exterior angle at the third vertex? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 125 }],
+        explanation: "55 + 70 = 125°.",
+      },
+      D: {
+        prompt: "A triangle has remote interior angles of 35° and 95°. What is the measure of the exterior angle at the third vertex? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 130 }],
+        explanation: "35 + 95 = 130°.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l06-interior-angle-sum-of-polygons",
+    grade: 10,
+    lessonNumber: 6,
+    title: "Interior Angle Sum of Polygons",
+    mathSkill: "Relate a Polygon's Side Count to Its Interior Angle Sum (G-CO.C.10)",
+    teaches: "The reason an n-sided polygon's interior angles sum to (n - 2) × 180° is that you can split it into (n - 2) triangles from one vertex — every slot gives you that (n - 2) as the note count, but the block count is the polygon's actual side count, so building the answer literally puts you in an n-beat bar.",
+    bpm: 138,
+    challenges: {
+      A: {
+        prompt: "A hexagon has 6 sides. From one vertex it splits into (6 - 2) triangles. Build a drum beat using exactly 6 blocks that add up to that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4, blocksUsed: 6 }],
+        explanation: "6 - 2 = 4 triangles, which is exactly why a hexagon's angles sum to 4 × 180° = 720° — build it across exactly 6 blocks, one for each side.",
+      },
+      B: {
+        prompt: "A pentagon has 5 sides. From one vertex it splits into (5 - 2) triangles. Build a drum beat using exactly 5 blocks that add up to that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3, blocksUsed: 5 }],
+        explanation: "5 - 2 = 3 triangles, so a pentagon's angles sum to 3 × 180° = 540° — build it across exactly 5 blocks, one for each side.",
+      },
+      C: {
+        prompt: "An octagon has 8 sides. From one vertex it splits into (8 - 2) triangles. Build a drum beat using exactly 8 blocks that add up to that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6, blocksUsed: 8 }],
+        explanation: "8 - 2 = 6 triangles, so an octagon's angles sum to 6 × 180° = 1080° — build it across exactly 8 blocks, one for each side.",
+      },
+      D: {
+        prompt: "A quadrilateral has 4 sides. From one vertex it splits into (4 - 2) triangles. Build a drum beat using exactly 4 blocks that add up to that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 2, blocksUsed: 4 }],
+        explanation: "4 - 2 = 2 triangles, so a quadrilateral's angles sum to 2 × 180° = 360° — build it across exactly 4 blocks, one for each side.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l07-triangle-congruence-and-cpctc",
+    grade: 10,
+    lessonNumber: 7,
+    title: "Triangle Congruence and CPCTC",
+    mathSkill: "Use CPCTC to Find a Congruent Triangle's Perimeter (G-CO.B.7)",
+    teaches: "Every slot gives one triangle's three side lengths and says a second triangle is congruent to it — congruent triangles have equal corresponding parts (CPCTC), so the second triangle's perimeter matches the first's exactly. Build that many notes anywhere in the kit.",
+    bpm: 140,
+    challenges: {
+      A: {
+        prompt: "Triangle ABC has sides 6, 8, and 10. Triangle DEF is congruent to triangle ABC. What is the perimeter of triangle DEF? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "Congruent triangles have equal corresponding sides (CPCTC), so DEF's perimeter equals ABC's: 6 + 8 + 10 = 24.",
+      },
+      B: {
+        prompt: "Triangle ABC has sides 5, 12, and 13. Triangle DEF is congruent to triangle ABC. What is the perimeter of triangle DEF? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "5 + 12 + 13 = 30.",
+      },
+      C: {
+        prompt: "Triangle ABC has sides 7, 7, and 10. Triangle DEF is congruent to triangle ABC. What is the perimeter of triangle DEF? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "7 + 7 + 10 = 24.",
+      },
+      D: {
+        prompt: "Triangle ABC has sides 9, 12, and 15. Triangle DEF is congruent to triangle ABC. What is the perimeter of triangle DEF? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 36 }],
+        explanation: "9 + 12 + 15 = 36.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l08-similar-triangles-scale-factor",
+    grade: 10,
+    lessonNumber: 8,
+    title: "Similar Triangles — Scale Factor",
+    mathSkill: "Use a Scale Factor to Find a Similar Triangle's Side (G-SRT.A.2)",
+    teaches: "Every slot gives a scale factor between two similar triangles and one side of the smaller one — multiply by the scale factor to find the matching side on the larger one, then build that many notes anywhere in the kit.",
+    bpm: 140,
+    challenges: {
+      A: {
+        prompt: "Triangle ABC ~ triangle DEF with scale factor 3 (DEF is 3× ABC). If BC = 5, what is EF? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "EF = 3 × 5 = 15.",
+      },
+      B: {
+        prompt: "Triangle ABC ~ triangle DEF with scale factor 4 (DEF is 4× ABC). If BC = 6, what is EF? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "EF = 4 × 6 = 24.",
+      },
+      C: {
+        prompt: "Triangle ABC ~ triangle DEF with scale factor 2 (DEF is 2× ABC). If BC = 13, what is EF? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 26 }],
+        explanation: "EF = 2 × 13 = 26.",
+      },
+      D: {
+        prompt: "Triangle ABC ~ triangle DEF with scale factor 5 (DEF is 5× ABC). If BC = 7, what is EF? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35 }],
+        explanation: "EF = 5 × 7 = 35.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l09-similar-triangles-proportions",
+    grade: 10,
+    lessonNumber: 9,
+    title: "Similar Triangles — Solving a Proportion",
+    mathSkill: "Solve a Proportion to Find a Similar Triangle's Missing Side (G-SRT.B.5)",
+    teaches: "Every slot gives three of a similar-triangle proportion's four sides — cross-multiply and solve for the missing one, then build that many notes anywhere in the kit.",
+    bpm: 140,
+    challenges: {
+      A: {
+        prompt: "Triangle ABC ~ triangle DEF, so AB/DE = BC/EF. If AB = 6, DE = 18, and BC = 8, what is EF? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "6/18 = 8/EF → EF = 8 × 18 ÷ 6 = 24.",
+      },
+      B: {
+        prompt: "Triangle ABC ~ triangle DEF, so AB/DE = BC/EF. If AB = 5, DE = 15, and BC = 9, what is EF? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 27 }],
+        explanation: "5/15 = 9/EF → EF = 9 × 15 ÷ 5 = 27.",
+      },
+      C: {
+        prompt: "Triangle ABC ~ triangle DEF, so AB/DE = BC/EF. If AB = 4, DE = 20, and BC = 7, what is EF? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35 }],
+        explanation: "4/20 = 7/EF → EF = 7 × 20 ÷ 4 = 35.",
+      },
+      D: {
+        prompt: "Triangle ABC ~ triangle DEF, so AB/DE = BC/EF. If AB = 3, DE = 12, and BC = 5, what is EF? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
+        explanation: "3/12 = 5/EF → EF = 5 × 12 ÷ 3 = 20.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l10-pythagorean-theorem-hypotenuse",
+    grade: 10,
+    lessonNumber: 10,
+    title: "The Pythagorean Theorem — Finding the Hypotenuse",
+    mathSkill: "Apply the Pythagorean Theorem to Find a Hypotenuse (G-SRT.C.8)",
+    teaches: "Every slot gives a right triangle's two legs — use a² + b² = c² to find the hypotenuse, then build that many notes anywhere in the kit.",
+    bpm: 140,
+    challenges: {
+      A: {
+        prompt: "A right triangle has legs of 9 and 12. What is the hypotenuse? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "9² + 12² = 81 + 144 = 225 = 15², so the hypotenuse is 15.",
+      },
+      B: {
+        prompt: "A right triangle has legs of 8 and 15. What is the hypotenuse? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 17 }],
+        explanation: "8² + 15² = 64 + 225 = 289 = 17², so the hypotenuse is 17.",
+      },
+      C: {
+        prompt: "A right triangle has legs of 20 and 21. What is the hypotenuse? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 29 }],
+        explanation: "20² + 21² = 400 + 441 = 841 = 29², so the hypotenuse is 29.",
+      },
+      D: {
+        prompt: "A right triangle has legs of 7 and 24. What is the hypotenuse? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 25 }],
+        explanation: "7² + 24² = 49 + 576 = 625 = 25², so the hypotenuse is 25.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l11-pythagorean-theorem-a-leg",
+    grade: 10,
+    lessonNumber: 11,
+    title: "The Pythagorean Theorem — Finding a Leg",
+    mathSkill: "Apply the Pythagorean Theorem to Find a Leg (G-SRT.C.8)",
+    teaches: "Every slot gives a right triangle's hypotenuse and one leg — use a² + b² = c² to find the missing leg, then build that many notes anywhere in the kit.",
+    bpm: 140,
+    challenges: {
+      A: {
+        prompt: "A right triangle has a hypotenuse of 13 and one leg of 5. What is the other leg? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "13² - 5² = 169 - 25 = 144 = 12², so the other leg is 12.",
+      },
+      B: {
+        prompt: "A right triangle has a hypotenuse of 17 and one leg of 15. What is the other leg? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "17² - 15² = 289 - 225 = 64 = 8², so the other leg is 8.",
+      },
+      C: {
+        prompt: "A right triangle has a hypotenuse of 25 and one leg of 7. What is the other leg? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "25² - 7² = 625 - 49 = 576 = 24², so the other leg is 24.",
+      },
+      D: {
+        prompt: "A right triangle has a hypotenuse of 29 and one leg of 20. What is the other leg? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21 }],
+        explanation: "29² - 20² = 841 - 400 = 441 = 21², so the other leg is 21.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l12-45-45-90-triangles",
+    grade: 10,
+    lessonNumber: 12,
+    title: "45-45-90 Special Right Triangles",
+    mathSkill: "Use the 45-45-90 Triangle Relationship (G-SRT.C.8)",
+    teaches: "Every slot gives a 45-45-90 triangle's hypotenuse written as a√2 — in this triangle each leg equals a, the same number multiplying √2, so read it straight off. Build that many notes anywhere in the kit.",
+    bpm: 140,
+    challenges: {
+      A: {
+        prompt: "In a 45-45-90 triangle, the hypotenuse is 9√2. What is the length of each leg? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "A 45-45-90 triangle's hypotenuse is always (leg) × √2, so a leg of 9 gives a hypotenuse of 9√2 — and reading it backward, each leg here is 9.",
+      },
+      B: {
+        prompt: "In a 45-45-90 triangle, the hypotenuse is 7√2. What is the length of each leg? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "Each leg is 7.",
+      },
+      C: {
+        prompt: "In a 45-45-90 triangle, the hypotenuse is 11√2. What is the length of each leg? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 11 }],
+        explanation: "Each leg is 11.",
+      },
+      D: {
+        prompt: "In a 45-45-90 triangle, the hypotenuse is 8√2. What is the length of each leg? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "Each leg is 8.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l13-trig-ratios-sine",
+    grade: 10,
+    lessonNumber: 13,
+    title: "Trig Ratios — Sine",
+    mathSkill: "Find sin(A) as a Reduced Fraction (G-SRT.C.6)",
+    teaches: "Every slot gives a right triangle's side opposite angle A and its hypotenuse — sin(A) = opposite ÷ hypotenuse, reduced to lowest terms. Build the numerator on the ride cymbal and the denominator on the crash cymbal.",
+    bpm: 142,
+    challenges: {
+      A: {
+        prompt: "In a right triangle, the side opposite angle A is 6 and the hypotenuse is 10. What is sin(A) as a fraction in lowest terms? Build a ride cymbal row with the numerator and a crash cymbal row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "ride", count: 3 },
+          { instrument: "crash", count: 5 },
+        ],
+        explanation: "sin(A) = 6/10 = 3/5.",
+      },
+      B: {
+        prompt: "In a right triangle, the side opposite angle A is 8 and the hypotenuse is 17. What is sin(A) as a fraction in lowest terms? Build a ride cymbal row with the numerator and a crash cymbal row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "ride", count: 8 },
+          { instrument: "crash", count: 17 },
+        ],
+        explanation: "sin(A) = 8/17 — already in lowest terms.",
+      },
+      C: {
+        prompt: "In a right triangle, the side opposite angle A is 9 and the hypotenuse is 15. What is sin(A) as a fraction in lowest terms? Build a ride cymbal row with the numerator and a crash cymbal row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "ride", count: 3 },
+          { instrument: "crash", count: 5 },
+        ],
+        explanation: "sin(A) = 9/15 = 3/5.",
+      },
+      D: {
+        prompt: "In a right triangle, the side opposite angle A is 5 and the hypotenuse is 13. What is sin(A) as a fraction in lowest terms? Build a ride cymbal row with the numerator and a crash cymbal row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "ride", count: 5 },
+          { instrument: "crash", count: 13 },
+        ],
+        explanation: "sin(A) = 5/13 — already in lowest terms.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l14-trig-ratios-cosine",
+    grade: 10,
+    lessonNumber: 14,
+    title: "Trig Ratios — Cosine",
+    mathSkill: "Find cos(A) as a Reduced Fraction (G-SRT.C.6)",
+    teaches: "Every slot gives a right triangle's side adjacent to angle A and its hypotenuse — cos(A) = adjacent ÷ hypotenuse, reduced to lowest terms. Build the numerator on the open hi-hat and the denominator on the rimshot.",
+    bpm: 142,
+    challenges: {
+      A: {
+        prompt: "In a right triangle, the side adjacent to angle A is 8 and the hypotenuse is 10. What is cos(A) as a fraction in lowest terms? Build an open hi-hat row with the numerator and a rimshot row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "hihatOpen", count: 4 },
+          { instrument: "rimshot", count: 5 },
+        ],
+        explanation: "cos(A) = 8/10 = 4/5.",
+      },
+      B: {
+        prompt: "In a right triangle, the side adjacent to angle A is 15 and the hypotenuse is 17. What is cos(A) as a fraction in lowest terms? Build an open hi-hat row with the numerator and a rimshot row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "hihatOpen", count: 15 },
+          { instrument: "rimshot", count: 17 },
+        ],
+        explanation: "cos(A) = 15/17 — already in lowest terms.",
+      },
+      C: {
+        prompt: "In a right triangle, the side adjacent to angle A is 12 and the hypotenuse is 15. What is cos(A) as a fraction in lowest terms? Build an open hi-hat row with the numerator and a rimshot row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "hihatOpen", count: 4 },
+          { instrument: "rimshot", count: 5 },
+        ],
+        explanation: "cos(A) = 12/15 = 4/5.",
+      },
+      D: {
+        prompt: "In a right triangle, the side adjacent to angle A is 12 and the hypotenuse is 13. What is cos(A) as a fraction in lowest terms? Build an open hi-hat row with the numerator and a rimshot row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "hihatOpen", count: 12 },
+          { instrument: "rimshot", count: 13 },
+        ],
+        explanation: "cos(A) = 12/13 — already in lowest terms.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l15-trig-ratios-tangent",
+    grade: 10,
+    lessonNumber: 15,
+    title: "Trig Ratios — Tangent",
+    mathSkill: "Find tan(A) as a Reduced Fraction (G-SRT.C.6)",
+    teaches: "Every slot gives a right triangle's side opposite and adjacent to angle A — tan(A) = opposite ÷ adjacent, reduced to lowest terms. Build the numerator on the low tom and the denominator on the mid tom.",
+    bpm: 142,
+    challenges: {
+      A: {
+        prompt: "In a right triangle, the side opposite angle A is 6 and the side adjacent to angle A is 8. What is tan(A) as a fraction in lowest terms? Build a low tom row with the numerator and a mid tom row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "lowTom", count: 3 },
+          { instrument: "midTom", count: 4 },
+        ],
+        explanation: "tan(A) = 6/8 = 3/4.",
+      },
+      B: {
+        prompt: "In a right triangle, the side opposite angle A is 8 and the side adjacent to angle A is 15. What is tan(A) as a fraction in lowest terms? Build a low tom row with the numerator and a mid tom row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "lowTom", count: 8 },
+          { instrument: "midTom", count: 15 },
+        ],
+        explanation: "tan(A) = 8/15 — already in lowest terms.",
+      },
+      C: {
+        prompt: "In a right triangle, the side opposite angle A is 9 and the side adjacent to angle A is 12. What is tan(A) as a fraction in lowest terms? Build a low tom row with the numerator and a mid tom row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "lowTom", count: 3 },
+          { instrument: "midTom", count: 4 },
+        ],
+        explanation: "tan(A) = 9/12 = 3/4.",
+      },
+      D: {
+        prompt: "In a right triangle, the side opposite angle A is 5 and the side adjacent to angle A is 12. What is tan(A) as a fraction in lowest terms? Build a low tom row with the numerator and a mid tom row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "lowTom", count: 5 },
+          { instrument: "midTom", count: 12 },
+        ],
+        explanation: "tan(A) = 5/12 — already in lowest terms.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l16-arc-length",
+    grade: 10,
+    lessonNumber: 16,
+    title: "Arc Length",
+    mathSkill: "Find an Arc's Length from Its Central Angle (G-C.B.5)",
+    teaches: "Every slot gives a circle's full circumference and an arc's central angle — the arc is that same fraction of the whole circumference. Build that many notes anywhere in the kit.",
+    bpm: 142,
+    challenges: {
+      A: {
+        prompt: "A circle has a circumference of 72. What is the length of an arc with a central angle of 90°? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 18 }],
+        explanation: "90° is 90/360 = 1/4 of the circle. 72 × 1/4 = 18.",
+      },
+      B: {
+        prompt: "A circle has a circumference of 90. What is the length of an arc with a central angle of 120°? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "120° is 120/360 = 1/3 of the circle. 90 × 1/3 = 30.",
+      },
+      C: {
+        prompt: "A circle has a circumference of 64. What is the length of an arc with a central angle of 180°? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "180° is half the circle. 64 × 1/2 = 32.",
+      },
+      D: {
+        prompt: "A circle has a circumference of 96. What is the length of an arc with a central angle of 270°? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 72 }],
+        explanation: "270° is 270/360 = 3/4 of the circle. 96 × 3/4 = 72.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l17-area-of-a-sector",
+    grade: 10,
+    lessonNumber: 17,
+    title: "Area of a Sector",
+    mathSkill: "Find a Sector's Area from Its Central Angle (G-C.B.5)",
+    teaches: "Every slot gives a circle's full area and a sector's central angle — the sector is that same fraction of the whole area. Build that many notes anywhere in the kit.",
+    bpm: 142,
+    challenges: {
+      A: {
+        prompt: "A circle has an area of 144. What is the area of a sector with a central angle of 90°? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 36 }],
+        explanation: "90° is 1/4 of the circle. 144 × 1/4 = 36.",
+      },
+      B: {
+        prompt: "A circle has an area of 180. What is the area of a sector with a central angle of 120°? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 60 }],
+        explanation: "120° is 1/3 of the circle. 180 × 1/3 = 60.",
+      },
+      C: {
+        prompt: "A circle has an area of 96. What is the area of a sector with a central angle of 180°? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 48 }],
+        explanation: "180° is half the circle. 96 × 1/2 = 48.",
+      },
+      D: {
+        prompt: "A circle has an area of 210. What is the area of a sector with a central angle of 60°? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35 }],
+        explanation: "60° is 60/360 = 1/6 of the circle. 210 × 1/6 = 35.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l18-equation-of-a-circle",
+    grade: 10,
+    lessonNumber: 18,
+    title: "Equation of a Circle",
+    mathSkill: "Find a Circle's Radius from Its Center-Radius Equation (G-GPE.A.1)",
+    teaches: "Every slot gives a circle's equation in the form (x - h)² + (y - k)² = r² — the number on the right is r², so take its square root to find the radius. Build that many notes anywhere in the kit.",
+    bpm: 142,
+    challenges: {
+      A: {
+        prompt: "A circle's equation is (x - 3)² + (y - 5)² = 49. What is its radius? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "r² = 49, so r = 7.",
+      },
+      B: {
+        prompt: "A circle's equation is (x - 2)² + (y + 1)² = 64. What is its radius? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "r² = 64, so r = 8.",
+      },
+      C: {
+        prompt: "A circle's equation is (x + 4)² + (y - 6)² = 81. What is its radius? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "r² = 81, so r = 9.",
+      },
+      D: {
+        prompt: "A circle's equation is (x - 1)² + (y - 1)² = 100. What is its radius? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "r² = 100, so r = 10.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l19-distance-formula",
+    grade: 10,
+    lessonNumber: 19,
+    title: "The Distance Formula",
+    mathSkill: "Find the Distance Between Two Points (G-GPE.B.7)",
+    teaches: "Every slot gives two coordinate points whose horizontal and vertical gaps form a Pythagorean triple — use the distance formula (really just the Pythagorean theorem on a coordinate grid) to find the distance, then build that many notes anywhere in the kit.",
+    bpm: 144,
+    challenges: {
+      A: {
+        prompt: "What is the distance between (1, 2) and (4, 6)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "The gaps are 3 across and 4 up — a 3-4-5 triangle, so the distance is 5.",
+      },
+      B: {
+        prompt: "What is the distance between (0, 0) and (6, 8)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "The gaps are 6 across and 8 up — a 6-8-10 triangle, so the distance is 10.",
+      },
+      C: {
+        prompt: "What is the distance between (2, 3) and (14, 8)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "The gaps are 12 across and 5 up — a 5-12-13 triangle, so the distance is 13.",
+      },
+      D: {
+        prompt: "What is the distance between (2, 2) and (11, 14)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "The gaps are 9 across and 12 up — a 9-12-15 triangle, so the distance is 15.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l20-midpoint-formula",
+    grade: 10,
+    lessonNumber: 20,
+    title: "The Midpoint Formula",
+    mathSkill: "Find the Midpoint of a Segment (G-GPE.B.6)",
+    teaches: "Every slot gives two coordinate points — average the x's and average the y's to find the midpoint. Build the midpoint's x-coordinate on the bass drum and its y-coordinate on the snare.",
+    bpm: 144,
+    challenges: {
+      A: {
+        prompt: "What is the midpoint of the segment from (2, 4) to (8, 10)? Build a bass drum row with the midpoint's x-coordinate and a snare row with its y-coordinate, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 7 },
+        ],
+        explanation: "Midpoint = ((2+8)/2, (4+10)/2) = (5, 7).",
+      },
+      B: {
+        prompt: "What is the midpoint of the segment from (0, 2) to (6, 10)? Build a bass drum row with the midpoint's x-coordinate and a snare row with its y-coordinate, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 3 },
+          { instrument: "snare", count: 6 },
+        ],
+        explanation: "Midpoint = ((0+6)/2, (2+10)/2) = (3, 6).",
+      },
+      C: {
+        prompt: "What is the midpoint of the segment from (4, 5) to (12, 13)? Build a bass drum row with the midpoint's x-coordinate and a snare row with its y-coordinate, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 8 },
+          { instrument: "snare", count: 9 },
+        ],
+        explanation: "Midpoint = ((4+12)/2, (5+13)/2) = (8, 9).",
+      },
+      D: {
+        prompt: "What is the midpoint of the segment from (2, 6) to (10, 2)? Build a bass drum row with the midpoint's x-coordinate and a snare row with its y-coordinate, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "snare", count: 4 },
+        ],
+        explanation: "Midpoint = ((2+10)/2, (6+2)/2) = (6, 4).",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l21-perpendicular-slopes",
+    grade: 10,
+    lessonNumber: 21,
+    title: "Slopes of Perpendicular Lines",
+    mathSkill: "Find the Slope of a Perpendicular Line (G-GPE.B.5)",
+    teaches: "Every slot gives a line's slope as a fraction — a perpendicular line's slope is the negative reciprocal (flip it and switch the sign). Build the new slope's numerator on the high tom and its denominator on the rimshot.",
+    bpm: 144,
+    challenges: {
+      A: {
+        prompt: "Line p has slope 3/4. A line perpendicular to p has slope -4/3 (flip and negate). Build a high tom row with the numerator and a rimshot row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "highTom", count: 4 },
+          { instrument: "rimshot", count: 3 },
+        ],
+        explanation: "Flip 3/4 to 4/3 and negate: the perpendicular slope is -4/3.",
+      },
+      B: {
+        prompt: "Line p has slope 2/5. A line perpendicular to p has slope -5/2 (flip and negate). Build a high tom row with the numerator and a rimshot row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "highTom", count: 5 },
+          { instrument: "rimshot", count: 2 },
+        ],
+        explanation: "Flip 2/5 to 5/2 and negate: the perpendicular slope is -5/2.",
+      },
+      C: {
+        prompt: "Line p has slope 5/6. A line perpendicular to p has slope -6/5 (flip and negate). Build a high tom row with the numerator and a rimshot row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "highTom", count: 6 },
+          { instrument: "rimshot", count: 5 },
+        ],
+        explanation: "Flip 5/6 to 6/5 and negate: the perpendicular slope is -6/5.",
+      },
+      D: {
+        prompt: "Line p has slope 7/3. A line perpendicular to p has slope -3/7 (flip and negate). Build a high tom row with the numerator and a rimshot row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "highTom", count: 3 },
+          { instrument: "rimshot", count: 7 },
+        ],
+        explanation: "Flip 7/3 to 3/7 and negate: the perpendicular slope is -3/7.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l22-volume-of-prisms-and-pyramids",
+    grade: 10,
+    lessonNumber: 22,
+    title: "Volume of Prisms and Pyramids",
+    mathSkill: "Find the Volume of a Prism or Pyramid (G-GMD.A.3)",
+    teaches: "Every slot is either a rectangular prism (volume = length × width × height) or a pyramid (volume = 1/3 × base area × height) — work it out, then build that many notes anywhere in the kit.",
+    bpm: 144,
+    challenges: {
+      A: {
+        prompt: "A rectangular prism has length 5, width 4, and height 6. What is its volume? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 120 }],
+        explanation: "5 × 4 × 6 = 120.",
+      },
+      B: {
+        prompt: "A square pyramid has a base area of 36 and a height of 9. What is its volume? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 108 }],
+        explanation: "1/3 × 36 × 9 = 108.",
+      },
+      C: {
+        prompt: "A rectangular prism has length 8, width 3, and height 5. What is its volume? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 120 }],
+        explanation: "8 × 3 × 5 = 120.",
+      },
+      D: {
+        prompt: "A square pyramid has a base area of 48 and a height of 6. What is its volume? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 96 }],
+        explanation: "1/3 × 48 × 6 = 96.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l23-surface-area-of-prisms",
+    grade: 10,
+    lessonNumber: 23,
+    title: "Surface Area of Rectangular Prisms",
+    mathSkill: "Find a Rectangular Prism's Surface Area (G-MG.A.1)",
+    teaches: "Every slot gives a rectangular prism's length, width, and height — use SA = 2(lw + lh + wh) to find the total surface area, then build that many notes anywhere in the kit.",
+    bpm: 144,
+    challenges: {
+      A: {
+        prompt: "A rectangular prism has length 5, width 4, and height 3. What is its surface area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 94 }],
+        explanation: "2(5×4 + 5×3 + 4×3) = 2(20 + 15 + 12) = 2(47) = 94.",
+      },
+      B: {
+        prompt: "A rectangular prism has length 6, width 2, and height 5. What is its surface area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 104 }],
+        explanation: "2(6×2 + 6×5 + 2×5) = 2(12 + 30 + 10) = 2(52) = 104.",
+      },
+      C: {
+        prompt: "A rectangular prism has length 4, width 4, and height 6. What is its surface area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 128 }],
+        explanation: "2(4×4 + 4×6 + 4×6) = 2(16 + 24 + 24) = 2(64) = 128.",
+      },
+      D: {
+        prompt: "A rectangular prism has length 3, width 3, and height 8. What is its surface area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 114 }],
+        explanation: "2(3×3 + 3×8 + 3×8) = 2(9 + 24 + 24) = 2(57) = 114.",
+      },
+    },
+  },
+  {
+    slug: "math-g10-l24-composite-figures",
+    grade: 10,
+    lessonNumber: 24,
+    title: "Composite Figures — Real-World Geometry",
+    mathSkill: "Find the Area of a Composite Figure (G-MG.A.1)",
+    teaches: "Sophomore year's last lesson: every slot is a house-shaped figure — a rectangle with a triangle roof — find each piece's area and add them. Build that many notes anywhere in the kit, and consider dropping this one in a Stack next to some of this year's other beats: two different lessons' answers, two different meters, one song.",
+    bpm: 146,
+    challenges: {
+      A: {
+        prompt: "A house-shaped figure has a 10-by-6 rectangle base and a triangle roof with base 10 and height 4. What is the total area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 80 }],
+        explanation: "Rectangle: 10 × 6 = 60. Triangle: 1/2 × 10 × 4 = 20. Total: 60 + 20 = 80.",
+      },
+      B: {
+        prompt: "A house-shaped figure has an 8-by-5 rectangle base and a triangle roof with base 8 and height 3. What is the total area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 52 }],
+        explanation: "Rectangle: 8 × 5 = 40. Triangle: 1/2 × 8 × 3 = 12. Total: 40 + 12 = 52.",
+      },
+      C: {
+        prompt: "A house-shaped figure has a 12-by-7 rectangle base and a triangle roof with base 12 and height 5. What is the total area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 114 }],
+        explanation: "Rectangle: 12 × 7 = 84. Triangle: 1/2 × 12 × 5 = 30. Total: 84 + 30 = 114.",
+      },
+      D: {
+        prompt: "A house-shaped figure has a 9-by-6 rectangle base and a triangle roof with base 9 and height 4. What is the total area? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 72 }],
+        explanation: "Rectangle: 9 × 6 = 54. Triangle: 1/2 × 9 × 4 = 18. Total: 54 + 18 = 72.",
+      },
+    },
+  },
+
+  // ============================================================
+  // Grade 11 = Algebra II, the third course in the sequence. Same
+  // 24-lesson shape, now reaching into complex numbers, exponentials/logs,
+  // rational expressions, and series — real (a+bi) and imaginary parts get
+  // their own two-instrument pairing (kick/snare again, this time standing
+  // in for a complex number's two components instead of a coordinate's),
+  // and blocksUsed keeps tying a sequence/series' term count to its own
+  // bar length, same as it did in Grade 9.
+  // ============================================================
+  {
+    slug: "math-g11-l01-function-notation",
+    grade: 11,
+    lessonNumber: 1,
+    title: "Function Notation — Evaluating f(x)",
+    mathSkill: "Evaluate a Quadratic Function at a Given x (F-IF.A.2)",
+    teaches: "Every slot gives a function f(x) and a value to substitute — plug it in and work it out, then build that many notes anywhere in the kit.",
+    bpm: 148,
+    challenges: {
+      A: {
+        prompt: "f(x) = 3x² - 2x + 1. What is f(4)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 41 }],
+        explanation: "3(4)² - 2(4) + 1 = 48 - 8 + 1 = 41.",
+      },
+      B: {
+        prompt: "f(x) = 2x² + 5x - 3. What is f(3)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "2(3)² + 5(3) - 3 = 18 + 15 - 3 = 30.",
+      },
+      C: {
+        prompt: "f(x) = x² - 4x + 7. What is f(5)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "(5)² - 4(5) + 7 = 25 - 20 + 7 = 12.",
+      },
+      D: {
+        prompt: "f(x) = 4x² - 3x + 2. What is f(2)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "4(2)² - 3(2) + 2 = 16 - 6 + 2 = 12.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l02-function-composition",
+    grade: 11,
+    lessonNumber: 2,
+    title: "Function Composition",
+    mathSkill: "Evaluate f(g(x)) (F-BF.A.1.c)",
+    teaches: "Every slot gives two functions f and g and a starting value — evaluate g first, then feed that result into f. Build that many notes anywhere in the kit.",
+    bpm: 148,
+    challenges: {
+      A: {
+        prompt: "f(x) = 2x + 3 and g(x) = x². What is f(g(2))? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 11 }],
+        explanation: "g(2) = 4. f(4) = 2(4) + 3 = 11.",
+      },
+      B: {
+        prompt: "f(x) = x + 5 and g(x) = 3x. What is f(g(4))? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 17 }],
+        explanation: "g(4) = 12. f(12) = 12 + 5 = 17.",
+      },
+      C: {
+        prompt: "f(x) = x² and g(x) = x + 1. What is f(g(3))? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 16 }],
+        explanation: "g(3) = 4. f(4) = 4² = 16.",
+      },
+      D: {
+        prompt: "f(x) = 2x - 1 and g(x) = x + 4. What is f(g(3))? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "g(3) = 7. f(7) = 2(7) - 1 = 13.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l03-inverse-functions",
+    grade: 11,
+    lessonNumber: 3,
+    title: "Inverse Functions",
+    mathSkill: "Evaluate an Inverse Function (F-BF.B.4a)",
+    teaches: "Every slot gives a linear function f and asks for f⁻¹ at a value — undo f's operations in reverse order to find the inverse's output, then build that many notes anywhere in the kit.",
+    bpm: 148,
+    challenges: {
+      A: {
+        prompt: "f(x) = 2x + 6. What is f⁻¹(16)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "f⁻¹(x) = (x - 6) ÷ 2. f⁻¹(16) = (16 - 6) ÷ 2 = 5.",
+      },
+      B: {
+        prompt: "f(x) = 3x - 9. What is f⁻¹(15)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "f⁻¹(x) = (x + 9) ÷ 3. f⁻¹(15) = (15 + 9) ÷ 3 = 8.",
+      },
+      C: {
+        prompt: "f(x) = 4x + 8. What is f⁻¹(28)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "f⁻¹(x) = (x - 8) ÷ 4. f⁻¹(28) = (28 - 8) ÷ 4 = 5.",
+      },
+      D: {
+        prompt: "f(x) = 5x - 10. What is f⁻¹(30)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "f⁻¹(x) = (x + 10) ÷ 5. f⁻¹(30) = (30 + 10) ÷ 5 = 8.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l04-polynomial-long-division",
+    grade: 11,
+    lessonNumber: 4,
+    title: "Polynomial Long Division",
+    mathSkill: "Divide a Polynomial and Evaluate the Quotient (A-APR.D.6)",
+    teaches: "Every slot divides one polynomial by a binomial with no remainder — find the quotient, then evaluate it at a given x. Build that many notes anywhere in the kit.",
+    bpm: 148,
+    challenges: {
+      A: {
+        prompt: "Divide (x² + 5x + 6) ÷ (x + 2). The quotient is x + 3. What is the quotient's value when x = 4? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "(x²+5x+6) ÷ (x+2) = x+3 exactly. At x = 4: 4 + 3 = 7.",
+      },
+      B: {
+        prompt: "Divide (x² + 7x + 10) ÷ (x + 2). The quotient is x + 5. What is the quotient's value when x = 3? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "At x = 3: 3 + 5 = 8.",
+      },
+      C: {
+        prompt: "Divide (x² + 9x + 20) ÷ (x + 4). The quotient is x + 5. What is the quotient's value when x = 5? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "At x = 5: 5 + 5 = 10.",
+      },
+      D: {
+        prompt: "Divide (x² + 6x + 8) ÷ (x + 2). The quotient is x + 4. What is the quotient's value when x = 6? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "At x = 6: 6 + 4 = 10.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l05-synthetic-division",
+    grade: 11,
+    lessonNumber: 5,
+    title: "Synthetic Division",
+    mathSkill: "Divide a Polynomial Using Synthetic Division (A-APR.D.6)",
+    teaches: "Every slot divides a polynomial by (x - a) using synthetic division, landing on a remainder of 0 — find the quotient, then evaluate it at a given x. Build that many notes anywhere in the kit.",
+    bpm: 148,
+    challenges: {
+      A: {
+        prompt: "Use synthetic division to divide (x² - x - 6) by (x - 3). The quotient is x + 2. What is the quotient's value when x = 5? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "(x²-x-6) ÷ (x-3) = x+2 exactly. At x = 5: 5 + 2 = 7.",
+      },
+      B: {
+        prompt: "Use synthetic division to divide (x² - 2x - 8) by (x - 4). The quotient is x + 2. What is the quotient's value when x = 6? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "At x = 6: 6 + 2 = 8.",
+      },
+      C: {
+        prompt: "Use synthetic division to divide (x² + x - 12) by (x - 3). The quotient is x + 4. What is the quotient's value when x = 2? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "At x = 2: 2 + 4 = 6.",
+      },
+      D: {
+        prompt: "Use synthetic division to divide (x² - 5x - 14) by (x - 7). The quotient is x + 2. What is the quotient's value when x = 6? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "At x = 6: 6 + 2 = 8.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l06-remainder-theorem",
+    grade: 11,
+    lessonNumber: 6,
+    title: "The Remainder Theorem",
+    mathSkill: "Apply the Remainder Theorem (A-APR.B.2)",
+    teaches: "The Remainder Theorem says dividing p(x) by (x - a) leaves a remainder of p(a) — so every slot just asks you to evaluate p(a) directly. Build that many notes anywhere in the kit.",
+    bpm: 148,
+    challenges: {
+      A: {
+        prompt: "p(x) = x³ - 2x² + 3x - 4. What is the remainder when p(x) is divided by (x - 3)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 14 }],
+        explanation: "By the Remainder Theorem, the remainder is p(3) = 27 - 18 + 9 - 4 = 14.",
+      },
+      B: {
+        prompt: "p(x) = x³ + 2x² - x + 5. What is the remainder when p(x) is divided by (x - 2)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 19 }],
+        explanation: "p(2) = 8 + 8 - 2 + 5 = 19.",
+      },
+      C: {
+        prompt: "p(x) = x³ - 3x² + 4x - 2. What is the remainder when p(x) is divided by (x - 4)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "p(4) = 64 - 48 + 16 - 2 = 30.",
+      },
+      D: {
+        prompt: "p(x) = x³ + x² - 5x + 6. What is the remainder when p(x) is divided by (x - 3)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 27 }],
+        explanation: "p(3) = 27 + 9 - 15 + 6 = 27.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l07-simplifying-radicals",
+    grade: 11,
+    lessonNumber: 7,
+    title: "Simplifying Radicals",
+    mathSkill: "Simplify a Square Root (N-RN.A.2)",
+    teaches: "Every slot gives a square root to simplify into a√b form — pull out the largest perfect-square factor. Build the coefficient a anywhere in the kit.",
+    bpm: 150,
+    challenges: {
+      A: {
+        prompt: "Simplify √72 into a√b form. What is a? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "72 = 36 × 2, and √36 = 6, so √72 = 6√2.",
+      },
+      B: {
+        prompt: "Simplify √50 into a√b form. What is a? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "50 = 25 × 2, and √25 = 5, so √50 = 5√2.",
+      },
+      C: {
+        prompt: "Simplify √98 into a√b form. What is a? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "98 = 49 × 2, and √49 = 7, so √98 = 7√2.",
+      },
+      D: {
+        prompt: "Simplify √200 into a√b form. What is a? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "200 = 100 × 2, and √100 = 10, so √200 = 10√2.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l08-powers-of-i",
+    grade: 11,
+    lessonNumber: 8,
+    title: "Imaginary Numbers — Powers of i",
+    mathSkill: "Find Where a Power of i Lands in Its 4-Term Cycle (N-CN.A.1)",
+    teaches: "Powers of i repeat in a cycle of 4: i, -1, -i, 1, then back to i again — every slot gives a power, and you find which of those 4 positions it lands on. Build that position number (1, 2, 3, or 4) anywhere in the kit.",
+    bpm: 150,
+    challenges: {
+      A: {
+        prompt: "i²³ lands on which position (1st = i, 2nd = -1, 3rd = -i, 4th = 1) in the repeating cycle? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "23 ÷ 4 leaves a remainder of 3, so i²³ lands on the 3rd position: -i.",
+      },
+      B: {
+        prompt: "i³⁸ lands on which position (1st = i, 2nd = -1, 3rd = -i, 4th = 1) in the repeating cycle? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 2 }],
+        explanation: "38 ÷ 4 leaves a remainder of 2, so i³⁸ lands on the 2nd position: -1.",
+      },
+      C: {
+        prompt: "i⁴⁵ lands on which position (1st = i, 2nd = -1, 3rd = -i, 4th = 1) in the repeating cycle? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 1 }],
+        explanation: "45 ÷ 4 leaves a remainder of 1, so i⁴⁵ lands on the 1st position: i.",
+      },
+      D: {
+        prompt: "i¹⁰⁰ lands on which position (1st = i, 2nd = -1, 3rd = -i, 4th = 1) in the repeating cycle? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "100 ÷ 4 divides evenly (a full cycle), which lands on the 4th position: 1.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l09-adding-subtracting-complex-numbers",
+    grade: 11,
+    lessonNumber: 9,
+    title: "Adding and Subtracting Complex Numbers",
+    mathSkill: "Add or Subtract Complex Numbers (N-CN.A.1)",
+    teaches: "Every slot adds or subtracts two complex numbers — combine the real parts, then combine the imaginary parts. Build the real part on the bass drum and the imaginary part's coefficient on the snare.",
+    bpm: 150,
+    challenges: {
+      A: {
+        prompt: "(5 + 3i) + (2 + 4i) = ? Build a bass drum row with the real part and a snare row with the imaginary part's coefficient, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 7 },
+          { instrument: "snare", count: 7 },
+        ],
+        explanation: "(5+2) + (3+4)i = 7 + 7i.",
+      },
+      B: {
+        prompt: "(9 + 7i) - (3 + 2i) = ? Build a bass drum row with the real part and a snare row with the imaginary part's coefficient, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "snare", count: 5 },
+        ],
+        explanation: "(9-3) + (7-2)i = 6 + 5i.",
+      },
+      C: {
+        prompt: "(4 + 6i) + (5 + 1i) = ? Build a bass drum row with the real part and a snare row with the imaginary part's coefficient, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 9 },
+          { instrument: "snare", count: 7 },
+        ],
+        explanation: "(4+5) + (6+1)i = 9 + 7i.",
+      },
+      D: {
+        prompt: "(10 + 2i) - (4 + 1i) = ? Build a bass drum row with the real part and a snare row with the imaginary part's coefficient, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 6 },
+          { instrument: "snare", count: 1 },
+        ],
+        explanation: "(10-4) + (2-1)i = 6 + 1i.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l10-multiplying-complex-numbers",
+    grade: 11,
+    lessonNumber: 10,
+    title: "Multiplying Complex Numbers",
+    mathSkill: "Multiply Two Complex Numbers (N-CN.A.2)",
+    teaches: "Every slot multiplies two complex numbers using FOIL, remembering i² = -1 — combine the real parts and the imaginary parts. Build the real part on the bass drum and the imaginary part's coefficient on the snare.",
+    bpm: 150,
+    challenges: {
+      A: {
+        prompt: "(2 + 3i)(4 + 1i) = ? Build a bass drum row with the real part and a snare row with the imaginary part's coefficient, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 14 },
+        ],
+        explanation: "(2×4 - 3×1) + (2×1 + 3×4)i = (8-3) + (2+12)i = 5 + 14i.",
+      },
+      B: {
+        prompt: "(5 + 2i)(3 + 1i) = ? Build a bass drum row with the real part and a snare row with the imaginary part's coefficient, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 13 },
+          { instrument: "snare", count: 11 },
+        ],
+        explanation: "(5×3 - 2×1) + (5×1 + 2×3)i = (15-2) + (5+6)i = 13 + 11i.",
+      },
+      C: {
+        prompt: "(4 + 3i)(2 + 1i) = ? Build a bass drum row with the real part and a snare row with the imaginary part's coefficient, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 5 },
+          { instrument: "snare", count: 10 },
+        ],
+        explanation: "(4×2 - 3×1) + (4×1 + 3×2)i = (8-3) + (4+6)i = 5 + 10i.",
+      },
+      D: {
+        prompt: "(6 + 1i)(2 + 3i) = ? Build a bass drum row with the real part and a snare row with the imaginary part's coefficient, in quarter notes.",
+        targets: [
+          { instrument: "kick", count: 9 },
+          { instrument: "snare", count: 20 },
+        ],
+        explanation: "(6×2 - 1×3) + (6×3 + 1×2)i = (12-3) + (18+2)i = 9 + 20i.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l11-quadratics-with-complex-roots",
+    grade: 11,
+    lessonNumber: 11,
+    title: "Quadratics with Complex Roots",
+    mathSkill: "Solve a Quadratic with Complex Roots (N-CN.C.7)",
+    teaches: "Every slot is a quadratic whose discriminant is negative — use the quadratic formula anyway, writing the negative square root as an imaginary number. Build the roots' real part on the high tom and the imaginary coefficient on the rimshot.",
+    bpm: 150,
+    challenges: {
+      A: {
+        prompt: "Solve x² - 4x + 13 = 0. The roots are a ± bi. Build a high tom row with a and a rimshot row with b, in quarter notes.",
+        targets: [
+          { instrument: "highTom", count: 2 },
+          { instrument: "rimshot", count: 3 },
+        ],
+        explanation: "Discriminant = 16 - 52 = -36. √-36 = 6i. Roots = (4 ± 6i) ÷ 2 = 2 ± 3i.",
+      },
+      B: {
+        prompt: "Solve x² - 6x + 25 = 0. The roots are a ± bi. Build a high tom row with a and a rimshot row with b, in quarter notes.",
+        targets: [
+          { instrument: "highTom", count: 3 },
+          { instrument: "rimshot", count: 4 },
+        ],
+        explanation: "Discriminant = 36 - 100 = -64. √-64 = 8i. Roots = (6 ± 8i) ÷ 2 = 3 ± 4i.",
+      },
+      C: {
+        prompt: "Solve x² - 2x + 5 = 0. The roots are a ± bi. Build a high tom row with a and a rimshot row with b, in quarter notes.",
+        targets: [
+          { instrument: "highTom", count: 1 },
+          { instrument: "rimshot", count: 2 },
+        ],
+        explanation: "Discriminant = 4 - 20 = -16. √-16 = 4i. Roots = (2 ± 4i) ÷ 2 = 1 ± 2i.",
+      },
+      D: {
+        prompt: "Solve x² - 8x + 41 = 0. The roots are a ± bi. Build a high tom row with a and a rimshot row with b, in quarter notes.",
+        targets: [
+          { instrument: "highTom", count: 4 },
+          { instrument: "rimshot", count: 5 },
+        ],
+        explanation: "Discriminant = 64 - 164 = -100. √-100 = 10i. Roots = (8 ± 10i) ÷ 2 = 4 ± 5i.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l12-completing-the-square",
+    grade: 11,
+    lessonNumber: 12,
+    title: "Completing the Square",
+    mathSkill: "Find the Number That Completes the Square (A-REI.B.4a)",
+    teaches: "Every slot gives x² + bx — to complete the square, add (b ÷ 2)². Build that many notes anywhere in the kit.",
+    bpm: 150,
+    challenges: {
+      A: {
+        prompt: "What number completes the square for x² + 10x? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 25 }],
+        explanation: "(10 ÷ 2)² = 5² = 25.",
+      },
+      B: {
+        prompt: "What number completes the square for x² + 14x? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 49 }],
+        explanation: "(14 ÷ 2)² = 7² = 49.",
+      },
+      C: {
+        prompt: "What number completes the square for x² + 6x? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "(6 ÷ 2)² = 3² = 9.",
+      },
+      D: {
+        prompt: "What number completes the square for x² + 18x? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 81 }],
+        explanation: "(18 ÷ 2)² = 9² = 81.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l13-exponential-growth-and-decay",
+    grade: 11,
+    lessonNumber: 13,
+    title: "Exponential Growth and Decay",
+    mathSkill: "Model Exponential Growth or Decay (F-LE.A.1)",
+    teaches: "Every slot gives a starting amount and a percent change per year — apply the growth or decay factor for each year, then build the resulting amount anywhere in the kit.",
+    bpm: 152,
+    challenges: {
+      A: {
+        prompt: "$200 grows 50% per year for 2 years. What is the final amount? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 450 }],
+        explanation: "200 × 1.5² = 200 × 2.25 = 450.",
+      },
+      B: {
+        prompt: "$100 doubles every year for 3 years. What is the final amount? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 800 }],
+        explanation: "100 × 2³ = 800.",
+      },
+      C: {
+        prompt: "$800 decays by half every year for 2 years. What is the final amount? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 200 }],
+        explanation: "800 × 0.5² = 200.",
+      },
+      D: {
+        prompt: "$50 triples every year for 2 years. What is the final amount? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 450 }],
+        explanation: "50 × 3² = 450.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l14-evaluating-logarithms",
+    grade: 11,
+    lessonNumber: 14,
+    title: "Evaluating Logarithms",
+    mathSkill: "Evaluate a Logarithm Using the Inverse Relationship with Exponents (F-BF.B.5)",
+    teaches: "Every slot gives log_b(x) — since a logarithm is just asking \"b to what power gives x,\" find that power. Build that many notes anywhere in the kit.",
+    bpm: 152,
+    challenges: {
+      A: {
+        prompt: "What is log₂(32)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "2⁵ = 32, so log₂(32) = 5.",
+      },
+      B: {
+        prompt: "What is log₃(81)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "3⁴ = 81, so log₃(81) = 4.",
+      },
+      C: {
+        prompt: "What is log₅(125)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "5³ = 125, so log₅(125) = 3.",
+      },
+      D: {
+        prompt: "What is log₄(256)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "4⁴ = 256, so log₄(256) = 4.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l15-properties-of-logarithms",
+    grade: 11,
+    lessonNumber: 15,
+    title: "Properties of Logarithms — the Product Rule",
+    mathSkill: "Combine Logarithms Using the Product Rule (F-LE.A.4)",
+    teaches: "Every slot adds two logs of the same base — the product rule says log_b(m) + log_b(n) = log_b(mn), so multiply inside and evaluate. Build that many notes anywhere in the kit.",
+    bpm: 152,
+    challenges: {
+      A: {
+        prompt: "log₂(4) + log₂(8) = log₂(?). Evaluate the result. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "log₂(4) + log₂(8) = log₂(4×8) = log₂(32) = 5.",
+      },
+      B: {
+        prompt: "log₃(9) + log₃(27) = log₃(?). Evaluate the result. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "log₃(9) + log₃(27) = log₃(243) = 5.",
+      },
+      C: {
+        prompt: "log₂(16) + log₂(4) = log₂(?). Evaluate the result. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "log₂(16) + log₂(4) = log₂(64) = 6.",
+      },
+      D: {
+        prompt: "log₅(25) + log₅(5) = log₅(?). Evaluate the result. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "log₅(25) + log₅(5) = log₅(125) = 3.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l16-solving-exponential-equations",
+    grade: 11,
+    lessonNumber: 16,
+    title: "Solving Exponential Equations",
+    mathSkill: "Solve an Exponential Equation (F-LE.A.4)",
+    teaches: "Every slot gives bˣ = a number that's also a power of b — rewrite both sides with the same base and match exponents. Build that many notes anywhere in the kit.",
+    bpm: 152,
+    challenges: {
+      A: {
+        prompt: "Solve for x: 3ˣ = 81. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "3⁴ = 81, so x = 4.",
+      },
+      B: {
+        prompt: "Solve for x: 2ˣ = 64. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "2⁶ = 64, so x = 6.",
+      },
+      C: {
+        prompt: "Solve for x: 5ˣ = 125. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "5³ = 125, so x = 3.",
+      },
+      D: {
+        prompt: "Solve for x: 6ˣ = 216. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "6³ = 216, so x = 3.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l17-solving-logarithmic-equations",
+    grade: 11,
+    lessonNumber: 17,
+    title: "Solving Logarithmic Equations",
+    mathSkill: "Solve a Logarithmic Equation (F-LE.A.4)",
+    teaches: "Every slot gives log_b(x) = n — rewrite it in exponential form, x = bⁿ, to solve. Build that many notes anywhere in the kit.",
+    bpm: 152,
+    challenges: {
+      A: {
+        prompt: "Solve for x: log₂(x) = 5. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 32 }],
+        explanation: "x = 2⁵ = 32.",
+      },
+      B: {
+        prompt: "Solve for x: log₃(x) = 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 81 }],
+        explanation: "x = 3⁴ = 81.",
+      },
+      C: {
+        prompt: "Solve for x: log₅(x) = 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 125 }],
+        explanation: "x = 5³ = 125.",
+      },
+      D: {
+        prompt: "Solve for x: log₄(x) = 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 64 }],
+        explanation: "x = 4³ = 64.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l18-compound-interest",
+    grade: 11,
+    lessonNumber: 18,
+    title: "Compound Interest",
+    mathSkill: "Find the Interest Earned Under Annual Compounding (F-LE.A.1/A.2)",
+    teaches: "Every slot gives a principal, an annual rate, and 2 years of annual compounding — find the final amount with A = P(1 + r)ᵗ, then subtract the principal to get the interest earned. Build that many notes anywhere in the kit.",
+    bpm: 152,
+    challenges: {
+      A: {
+        prompt: "$100 is invested at 10% annual interest, compounded annually, for 2 years. How much interest was earned? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21 }],
+        explanation: "A = 100 × 1.1² = 121. Interest earned = 121 - 100 = 21.",
+      },
+      B: {
+        prompt: "$100 is invested at 20% annual interest, compounded annually, for 2 years. How much interest was earned? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 44 }],
+        explanation: "A = 100 × 1.2² = 144. Interest earned = 144 - 100 = 44.",
+      },
+      C: {
+        prompt: "$200 is invested at 10% annual interest, compounded annually, for 2 years. How much interest was earned? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 42 }],
+        explanation: "A = 200 × 1.1² = 242. Interest earned = 242 - 200 = 42.",
+      },
+      D: {
+        prompt: "$50 is invested at 20% annual interest, compounded annually, for 2 years. How much interest was earned? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 22 }],
+        explanation: "A = 50 × 1.2² = 72. Interest earned = 72 - 50 = 22.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l19-simplifying-rational-expressions",
+    grade: 11,
+    lessonNumber: 19,
+    title: "Simplifying Rational Expressions",
+    mathSkill: "Simplify a Rational Expression and Evaluate It (A-APR.D.7)",
+    teaches: "Every slot's numerator factors as a difference of squares that cancels with the denominator — simplify, then evaluate at a given x. Build that many notes anywhere in the kit.",
+    bpm: 154,
+    challenges: {
+      A: {
+        prompt: "Simplify (x² - 9) ÷ (x - 3). Then evaluate it at x = 5. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "(x²-9) ÷ (x-3) = x+3. At x=5: 5+3=8.",
+      },
+      B: {
+        prompt: "Simplify (x² - 16) ÷ (x - 4). Then evaluate it at x = 6. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "(x²-16) ÷ (x-4) = x+4. At x=6: 6+4=10.",
+      },
+      C: {
+        prompt: "Simplify (x² - 25) ÷ (x - 5). Then evaluate it at x = 7. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "(x²-25) ÷ (x-5) = x+5. At x=7: 7+5=12.",
+      },
+      D: {
+        prompt: "Simplify (x² - 36) ÷ (x - 6). Then evaluate it at x = 4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "(x²-36) ÷ (x-6) = x+6. At x=4: 4+6=10.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l20-adding-rational-expressions",
+    grade: 11,
+    lessonNumber: 20,
+    title: "Adding Rational Expressions",
+    mathSkill: "Add Rational Expressions with a Common Denominator (A-APR.D.7)",
+    teaches: "Every slot adds two fractions that already share a denominator — add the numerators, then evaluate the result at a given x. Build that many notes anywhere in the kit.",
+    bpm: 154,
+    challenges: {
+      A: {
+        prompt: "Add 8/(x+1) + 12/(x+1), then evaluate the sum at x = 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "8/(x+1) + 12/(x+1) = 20/(x+1). At x=3: 20/4 = 5.",
+      },
+      B: {
+        prompt: "Add 9/(x+2) + 15/(x+2), then evaluate the sum at x = 2. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "9/(x+2) + 15/(x+2) = 24/(x+2). At x=2: 24/4 = 6.",
+      },
+      C: {
+        prompt: "Add 10/(x+3) + 20/(x+3), then evaluate the sum at x = 2. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "10/(x+3) + 20/(x+3) = 30/(x+3). At x=2: 30/5 = 6.",
+      },
+      D: {
+        prompt: "Add 14/(x+2) + 21/(x+2), then evaluate the sum at x = 3. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "14/(x+2) + 21/(x+2) = 35/(x+2). At x=3: 35/5 = 7.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l21-solving-rational-equations",
+    grade: 11,
+    lessonNumber: 21,
+    title: "Solving Rational Equations",
+    mathSkill: "Solve a Rational Equation (A-REI.A.2)",
+    teaches: "Every slot gives an equation with x in the denominator — cross-multiply to clear the fraction, then solve for x. Build that many notes anywhere in the kit.",
+    bpm: 154,
+    challenges: {
+      A: {
+        prompt: "Solve for x: 1/(x - 2) = 1/6. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "x - 2 = 6, so x = 8.",
+      },
+      B: {
+        prompt: "Solve for x: 1/(x - 3) = 1/7. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "x - 3 = 7, so x = 10.",
+      },
+      C: {
+        prompt: "Solve for x: 2/(x - 1) = 1/4. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "4 × 2 = x - 1 → 8 = x - 1 → x = 9.",
+      },
+      D: {
+        prompt: "Solve for x: 3/(x - 2) = 1/5. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 17 }],
+        explanation: "5 × 3 = x - 2 → 15 = x - 2 → x = 17.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l22-arithmetic-series",
+    grade: 11,
+    lessonNumber: 22,
+    title: "Arithmetic Series",
+    mathSkill: "Find the Sum of an Arithmetic Series (F-BF.A.2)",
+    teaches: "Every slot gives an arithmetic sequence's first n terms — find their sum, then build it using exactly n blocks, so the term count IS the block count, one more time.",
+    bpm: 154,
+    challenges: {
+      A: {
+        prompt: "Find the sum of 1, 3, 5, 7, 9 (the first 5 odd numbers). Build a drum beat using exactly 5 blocks that add up to the sum in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 25, blocksUsed: 5 }],
+        explanation: "Sum = 5 ÷ 2 × (1 + 9) = 25 — build it across exactly 5 blocks, one per term.",
+      },
+      B: {
+        prompt: "Find the sum of 1, 2, 3, 4, 5, 6. Build a drum beat using exactly 6 blocks that add up to the sum in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21, blocksUsed: 6 }],
+        explanation: "Sum = 6 ÷ 2 × (1 + 6) = 21 — build it across exactly 6 blocks, one per term.",
+      },
+      C: {
+        prompt: "Find the sum of 1, 2, 3, 4, 5, 6, 7. Build a drum beat using exactly 7 blocks that add up to the sum in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 28, blocksUsed: 7 }],
+        explanation: "Sum = 7 ÷ 2 × (1 + 7) = 28 — build it across exactly 7 blocks, one per term.",
+      },
+      D: {
+        prompt: "Find the sum of 1, 2, 3, 4, 5, 6, 7, 8. Build a drum beat using exactly 8 blocks that add up to the sum in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 36, blocksUsed: 8 }],
+        explanation: "Sum = 8 ÷ 2 × (1 + 8) = 36 — build it across exactly 8 blocks, one per term.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l23-geometric-series",
+    grade: 11,
+    lessonNumber: 23,
+    title: "Geometric Series",
+    mathSkill: "Find the Sum of a Geometric Series (A-SSE.B.4)",
+    teaches: "Every slot gives a geometric sequence's first n terms — find their sum, then build it using exactly n blocks, tying the series' own length to the beat's own bar length one more time.",
+    bpm: 154,
+    challenges: {
+      A: {
+        prompt: "Find the sum of 1, 2, 4, 8 (each term doubles). Build a drum beat using exactly 4 blocks that add up to the sum in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15, blocksUsed: 4 }],
+        explanation: "1 + 2 + 4 + 8 = 15 — build it across exactly 4 blocks, one per term.",
+      },
+      B: {
+        prompt: "Find the sum of 1, 2, 4 (each term doubles). Build a drum beat using exactly 3 blocks that add up to the sum in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7, blocksUsed: 3 }],
+        explanation: "1 + 2 + 4 = 7 — build it across exactly 3 blocks, one per term.",
+      },
+      C: {
+        prompt: "Find the sum of 2, 4, 8 (each term doubles). Build a drum beat using exactly 3 blocks that add up to the sum in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 14, blocksUsed: 3 }],
+        explanation: "2 + 4 + 8 = 14 — build it across exactly 3 blocks, one per term.",
+      },
+      D: {
+        prompt: "Find the sum of 1, 3, 9 (each term triples). Build a drum beat using exactly 3 blocks that add up to the sum in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13, blocksUsed: 3 }],
+        explanation: "1 + 3 + 9 = 13 — build it across exactly 3 blocks, one per term.",
+      },
+    },
+  },
+  {
+    slug: "math-g11-l24-linear-vs-exponential-growth",
+    grade: 11,
+    lessonNumber: 24,
+    title: "Linear vs. Exponential Growth — Which Wins?",
+    mathSkill: "Compare Linear and Exponential Growth (F-LE.A.3)",
+    teaches: "Junior year's last lesson: every slot gives a linear function L(x) and an exponential function E(x) — evaluate both at the same x and find the positive difference between them. Build it on the crash cymbal using exactly x blocks, so the input you plugged in becomes the beat's own bar length.",
+    bpm: 156,
+    challenges: {
+      A: {
+        prompt: "L(x) = 5x + 10 and E(x) = 2×2ˣ. At x = 5, which is bigger, and by how much? Build a crash cymbal beat using exactly 5 blocks that add up to the difference in all.",
+        targets: [{ instrument: "crash", count: 29, blocksUsed: 5 }],
+        explanation: "L(5) = 35. E(5) = 2×32 = 64. E is bigger by 64 - 35 = 29 — exponential growth has caught up and passed the line.",
+      },
+      B: {
+        prompt: "L(x) = 4x + 15 and E(x) = 3×2ˣ. At x = 4, which is bigger, and by how much? Build a crash cymbal beat using exactly 4 blocks that add up to the difference in all.",
+        targets: [{ instrument: "crash", count: 17, blocksUsed: 4 }],
+        explanation: "L(4) = 31. E(4) = 3×16 = 48. E is bigger by 48 - 31 = 17.",
+      },
+      C: {
+        prompt: "L(x) = 2x + 10 and E(x) = 2×2ˣ. At x = 4, which is bigger, and by how much? Build a crash cymbal beat using exactly 4 blocks that add up to the difference in all.",
+        targets: [{ instrument: "crash", count: 14, blocksUsed: 4 }],
+        explanation: "L(4) = 18. E(4) = 2×16 = 32. E is bigger by 32 - 18 = 14.",
+      },
+      D: {
+        prompt: "L(x) = 5x + 5 and E(x) = 2×2ˣ. At x = 3, which is bigger, and by how much? Build a crash cymbal beat using exactly 3 blocks that add up to the difference in all.",
+        targets: [{ instrument: "crash", count: 4, blocksUsed: 3 }],
+        explanation: "L(3) = 20. E(3) = 2×8 = 16. Here the line is STILL bigger, by 20 - 16 = 4 — exponential growth needs a bit more time before it overtakes.",
+      },
+    },
+  },
+
+  // ============================================================
+  // Grade 12 = Pre-Calculus, the last stop before the K-12 curriculum hands
+  // off to actual Calculus — radians, the unit circle, the Law of Sines and
+  // Cosines, matrices and vectors (the (+) "advanced" standards under
+  // N-VM), and a run at statistics and probability, closing with a limit:
+  // the one calculus idea that fits this format (evaluate a rational
+  // function's removable hole by factoring and canceling — the exact same
+  // move Grade 11's rational-expressions lessons taught, one grade later,
+  // now called by its real name). Twelve grades, four courses, one long
+  // arrangement — lesson 24 says so outright.
+  // ============================================================
+  {
+    slug: "math-g12-l01-radians-and-degrees",
+    grade: 12,
+    lessonNumber: 1,
+    title: "Radians and Degrees",
+    mathSkill: "Convert Radians to Degrees (F-TF.A.1)",
+    teaches: "Every slot gives an angle as a fraction of π radians — convert to degrees using 180° = π radians, so the π cancels cleanly. Build that many notes anywhere in the kit.",
+    bpm: 158,
+    challenges: {
+      A: {
+        prompt: "Convert π/3 radians to degrees. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 60 }],
+        explanation: "π/3 × 180/π = 180/3 = 60°.",
+      },
+      B: {
+        prompt: "Convert π/4 radians to degrees. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 45 }],
+        explanation: "π/4 × 180/π = 180/4 = 45°.",
+      },
+      C: {
+        prompt: "Convert 2π/3 radians to degrees. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 120 }],
+        explanation: "2π/3 × 180/π = 360/3 = 120°.",
+      },
+      D: {
+        prompt: "Convert 5π/6 radians to degrees. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 150 }],
+        explanation: "5π/6 × 180/π = 900/6 = 150°.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l02-arc-length-in-radians",
+    grade: 12,
+    lessonNumber: 2,
+    title: "Arc Length in Radians",
+    mathSkill: "Find Arc Length Using s = rθ (F-TF.A.1)",
+    teaches: "In radians, an arc's length is just s = rθ — no π or degree conversion needed, since a radian is already a plain number. Multiply the radius by the angle, then build that many notes anywhere in the kit.",
+    bpm: 158,
+    challenges: {
+      A: {
+        prompt: "A circle has radius 10. What is the arc length for a central angle of 1.5 radians (s = rθ)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "s = 10 × 1.5 = 15.",
+      },
+      B: {
+        prompt: "A circle has radius 8. What is the arc length for a central angle of 2 radians (s = rθ)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 16 }],
+        explanation: "s = 8 × 2 = 16.",
+      },
+      C: {
+        prompt: "A circle has radius 12. What is the arc length for a central angle of 2.5 radians (s = rθ)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "s = 12 × 2.5 = 30.",
+      },
+      D: {
+        prompt: "A circle has radius 6. What is the arc length for a central angle of 4 radians (s = rθ)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "s = 6 × 4 = 24.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l03-unit-circle-reference-angles",
+    grade: 12,
+    lessonNumber: 3,
+    title: "The Unit Circle — Reference Angles",
+    mathSkill: "Find a Reference Angle (F-TF.A.2)",
+    teaches: "Every slot gives an angle outside the first quadrant — find its reference angle, the acute angle it makes with the x-axis. Build that many notes anywhere in the kit.",
+    bpm: 158,
+    challenges: {
+      A: {
+        prompt: "What is the reference angle for 150°? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "In quadrant II, the reference angle is 180° - 150° = 30°.",
+      },
+      B: {
+        prompt: "What is the reference angle for 200°? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 20 }],
+        explanation: "In quadrant III, the reference angle is 200° - 180° = 20°.",
+      },
+      C: {
+        prompt: "What is the reference angle for 300°? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 60 }],
+        explanation: "In quadrant IV, the reference angle is 360° - 300° = 60°.",
+      },
+      D: {
+        prompt: "What is the reference angle for 250°? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 70 }],
+        explanation: "In quadrant III, the reference angle is 250° - 180° = 70°.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l04-30-60-90-triangles",
+    grade: 12,
+    lessonNumber: 4,
+    title: "30-60-90 Special Right Triangles",
+    mathSkill: "Use the 30-60-90 Triangle Relationship (G-SRT.C.8)",
+    teaches: "In a 30-60-90 triangle, the hypotenuse is always twice the shortest leg (the one across from the 30° angle) — every slot gives the short leg, so double it. Build that many notes anywhere in the kit.",
+    bpm: 158,
+    challenges: {
+      A: {
+        prompt: "In a 30-60-90 triangle, the short leg (across from the 30° angle) is 7. What is the hypotenuse? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 14 }],
+        explanation: "The hypotenuse is always double the short leg: 2 × 7 = 14.",
+      },
+      B: {
+        prompt: "In a 30-60-90 triangle, the short leg is 9. What is the hypotenuse? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 18 }],
+        explanation: "2 × 9 = 18.",
+      },
+      C: {
+        prompt: "In a 30-60-90 triangle, the short leg is 11. What is the hypotenuse? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 22 }],
+        explanation: "2 × 11 = 22.",
+      },
+      D: {
+        prompt: "In a 30-60-90 triangle, the short leg is 15. What is the hypotenuse? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "2 × 15 = 30.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l05-law-of-sines",
+    grade: 12,
+    lessonNumber: 5,
+    title: "The Law of Sines",
+    mathSkill: "Apply the Law of Sines (G-SRT.D.10)",
+    teaches: "Every slot gives a triangle with a 30° angle and a 90° angle, plus the side opposite the 90° (the hypotenuse) — since sin(30°)=1/2 and sin(90°)=1, the Law of Sines gives the side opposite the 30° angle as exactly half the hypotenuse. Build that many notes anywhere in the kit.",
+    bpm: 160,
+    challenges: {
+      A: {
+        prompt: "In triangle ABC, angle A = 30°, angle B = 90°, and side b (the hypotenuse, opposite angle B) = 20. Using the Law of Sines (a/sinA = b/sinB), find side a. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "a = b × sin(30°) ÷ sin(90°) = 20 × 0.5 ÷ 1 = 10.",
+      },
+      B: {
+        prompt: "In triangle ABC, angle A = 30°, angle B = 90°, and side b = 16. Using the Law of Sines, find side a. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "a = 16 × 0.5 = 8.",
+      },
+      C: {
+        prompt: "In triangle ABC, angle A = 30°, angle B = 90°, and side b = 24. Using the Law of Sines, find side a. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "a = 24 × 0.5 = 12.",
+      },
+      D: {
+        prompt: "In triangle ABC, angle A = 30°, angle B = 90°, and side b = 30. Using the Law of Sines, find side a. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "a = 30 × 0.5 = 15.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l06-law-of-cosines",
+    grade: 12,
+    lessonNumber: 6,
+    title: "The Law of Cosines",
+    mathSkill: "Apply the Law of Cosines (G-SRT.D.11)",
+    teaches: "Every slot gives two sides of a triangle with a 60° angle between them — since cos(60°)=1/2, the Law of Sines (c² = a²+b²-2ab·cosC) simplifies to c² = a²+b²-ab, and every pair here is chosen so that comes out a perfect square. Build the third side anywhere in the kit.",
+    bpm: 160,
+    challenges: {
+      A: {
+        prompt: "Triangle ABC has a = 5, b = 8, and the angle between them, C, is 60°. What is side c? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "c² = 5²+8²-5×8 = 25+64-40 = 49, so c = 7.",
+      },
+      B: {
+        prompt: "Triangle ABC has a = 7, b = 15, and the angle between them, C, is 60°. What is side c? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "c² = 7²+15²-7×15 = 49+225-105 = 169, so c = 13.",
+      },
+      C: {
+        prompt: "Triangle ABC has a = 5, b = 21, and the angle between them, C, is 60°. What is side c? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 19 }],
+        explanation: "c² = 5²+21²-5×21 = 25+441-105 = 361, so c = 19.",
+      },
+      D: {
+        prompt: "Triangle ABC has a = 7, b = 40, and the angle between them, C, is 60°. What is side c? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 37 }],
+        explanation: "c² = 7²+40²-7×40 = 49+1600-280 = 1369, so c = 37.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l07-transformations-shifts",
+    grade: 12,
+    lessonNumber: 7,
+    title: "Transformations — Shifts",
+    mathSkill: "Evaluate a Shifted Function (F-BF.B.3)",
+    teaches: "Every slot shifts f(x) = x² horizontally and vertically to build g(x) — substitute in, apply the shifts, then evaluate at a given x. Build that many notes anywhere in the kit.",
+    bpm: 160,
+    challenges: {
+      A: {
+        prompt: "f(x) = x². g(x) = f(x - 3) + 2. What is g(5)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "g(5) = (5-3)² + 2 = 4 + 2 = 6.",
+      },
+      B: {
+        prompt: "f(x) = x². g(x) = f(x + 1) - 4. What is g(3)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "g(3) = (3+1)² - 4 = 16 - 4 = 12.",
+      },
+      C: {
+        prompt: "f(x) = x². g(x) = f(x - 2) + 5. What is g(6)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21 }],
+        explanation: "g(6) = (6-2)² + 5 = 16 + 5 = 21.",
+      },
+      D: {
+        prompt: "f(x) = x². g(x) = f(x + 2) - 3. What is g(4)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 33 }],
+        explanation: "g(4) = (4+2)² - 3 = 36 - 3 = 33.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l08-transformations-stretches",
+    grade: 12,
+    lessonNumber: 8,
+    title: "Transformations — Stretches and Reflections",
+    mathSkill: "Evaluate a Stretched or Reflected Function (F-BF.B.3)",
+    teaches: "Every slot stretches, reflects, or shifts f(x) = x² by a scale factor — substitute in and evaluate at a given x. Build that many notes anywhere in the kit.",
+    bpm: 160,
+    challenges: {
+      A: {
+        prompt: "f(x) = x². g(x) = 3f(x). What is g(4)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 48 }],
+        explanation: "g(4) = 3 × 4² = 3 × 16 = 48.",
+      },
+      B: {
+        prompt: "f(x) = x². g(x) = 2f(x) + 1. What is g(3)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 19 }],
+        explanation: "g(3) = 2 × 9 + 1 = 19.",
+      },
+      C: {
+        prompt: "f(x) = x². g(x) = -f(x) + 50 (a reflection, then a shift up so the result stays positive). What is g(5)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 25 }],
+        explanation: "g(5) = -25 + 50 = 25.",
+      },
+      D: {
+        prompt: "f(x) = x². g(x) = 4f(x) - 10. What is g(2)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "g(2) = 4 × 4 - 10 = 6.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l09-polynomial-zeros",
+    grade: 12,
+    lessonNumber: 9,
+    title: "Zeros of a Polynomial",
+    mathSkill: "Find a Polynomial's Zeros from Its Factored Form (A-APR.B.3)",
+    teaches: "Every slot gives a cubic already factored into three binomials — each factor gives one zero. Build the largest zero anywhere in the kit.",
+    bpm: 160,
+    challenges: {
+      A: {
+        prompt: "p(x) = (x - 2)(x - 5)(x + 1). What is the largest zero? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "The zeros are 2, 5, and -1. The largest is 5.",
+      },
+      B: {
+        prompt: "p(x) = (x - 3)(x - 7)(x + 2). What is the largest zero? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "The zeros are 3, 7, and -2. The largest is 7.",
+      },
+      C: {
+        prompt: "p(x) = (x - 1)(x - 9)(x + 4). What is the largest zero? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "The zeros are 1, 9, and -4. The largest is 9.",
+      },
+      D: {
+        prompt: "p(x) = (x - 6)(x - 8)(x + 3). What is the largest zero? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "The zeros are 6, 8, and -3. The largest is 8.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l10-rational-root-theorem",
+    grade: 12,
+    lessonNumber: 10,
+    title: "The Rational Root Theorem",
+    mathSkill: "Find a Polynomial's Roots by Testing Small Integers (A-APR.B.3)",
+    teaches: "Every slot gives a cubic whose roots are all small positive integers — the Rational Root Theorem says to start by testing small whole-number candidates, and here every one of them works. Build the largest root anywhere in the kit.",
+    bpm: 160,
+    challenges: {
+      A: {
+        prompt: "p(x) = x³ - 6x² + 11x - 6 has roots 1, 2, and 3. What is the largest root? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "(x-1)(x-2)(x-3) = x³-6x²+11x-6, so the roots are 1, 2, 3. The largest is 3.",
+      },
+      B: {
+        prompt: "p(x) = x³ - 9x² + 26x - 24 has roots 2, 3, and 4. What is the largest root? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "(x-2)(x-3)(x-4) = x³-9x²+26x-24. The largest root is 4.",
+      },
+      C: {
+        prompt: "p(x) = x³ - 12x² + 44x - 48 has roots 2, 4, and 6. What is the largest root? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "(x-2)(x-4)(x-6) = x³-12x²+44x-48. The largest root is 6.",
+      },
+      D: {
+        prompt: "p(x) = x³ - 8x² + 19x - 12 has roots 1, 3, and 4. What is the largest root? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "(x-1)(x-3)(x-4) = x³-8x²+19x-12. The largest root is 4.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l11-vertical-asymptotes",
+    grade: 12,
+    lessonNumber: 11,
+    title: "Vertical Asymptotes of Rational Functions",
+    mathSkill: "Find a Vertical Asymptote (F-IF.C.7d)",
+    teaches: "Every slot gives a rational function whose denominator is linear — the vertical asymptote is where that denominator equals zero. Build that x-value anywhere in the kit.",
+    bpm: 160,
+    challenges: {
+      A: {
+        prompt: "f(x) = 3 ÷ (2x - 10). Where is the vertical asymptote? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "2x - 10 = 0 → x = 5.",
+      },
+      B: {
+        prompt: "f(x) = 4 ÷ (3x - 21). Where is the vertical asymptote? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "3x - 21 = 0 → x = 7.",
+      },
+      C: {
+        prompt: "f(x) = 2 ÷ (4x - 24). Where is the vertical asymptote? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "4x - 24 = 0 → x = 6.",
+      },
+      D: {
+        prompt: "f(x) = 5 ÷ (5x - 40). Where is the vertical asymptote? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "5x - 40 = 0 → x = 8.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l12-piecewise-functions",
+    grade: 12,
+    lessonNumber: 12,
+    title: "Piecewise Functions",
+    mathSkill: "Evaluate a Piecewise Function (F-IF.B.6)",
+    teaches: "Every slot uses the same piecewise function, f(x) = 3x+2 if x<4, or x²-3 if x≮4 — check which piece the given x falls into, then evaluate with that piece. Build that many notes anywhere in the kit.",
+    bpm: 160,
+    challenges: {
+      A: {
+        prompt: "f(x) = 3x+2 if x<4, or x²-3 if x≥4. What is f(2)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "2 < 4, so use 3x+2: 3(2)+2 = 8.",
+      },
+      B: {
+        prompt: "f(x) = 3x+2 if x<4, or x²-3 if x≥4. What is f(6)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 33 }],
+        explanation: "6 ≥ 4, so use x²-3: 6²-3 = 33.",
+      },
+      C: {
+        prompt: "f(x) = 3x+2 if x<4, or x²-3 if x≥4. What is f(1)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "1 < 4, so use 3x+2: 3(1)+2 = 5.",
+      },
+      D: {
+        prompt: "f(x) = 3x+2 if x<4, or x²-3 if x≥4. What is f(7)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 46 }],
+        explanation: "7 ≥ 4, so use x²-3: 7²-3 = 46.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l13-matrix-addition",
+    grade: 12,
+    lessonNumber: 13,
+    title: "Matrices — Addition and Subtraction",
+    mathSkill: "Add or Subtract 2×2 Matrices (N-VM.C.7)",
+    teaches: "Every slot adds or subtracts two 2×2 matrices entry by entry — combine each position, then add up all four resulting entries. Build that many notes anywhere in the kit.",
+    bpm: 162,
+    challenges: {
+      A: {
+        prompt: "Add [[2,3],[4,5]] + [[1,2],[3,1]]. What is the sum of all four entries in the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 21 }],
+        explanation: "The result is [[3,5],[7,6]]. 3+5+7+6 = 21.",
+      },
+      B: {
+        prompt: "Add [[5,1],[2,6]] + [[3,4],[1,2]]. What is the sum of all four entries in the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "The result is [[8,5],[3,8]]. 8+5+3+8 = 24.",
+      },
+      C: {
+        prompt: "Add [[6,2],[3,4]] + [[1,5],[2,1]]. What is the sum of all four entries in the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 24 }],
+        explanation: "The result is [[7,7],[5,5]]. 7+7+5+5 = 24.",
+      },
+      D: {
+        prompt: "Subtract [[4,3],[5,2]] - [[1,1],[2,1]]. What is the sum of all four entries in the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "The result is [[3,2],[3,1]]. 3+2+3+1 = 9.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l14-matrix-scalar-multiplication",
+    grade: 12,
+    lessonNumber: 14,
+    title: "Matrices — Scalar Multiplication",
+    mathSkill: "Multiply a Matrix by a Scalar (N-VM.C.7)",
+    teaches: "Every slot multiplies every entry of a 2×2 matrix by the same scalar — then add up all four resulting entries. Build that many notes anywhere in the kit.",
+    bpm: 162,
+    challenges: {
+      A: {
+        prompt: "Multiply 3 × [[2,1],[3,4]]. What is the sum of all four entries in the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "The result is [[6,3],[9,12]]. 6+3+9+12 = 30.",
+      },
+      B: {
+        prompt: "Multiply 2 × [[5,3],[1,6]]. What is the sum of all four entries in the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 30 }],
+        explanation: "The result is [[10,6],[2,12]]. 10+6+2+12 = 30.",
+      },
+      C: {
+        prompt: "Multiply 4 × [[1,2],[3,1]]. What is the sum of all four entries in the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 28 }],
+        explanation: "The result is [[4,8],[12,4]]. 4+8+12+4 = 28.",
+      },
+      D: {
+        prompt: "Multiply 5 × [[2,1],[1,3]]. What is the sum of all four entries in the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 35 }],
+        explanation: "The result is [[10,5],[5,15]]. 10+5+5+15 = 35.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l15-matrix-multiplication",
+    grade: 12,
+    lessonNumber: 15,
+    title: "Multiplying 2×2 Matrices",
+    mathSkill: "Multiply Two 2×2 Matrices (N-VM.C.8)",
+    teaches: "Every slot multiplies two 2×2 matrices — the top-left entry of the result is (row 1 of the first) · (column 1 of the second). Build that many notes anywhere in the kit.",
+    bpm: 162,
+    challenges: {
+      A: {
+        prompt: "Multiply [[1,2],[3,4]] × [[5,6],[7,8]]. What is the top-left entry of the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 19 }],
+        explanation: "Top-left = 1×5 + 2×7 = 5 + 14 = 19.",
+      },
+      B: {
+        prompt: "Multiply [[2,1],[0,3]] × [[4,2],[1,5]]. What is the top-left entry of the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "Top-left = 2×4 + 1×1 = 8 + 1 = 9.",
+      },
+      C: {
+        prompt: "Multiply [[3,2],[1,4]] × [[2,3],[5,1]]. What is the top-left entry of the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 16 }],
+        explanation: "Top-left = 3×2 + 2×5 = 6 + 10 = 16.",
+      },
+      D: {
+        prompt: "Multiply [[1,3],[2,2]] × [[4,1],[2,6]]. What is the top-left entry of the result? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "Top-left = 1×4 + 3×2 = 4 + 6 = 10.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l16-vector-magnitude",
+    grade: 12,
+    lessonNumber: 16,
+    title: "Vector Magnitude",
+    mathSkill: "Find a Vector's Magnitude (N-VM.A.3)",
+    teaches: "Every slot gives a vector's components as a Pythagorean triple — magnitude is √(x²+y²), same formula as the distance formula. Build that many notes anywhere in the kit.",
+    bpm: 162,
+    challenges: {
+      A: {
+        prompt: "What is the magnitude of vector (3, 4)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "√(3²+4²) = √25 = 5.",
+      },
+      B: {
+        prompt: "What is the magnitude of vector (6, 8)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "√(6²+8²) = √100 = 10.",
+      },
+      C: {
+        prompt: "What is the magnitude of vector (9, 12)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "√(9²+12²) = √225 = 15.",
+      },
+      D: {
+        prompt: "What is the magnitude of vector (5, 12)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "√(5²+12²) = √169 = 13.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l17-vector-addition",
+    grade: 12,
+    lessonNumber: 17,
+    title: "Vector Addition",
+    mathSkill: "Add Vectors and Find the Resultant's Magnitude (N-VM.B.4)",
+    teaches: "Every slot adds two vectors component-wise, and the sum happens to form a Pythagorean triple — add the components, then find the resultant's magnitude. Build that many notes anywhere in the kit.",
+    bpm: 162,
+    challenges: {
+      A: {
+        prompt: "Add vectors (1, 2) and (2, 2), then find the magnitude of the sum. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "Sum = (3, 4). Magnitude = √(3²+4²) = 5.",
+      },
+      B: {
+        prompt: "Add vectors (3, 1) and (3, 7), then find the magnitude of the sum. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "Sum = (6, 8). Magnitude = √(6²+8²) = 10.",
+      },
+      C: {
+        prompt: "Add vectors (4, 5) and (5, 7), then find the magnitude of the sum. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "Sum = (9, 12). Magnitude = √(9²+12²) = 15.",
+      },
+      D: {
+        prompt: "Add vectors (2, 4) and (3, 8), then find the magnitude of the sum. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "Sum = (5, 12). Magnitude = √(5²+12²) = 13.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l18-determinant-of-a-matrix",
+    grade: 12,
+    lessonNumber: 18,
+    title: "The Determinant of a 2×2 Matrix",
+    mathSkill: "Find a 2×2 Matrix's Determinant (N-VM.C.10)",
+    teaches: "Every slot gives a 2×2 matrix [[a,b],[c,d]] — the determinant is ad - bc. Build that many notes anywhere in the kit.",
+    bpm: 162,
+    challenges: {
+      A: {
+        prompt: "Find the determinant of [[5,2],[1,3]]. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 13 }],
+        explanation: "5×3 - 2×1 = 15 - 2 = 13.",
+      },
+      B: {
+        prompt: "Find the determinant of [[6,1],[2,4]]. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 22 }],
+        explanation: "6×4 - 1×2 = 24 - 2 = 22.",
+      },
+      C: {
+        prompt: "Find the determinant of [[7,3],[2,5]]. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 29 }],
+        explanation: "7×5 - 3×2 = 35 - 6 = 29.",
+      },
+      D: {
+        prompt: "Find the determinant of [[8,2],[3,6]]. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 42 }],
+        explanation: "8×6 - 2×3 = 48 - 6 = 42.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l19-mean-of-a-data-set",
+    grade: 12,
+    lessonNumber: 19,
+    title: "Mean of a Data Set",
+    mathSkill: "Find the Mean of a Data Set (S-ID.A.2)",
+    teaches: "Every slot gives 5 data points — add them up and divide by 5 to find the mean. Build that many notes anywhere in the kit.",
+    bpm: 164,
+    challenges: {
+      A: {
+        prompt: "Find the mean of 4, 8, 6, 10, 7. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 7 }],
+        explanation: "(4+8+6+10+7) ÷ 5 = 35 ÷ 5 = 7.",
+      },
+      B: {
+        prompt: "Find the mean of 12, 15, 9, 18, 6. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "(12+15+9+18+6) ÷ 5 = 60 ÷ 5 = 12.",
+      },
+      C: {
+        prompt: "Find the mean of 5, 10, 15, 20, 25. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "(5+10+15+20+25) ÷ 5 = 75 ÷ 5 = 15.",
+      },
+      D: {
+        prompt: "Find the mean of 3, 6, 9, 12, 15. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 9 }],
+        explanation: "(3+6+9+12+15) ÷ 5 = 45 ÷ 5 = 9.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l20-standard-deviation",
+    grade: 12,
+    lessonNumber: 20,
+    title: "Standard Deviation",
+    mathSkill: "Find the Standard Deviation of a Simple Data Set (S-ID.A.2)",
+    teaches: "Every slot gives 8 data points split evenly between two values — find the mean, find how far every point is from it, square those, average the squares (the variance), then take the square root. Build that many notes anywhere in the kit.",
+    bpm: 164,
+    challenges: {
+      A: {
+        prompt: "Find the standard deviation of 4, 4, 4, 4, 10, 10, 10, 10. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 3 }],
+        explanation: "Mean = 7. Every point is 3 away, so variance = 3² = 9, and standard deviation = √9 = 3.",
+      },
+      B: {
+        prompt: "Find the standard deviation of 1, 1, 1, 1, 9, 9, 9, 9. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 4 }],
+        explanation: "Mean = 5. Every point is 4 away, so variance = 4² = 16, and standard deviation = √16 = 4.",
+      },
+      C: {
+        prompt: "Find the standard deviation of 6, 6, 6, 6, 16, 16, 16, 16. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "Mean = 11. Every point is 5 away, so variance = 5² = 25, and standard deviation = √25 = 5.",
+      },
+      D: {
+        prompt: "Find the standard deviation of 2, 2, 2, 2, 14, 14, 14, 14. Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 6 }],
+        explanation: "Mean = 8. Every point is 6 away, so variance = 6² = 36, and standard deviation = √36 = 6.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l21-combinations-and-permutations",
+    grade: 12,
+    lessonNumber: 21,
+    title: "Combinations and Permutations",
+    mathSkill: "Compute a Combination or Permutation (S-CP.B.9)",
+    teaches: "Every slot asks for either a combination (order doesn't matter) or a permutation (order matters) from a small group — work it out, then build that many notes anywhere in the kit.",
+    bpm: 164,
+    challenges: {
+      A: {
+        prompt: "How many ways can you choose 2 items from a group of 5, where order doesn't matter (5C2)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "5C2 = (5×4) ÷ (2×1) = 10.",
+      },
+      B: {
+        prompt: "How many ways can you arrange 3 items chosen from a group of 5, where order matters (5P3)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 60 }],
+        explanation: "5P3 = 5×4×3 = 60.",
+      },
+      C: {
+        prompt: "How many ways can you choose 2 items from a group of 6, where order doesn't matter (6C2)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "6C2 = (6×5) ÷ (2×1) = 15.",
+      },
+      D: {
+        prompt: "How many ways can you arrange 2 items chosen from a group of 4, where order matters (4P2)? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 12 }],
+        explanation: "4P2 = 4×3 = 12.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l22-probability-of-independent-events",
+    grade: 12,
+    lessonNumber: 22,
+    title: "Probability of Independent Events",
+    mathSkill: "Find the Probability of Two Independent Events (S-CP.A.1)",
+    teaches: "Every slot gives P(A) and P(B) for two independent events — multiply them and reduce to lowest terms. Build the numerator on the ride cymbal and the denominator on the crash cymbal.",
+    bpm: 164,
+    challenges: {
+      A: {
+        prompt: "P(A) = 1/2 and P(B) = 1/3. What is P(A and B) as a reduced fraction? Build a ride cymbal row with the numerator and a crash cymbal row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "ride", count: 1 },
+          { instrument: "crash", count: 6 },
+        ],
+        explanation: "1/2 × 1/3 = 1/6.",
+      },
+      B: {
+        prompt: "P(A) = 1/2 and P(B) = 1/4. What is P(A and B) as a reduced fraction? Build a ride cymbal row with the numerator and a crash cymbal row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "ride", count: 1 },
+          { instrument: "crash", count: 8 },
+        ],
+        explanation: "1/2 × 1/4 = 1/8.",
+      },
+      C: {
+        prompt: "P(A) = 2/5 and P(B) = 1/2. What is P(A and B) as a reduced fraction? Build a ride cymbal row with the numerator and a crash cymbal row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "ride", count: 1 },
+          { instrument: "crash", count: 5 },
+        ],
+        explanation: "2/5 × 1/2 = 2/10 = 1/5.",
+      },
+      D: {
+        prompt: "P(A) = 3/4 and P(B) = 1/3. What is P(A and B) as a reduced fraction? Build a ride cymbal row with the numerator and a crash cymbal row with the denominator, in quarter notes.",
+        targets: [
+          { instrument: "ride", count: 1 },
+          { instrument: "crash", count: 4 },
+        ],
+        explanation: "3/4 × 1/3 = 3/12 = 1/4.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l23-expected-value",
+    grade: 12,
+    lessonNumber: 23,
+    title: "Expected Value",
+    mathSkill: "Calculate the Expected Value of a Random Variable (S-MD.A.2)",
+    teaches: "Every slot gives a simple payout game — multiply each outcome by its probability and add the results. Build that many notes anywhere in the kit.",
+    bpm: 164,
+    challenges: {
+      A: {
+        prompt: "A game pays $10 with probability 0.5, and $0 otherwise. What is the expected value? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 5 }],
+        explanation: "10 × 0.5 + 0 × 0.5 = 5.",
+      },
+      B: {
+        prompt: "A game pays $30 with probability 1/3, and $0 otherwise. What is the expected value? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 10 }],
+        explanation: "30 × 1/3 = 10.",
+      },
+      C: {
+        prompt: "A game pays $5 with probability 0.4, and $10 with probability 0.6. What is the expected value? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 8 }],
+        explanation: "5 × 0.4 + 10 × 0.6 = 2 + 6 = 8.",
+      },
+      D: {
+        prompt: "A game pays $60 with probability 1/4, and $0 otherwise. What is the expected value? Build a drum beat with that many notes in all.",
+        targets: [{ instrument: ANY_KIT_PIECE, count: 15 }],
+        explanation: "60 × 1/4 = 15.",
+      },
+    },
+  },
+  {
+    slug: "math-g12-l24-introduction-to-limits",
+    grade: 12,
+    lessonNumber: 24,
+    title: "Introduction to Limits",
+    mathSkill: "Evaluate a Limit by Factoring Out a Removable Discontinuity",
+    teaches: "The last lesson of RockBlocks Math, K through 12: every slot is a limit of a rational function with a hole — the same factor-and-cancel move Grade 11 taught for simplifying rational expressions, just asked with calculus's own vocabulary now. Factor the numerator, cancel the shared factor, then plug the target value into what's left. Build that many notes on the crash cymbal, anywhere you like in the beat — and if you've built one lesson from every grade along the way, this is the one to finally drop them all into a single long Stack and hear the whole run, kindergarten to here, back to back.",
+    bpm: 166,
+    challenges: {
+      A: {
+        prompt: "Find the limit as x approaches 4 of (x² - 16) ÷ (x - 4). Build a crash cymbal beat with that many notes in all.",
+        targets: [{ instrument: "crash", count: 8 }],
+        explanation: "(x²-16) ÷ (x-4) simplifies to x+4 for x≠4. The limit as x→4 is 4+4 = 8.",
+      },
+      B: {
+        prompt: "Find the limit as x approaches 6 of (x² - 36) ÷ (x - 6). Build a crash cymbal beat with that many notes in all.",
+        targets: [{ instrument: "crash", count: 12 }],
+        explanation: "Simplifies to x+6. The limit as x→6 is 6+6 = 12.",
+      },
+      C: {
+        prompt: "Find the limit as x approaches 9 of (x² - 81) ÷ (x - 9). Build a crash cymbal beat with that many notes in all.",
+        targets: [{ instrument: "crash", count: 18 }],
+        explanation: "Simplifies to x+9. The limit as x→9 is 9+9 = 18.",
+      },
+      D: {
+        prompt: "Find the limit as x approaches 11 of (x² - 121) ÷ (x - 11). Build a crash cymbal beat with that many notes in all.",
+        targets: [{ instrument: "crash", count: 22 }],
+        explanation: "Simplifies to x+11. The limit as x→11 is 11+11 = 22.",
       },
     },
   },

@@ -15,7 +15,7 @@ interface LessonRow {
 // The lesson browser on /math — same tab-bar-over-a-flat-list shape as
 // RockWordsAdminList: one grade's lessons shown at a time behind a pill bar,
 // rather than every grade's section rendered and expanded at once. With
-// K-9 (10 grades x 24 lessons = 240 rows), a fully-expanded page was an
+// K-12 (13 grades x 24 lessons = 312 rows), a fully-expanded page was an
 // enormous scroll for a visitor just looking for one grade.
 export function MathLessonsBrowser({
   lessons,
