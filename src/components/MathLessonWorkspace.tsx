@@ -6,11 +6,13 @@ import { Editor } from "./Editor";
 import { Confetti } from "./Confetti";
 import { MathLessonAbout } from "./MathLessonAbout";
 import type { BoardSlotData, ExtendedSlotLetter, SlotLetter, SlotMap } from "@/lib/board";
+import { SLOT_LETTERS } from "@/lib/board";
 import { gradeLabel, type MathChallenge } from "@/lib/mathSchool";
 import { getTileById } from "@/lib/rhythm";
 import type { StoredLine } from "@/lib/song";
 import type { StackArrangement } from "@/lib/stack";
 import { useMathProgress } from "@/lib/useMathProgress";
+import { clearMathLessonDraft, loadMathLessonDraft, saveMathLessonDraft } from "@/lib/mathLessonDraft";
 
 // Counts real hits (not rests) a target instrument has in a slot's lines —
 // a tile can itself hold more than one hit (an eighth pair, a triplet run),
@@ -154,11 +156,35 @@ export function MathLessonWorkspace({
   // competing with the beat for the student's attention.
   const [playOnceSignal, setPlayOnceSignal] = useState(0);
   const [nextLessonReady, setNextLessonReady] = useState(false);
+  // A null here means every slot's beat is rebuilt fresh on mount (matching
+  // the server-rendered blank state, so there's no hydration mismatch) and
+  // then, if the visitor built something before a refresh, restored a beat
+  // after mount via a remount (see the `key` on Editor below) — the same
+  // "brief flash from blank to restored" tradeoff the homepage scratchpad
+  // draft accepts, for the same reason (localStorage doesn't exist on the
+  // server, so it can't be read during the initial render).
+  const [restoredSlots, setRestoredSlots] = useState<SlotMap | null>(null);
+  // Gates handleSnapshotChange's save below until the restore attempt above
+  // has actually run. Editor fires onSnapshotChange once on its own mount,
+  // with whatever it mounted with — on the very first render that's always
+  // the blank slots this component passed it, before the restore effect has
+  // had a chance to read localStorage. Without this gate, that mount-time
+  // echo would overwrite a real saved draft with blank data a moment before
+  // the restore effect below gets to read it, destroying the very thing
+  // it's about to restore.
+  const [restoreAttempted, setRestoreAttempted] = useState(false);
 
   const progress = useMathProgress(allLessonSlugs);
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRestoredSlots(loadMathLessonDraft(lesson.slug));
+    setRestoreAttempted(true);
+  }, [lesson.slug]);
+
   function handleSnapshotChange(slots: SlotMap, slot: ExtendedSlotLetter) {
     setSnapshot(slots);
+    if (restoreAttempted) saveMathLessonDraft(lesson.slug, slots);
     setActiveSlot((prevSlot) => {
       if (slot === prevSlot) return prevSlot;
       setStatus("unanswered");
@@ -186,6 +212,13 @@ export function MathLessonWorkspace({
     setStatus(allMet ? "correct" : "incorrect");
     if (allMet) {
       progress.markSolved(lesson.slug, activeSlot);
+      // The refresh-safety draft's job ends once every slot has been solved
+      // — the answers are already credited, so there's nothing left to lose
+      // to a refresh, and clearing it here keeps localStorage from
+      // accumulating a permanent entry per lesson ever visited.
+      if (SLOT_LETTERS.every((s) => s === activeSlot || progress.isSolved(lesson.slug, s))) {
+        clearMathLessonDraft(lesson.slug);
+      }
       setNextLessonReady(false);
       setPlayOnceSignal((n) => n + 1);
       // The question modal stays closed for now — Editor's sheet music view
@@ -203,10 +236,17 @@ export function MathLessonWorkspace({
   return (
     <>
       <Editor
+        // Editor only reads its `board.slots` prop once, at mount, into a
+        // ref (so slot-switching later reads the ref, not this prop) — a
+        // key forces a fresh mount when restoration finds a draft to load,
+        // rather than one Editor instance stuck with the blank slots it
+        // first mounted with. Skipped when there's nothing to restore so a
+        // brand-new lesson visit never remounts.
+        key={restoredSlots ? "restored" : "initial"}
         board={{
           slug: lesson.slug,
           displayName: lesson.title,
-          slots: { A: lesson.slotA, B: lesson.slotB, C: lesson.slotC, D: lesson.slotD },
+          slots: restoredSlots ?? { A: lesson.slotA, B: lesson.slotB, C: lesson.slotC, D: lesson.slotD },
           stack: lesson.stack,
           readOnly: true,
           basePath: `/math/${lesson.slug}`,
