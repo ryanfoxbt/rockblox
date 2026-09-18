@@ -32,6 +32,14 @@ export function HomeContent() {
               Drum School (100 free lessons)
             </Link>
             ,{" "}
+            <Link href="/math" className="text-yellow-400 transition hover:text-yellow-300">
+              RockBlocks Math (free K-12 curriculum)
+            </Link>
+            ,{" "}
+            <Link href="/rockwords" className="text-yellow-400 transition hover:text-yellow-300">
+              RockWords (a word game that builds a beat)
+            </Link>
+            ,{" "}
             <Link href="/songs" className="text-yellow-400 transition hover:text-yellow-300">
               famous song drum beats
             </Link>
@@ -102,6 +110,17 @@ export function HomeContent() {
               generative Fractal Art and export a share-ready video, sized for TikTok and Instagram Reels,
               with no video editor.
             </li>
+            <li>
+              <span className="font-semibold text-white/90">Teachers, parents, and K-12 students</span> —{" "}
+              <Link href="/math" className="text-yellow-400 transition hover:text-yellow-300">
+                RockBlocks Math
+              </Link>{" "}
+              for a grade-aligned math curriculum taught through drumming, and{" "}
+              <Link href="/rockwords" className="text-yellow-400 transition hover:text-yellow-300">
+                RockWords
+              </Link>{" "}
+              for a grade-tailored vocabulary word game that builds a real drum beat as you play.
+            </li>
           </ul>
         </div>
 
@@ -137,6 +156,12 @@ export function HomeContent() {
           <Link href="/school" className="transition hover:text-yellow-400">
             Drum School
           </Link>
+          <Link href="/math" className="transition hover:text-yellow-400">
+            RockBlocks Math
+          </Link>
+          <Link href="/rockwords" className="transition hover:text-yellow-400">
+            RockWords
+          </Link>
           <Link href="/songs" className="transition hover:text-yellow-400">
             Songs
           </Link>
@@ -145,9 +170,6 @@ export function HomeContent() {
           </Link>
           <Link href="/fractal-art" className="transition hover:text-yellow-400">
             Fractal Art video
-          </Link>
-          <Link href="/rockwords" className="transition hover:text-yellow-400">
-            RockWords
           </Link>
           <Link href="/about" className="transition hover:text-yellow-400">
             About

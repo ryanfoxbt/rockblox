@@ -43,7 +43,7 @@ export default function AboutPage() {
           sequencer — the two views edit one pattern, so you can move between them anytime.
         </p>
         <p className="text-sm leading-relaxed text-white/70 sm:text-base">
-          The same model scales up. Bars can be any length from 1 to 16 beats, so odd time signatures like
+          The same model scales up. Bars can be any length from 3 to 8 beats, so odd time signatures like
           5/4 and 7/8 are first-class, not a workaround. Tiles carry accents, ghost notes, and triplets. An
           Inspiration generator will hand you a fresh, unique beat — in any meter — a groove variation, a
           fill, or a human-playable drum solo at a complexity you choose, all in a few clicks. You can
@@ -75,7 +75,15 @@ export default function AboutPage() {
           <Link href="/fractal-art" className="text-yellow-400 transition hover:text-yellow-300">
             turn it into a generative Fractal Art video for TikTok and Instagram Reels
           </Link>
-          .
+          . Two more free tools sit on top of the same beat-building engine:{" "}
+          <Link href="/math" className="text-yellow-400 transition hover:text-yellow-300">
+            RockBlocks Math
+          </Link>{" "}
+          pairs a Kindergarten-through-Grade-12 math curriculum with drum beats you build the answer into, and{" "}
+          <Link href="/rockwords" className="text-yellow-400 transition hover:text-yellow-300">
+            RockWords
+          </Link>{" "}
+          turns a grade-tailored, Wordle-style word game into a real, playable drum pattern as you guess.
         </p>
 
         <h2 className="mt-4 text-lg font-bold">The physical RockBlocks</h2>
@@ -99,6 +107,12 @@ export default function AboutPage() {
           </Link>
           <Link href="/school" className="transition hover:text-yellow-400">
             Drum School
+          </Link>
+          <Link href="/math" className="transition hover:text-yellow-400">
+            RockBlocks Math
+          </Link>
+          <Link href="/rockwords" className="transition hover:text-yellow-400">
+            RockWords
           </Link>
           <Link href="/songs" className="transition hover:text-yellow-400">
             Songs

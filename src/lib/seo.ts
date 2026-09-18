@@ -26,7 +26,7 @@ export const BRAND_DESCRIPTION =
 
 export const FEATURE_LIST: string[] = [
   "Drag rhythmic values (quarter notes, eighths, sixteenths, triplets and more) into a grid of beat blocks — one row per drum piece",
-  "Build beats in regular or odd time signatures (3/4, 5/4, 7/8 and beyond), up to 16 beats per bar",
+  "Build beats in regular or odd time signatures (3/4, 5/4, 7/8 and beyond), up to 8 beats per bar",
   "Play through several classic drum-machine kits (TR-808, LinnDrum LM-2, Roland CR-8000, MFB-512, Casio RZ-1) plus an acoustic kit and a synthesized novelty kit",
   "Two ways to build a beat: RockBlocks' own beat-block grid — one block per beat, drag in a rhythm tile — or a Classic view, a familiar 16-step drum-machine sequencer grid for the exact same pattern; switch anytime, and an edit in either view shows up instantly in the other",
   "Inspiration generator: in a few clicks, spin up a fresh, unique beat in a regular or odd time signature — or a groove variation, fill, or human-playable drum solo from an existing beat, with a complexity dial",
@@ -39,7 +39,7 @@ export const FEATURE_LIST: string[] = [
   "Fractal Art: turn a beat into generative line art — one continuous, colored layer per drum piece, drawing itself in time with the music — in a dark or light background and five visual styles (Classic, Bloom, Vignette, Vivid, Prism)",
   "Export a share-ready video of a beat's Fractal Art — vertical (9:16) for TikTok and Instagram Reels, or square (1:1) — with the beat's own sheet music and a live playhead overlaid, an optional RockBlocks logo, and a 7–15 second clip length",
   "Drum School: 100 free stepwise lessons that build a full groove one idea at a time",
-  "RockBlocks Math: a free, grade-aligned math curriculum where each lesson pairs a math concept with a drum pattern built to correlate with it",
+  "RockBlocks Math: a free, grade-aligned (Kindergarten-Grade 12) math curriculum where each lesson pairs a math concept with a drum pattern built to correlate with it",
   "RockWords: a free, grade-tailored (Kindergarten-Grade 12) Wordle-style word game where every guess builds part of a real, physically-playable drum pattern — right letters hit hard, wrong letters still get a real drum hit, vowels add their own drum color, and a live dictionary check keeps every guess a real word",
 ];
 
@@ -89,7 +89,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Can I make beats in odd time signatures?",
-    a: "Yes. You can set any bar length from 1 to 16 beats, so 3/4, 5/4, 7/8, and less common meters all work. This is one of the main reasons musicians use RockBlocks to sketch drum parts. The Inspiration generator and generated bass lines work in odd meters too, so you can spin up a unique 5/4 or 7/8 groove with a matching bass part in a few clicks.",
+    a: "Yes. You can set any bar length from 3 to 8 beats, so 3/4, 5/4, 7/8, and less common meters all work. This is one of the main reasons musicians use RockBlocks to sketch drum parts. The Inspiration generator and generated bass lines work in odd meters too, so you can spin up a unique 5/4 or 7/8 groove with a matching bass part in a few clicks.",
   },
   {
     q: "How do I make a drum beat?",
@@ -150,6 +150,14 @@ export const FAQ: { q: string; a: string }[] = [
   {
     q: "Is there a physical RockBlocks?",
     a: "A physical RockBlocks instrument for toy shops and music stores is planned. The web app is the same idea you can use today for free.",
+  },
+  {
+    q: "Does RockBlocks teach math?",
+    a: "Yes. RockBlocks Math is a free, grade-aligned math curriculum (Kindergarten through Grade 12) built into RockBlocks. Each lesson pairs a math concept with a worked-example drum beat, then has you build the answer yourself in a real, playable pattern. See rockblocks.app/math.",
+  },
+  {
+    q: "Is there a word game built into RockBlocks?",
+    a: "Yes. RockWords is a free, grade-tailored (Kindergarten through Grade 12) Wordle-style word game where every guess builds part of a real, playable RockBlocks drum pattern. See rockblocks.app/rockwords.",
   },
 ];
 
@@ -342,6 +350,69 @@ export const ROCKWORDS_FAQ: { q: string; a: string }[] = [
   {
     q: "Is RockWords free?",
     a: "Yes. Every grade, every round, and taking the resulting beat into the full RockBlocks editor are all free, with no account required.",
+  },
+];
+
+// --- RockBlocks Math (the /math pillar page) ---------------------------
+// People search for a free way to practice or teach K-12 math that isn't a
+// worksheet. RockBlocks' answer: pair every lesson with a worked-example
+// drum beat, then have the student build and hear their own answer. Same
+// single-source pattern as AI music, Fractal Art, and RockWords above.
+
+export const MATH_DESCRIPTION =
+  "RockBlocks Math is a free, grade-aligned math curriculum taught through drumming, covering Kindergarten through Grade 12. Each grade has 24 lessons that pair a math concept — counting, addition, subtraction, multiplication, fractions, decimals, ratios, equations, exponents, slope, the Pythagorean theorem, geometry, trigonometry, systems of equations, quadratics, complex numbers, logarithms, matrices, vectors, statistics, and an intro to limits — with a worked-example drum beat built to correlate with it. The student then builds the answer themselves in a real, playable RockBlocks beat and checks it against the correct answer. No login or download is required to try it; signed in, a solved count and a set of gig-themed badges are saved per grade.";
+
+export const MATH_STEPS: { name: string; text: string }[] = [
+  {
+    name: "Pick a grade",
+    text: "Kindergarten through Grade 12 are all playable, each with its own 24-lesson track — start wherever fits.",
+  },
+  {
+    name: "Read the worked example",
+    text: "Every lesson introduces one math concept with a worked example, shown as a real drum beat built to correlate with the idea being taught.",
+  },
+  {
+    name: "Build the answer as a beat",
+    text: "Drag rhythm tiles into the grid so the beat matches the correct answer — a note count, or for multiplication and ratios, a number of rhythm blocks holding a number of notes each — then press play to check it.",
+  },
+  {
+    name: "Get instant feedback",
+    text: "A correct answer plays back as a reward and unlocks the next lesson; an incorrect one explains why, right on the page.",
+  },
+  {
+    name: "Keep exploring",
+    text: "Every math answer is a real RockBlocks pattern — change the kit, view it as sheet music, drop it into a Stack, or export it, the same as any other beat.",
+  },
+  {
+    name: "Track progress (optional)",
+    text: "Sign in and your solved count and a set of gig-themed badges are saved per grade; no account is required to use any lesson.",
+  },
+];
+
+export const MATH_FAQ: { q: string; a: string }[] = [
+  {
+    q: "What is RockBlocks Math?",
+    a: "RockBlocks Math is a free, grade-aligned math curriculum built into RockBlocks. Each lesson pairs a math concept with a worked-example drum beat, then has you build the answer yourself in a real, playable RockBlocks pattern.",
+  },
+  {
+    q: "What grades does RockBlocks Math cover?",
+    a: "Kindergarten through Grade 12, with 24 lessons per grade — from counting and place value up through trigonometry, quadratics, logarithms, matrices, vectors, and an intro to limits.",
+  },
+  {
+    q: "Is RockBlocks Math free?",
+    a: "Yes. Every grade and every lesson is free, with no account required to try it.",
+  },
+  {
+    q: "Do I need an account to use RockBlocks Math?",
+    a: "No. Any lesson works with no login. Signing in adds a per-grade solved count and a set of gig-themed badges as you work through lessons.",
+  },
+  {
+    q: "How does building the answer as a drum beat work?",
+    a: "Each lesson's prompt tells you what to build — for example, a certain number of notes, or for multiplication and ratios, a certain number of rhythm blocks holding a certain number of notes each. You drag rhythm tiles into the real RockBlocks grid until the beat matches, then press play; a correct answer plays back as a reward.",
+  },
+  {
+    q: "Is RockBlocks Math a worksheet replacement?",
+    a: "It's built as an alternative to a worksheet: the same math practice, but the answer is a real, audible drum pattern you build and hear instead of a number you write down.",
   },
 ];
 
@@ -551,6 +622,49 @@ export const rockWordsPageJsonLd: Json = {
       "@type": "FAQPage",
       "@id": `${SITE_URL}/rockwords#faq`,
       mainEntity: ROCKWORDS_FAQ.map(({ q, a }) => ({
+        "@type": "Question",
+        name: q,
+        acceptedAnswer: { "@type": "Answer", text: a },
+      })),
+    },
+  ],
+};
+
+// /math graph — WebPage + a HowTo for the lesson loop + an FAQPage, layered
+// on top of the root graph. Per-grade Course and per-lesson LearningResource
+// JSON-LD (mathCourseJsonLd, mathLessonJsonLd below) sit alongside this on
+// the index and lesson pages respectively.
+export const mathPageJsonLd: Json = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": `${SITE_URL}/math#webpage`,
+      url: `${SITE_URL}/math`,
+      name: "RockBlocks Math — Learn Math Through Drumming, Free",
+      description: MATH_DESCRIPTION,
+      isPartOf: { "@id": `${SITE_URL}/#website` },
+      about: { "@id": `${SITE_URL}/#app` },
+      primaryImageOfPage: `${SITE_URL}/opengraph-image`,
+    },
+    {
+      "@type": "HowTo",
+      name: "How RockBlocks Math lessons work",
+      description:
+        "Read a lesson's worked example, then build the answer yourself as a real drum beat in RockBlocks and check it.",
+      image: `${SITE_URL}/opengraph-image`,
+      totalTime: "PT5M",
+      step: MATH_STEPS.map((s, i) => ({
+        "@type": "HowToStep",
+        position: i + 1,
+        name: s.name,
+        text: s.text,
+      })),
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/math#faq`,
+      mainEntity: MATH_FAQ.map(({ q, a }) => ({
         "@type": "Question",
         name: q,
         acceptedAnswer: { "@type": "Answer", text: a },
