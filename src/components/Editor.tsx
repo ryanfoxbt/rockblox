@@ -25,6 +25,7 @@ import { RandomizeButton, VariationKind } from "@/components/RandomizeButton";
 import { BasslineButton, BasslineModal } from "@/components/BasslineButton";
 import { BasslineRow } from "@/components/BasslineRow";
 import { TextToBeatButton } from "@/components/TextToBeatButton";
+import { HowItWorksModal } from "@/components/HowItWorksModal";
 import { WallButton } from "@/components/WallButton";
 import { PresenceIndicator } from "@/components/PresenceIndicator";
 import { cycleHitAccent, RhythmTile, toggleHitRest } from "@/lib/rhythm";
@@ -933,7 +934,8 @@ export function Editor({
             <p className="text-sm text-white/50">
               {viewMode === "blocks"
                 ? `Drag rhythmic values into up to ${visibleBeats} beat blocks per line to build a drum groove, or click a tile then click a block to place it — handy on a trackpad.`
-                : "Click a step to add a hit, click again to clear — right-click (or Ctrl/Option-click) to cycle accent/ghost."}
+                : "Click a step to add a hit, click again to clear — right-click (or Ctrl/Option-click) to cycle accent/ghost."}{" "}
+              <HowItWorksModal />
             </p>
           )}
           {board ? (
@@ -1020,6 +1022,7 @@ export function Editor({
           )}
           {!board && (
             <div className="mt-2 flex flex-wrap items-center gap-2">
+              <TextToBeatButton />
               <ClaimUrlBox bpm={bpm} lines={lines} kit={kit} customSamples={customSamples} bassline={bassline} />
               <SaveToLibraryButton getSlots={currentSlotsSnapshot} />
               {lastBoardName && (
@@ -1174,7 +1177,6 @@ export function Editor({
                       )}
                     </>
                   )}
-                  {!board && <TextToBeatButton variant="menuItem" />}
                   <RandomizeButton
                     variant="menuItem"
                     variationSources={variationSources}

@@ -49,3 +49,47 @@ body {
     opacity: 0;
   }
 }
+
+/* How It Works modal's step illustrations (see HowItWorksModal) — small
+   looping CSS animations standing in for a screen recording, so the modal
+   needs no external video/image assets. */
+@keyframes how-drag-tile {
+  0%, 10% { transform: translateY(-14px); opacity: 0; }
+  25% { transform: translateY(-14px); opacity: 1; }
+  55%, 100% { transform: translateY(22px); opacity: 1; }
+}
+@keyframes how-drag-pulse {
+  0%, 50% { transform: scale(0.7); opacity: 0; }
+  65% { transform: scale(1.2); opacity: 1; }
+  85%, 100% { transform: scale(1.5); opacity: 0; }
+}
+@keyframes how-type-cursor {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes how-type-bar {
+  0%, 15% { transform: scaleY(0.15); }
+  45% { transform: scaleY(1); }
+  75%, 100% { transform: scaleY(0.15); }
+}
+@keyframes how-share-pop {
+  0%, 15% { transform: scale(0.6); opacity: 0; }
+  35% { transform: scale(1.1); opacity: 1; }
+  55%, 100% { transform: scale(1); opacity: 1; }
+}
+
+.how-drag-tile { animation: how-drag-tile 2.6s ease-in-out infinite; }
+.how-drag-pulse { animation: how-drag-pulse 2.6s ease-out infinite; transform-origin: center; }
+.how-type-cursor { animation: how-type-cursor 0.9s step-end infinite; }
+.how-type-bar { animation: how-type-bar 1.8s ease-in-out infinite; transform-origin: bottom; }
+.how-share-pop { animation: how-share-pop 2.4s ease-out infinite; transform-origin: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .how-drag-tile,
+  .how-drag-pulse,
+  .how-type-cursor,
+  .how-type-bar,
+  .how-share-pop {
+    animation: none;
+  }
+}
