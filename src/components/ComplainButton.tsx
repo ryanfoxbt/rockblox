@@ -43,7 +43,14 @@ export function ComplainButton() {
         // inconsistently, which is what made this look dimmer on desktop
         // than on mobile. `opacity` is a compositing property applied to the
         // whole rendered glyph, so it dims identically everywhere.
-        className="fixed bottom-3 left-3 z-40 text-[11px] opacity-30 transition hover:opacity-100"
+        //
+        // bottom-16, not bottom-3: several pages (Editor and StackBuilder's
+        // mobile "Placing: ..." bar, the Math admin lesson editor/creator's
+        // "Save changes" bar) put a real, full-width control bar flush
+        // against inset-x-0 bottom-0, with a button right at the left edge.
+        // Sitting this low would land right on top of it; bottom-16 clears
+        // every such bar while staying in the same bottom-left corner.
+        className="fixed bottom-16 left-3 z-40 text-[11px] opacity-30 transition hover:opacity-100"
       >
         😠
       </button>
