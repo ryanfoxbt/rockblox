@@ -50,7 +50,7 @@ export function ComplainButton() {
         // against inset-x-0 bottom-0, with a button right at the left edge.
         // Sitting this low would land right on top of it; bottom-16 clears
         // every such bar while staying in the same bottom-left corner.
-        className="fixed bottom-16 left-3 z-40 text-[11px] opacity-30 transition hover:opacity-100"
+        className="fixed bottom-16 left-[7px] z-40 text-[11px] opacity-30 transition hover:opacity-100"
       >
         😠
       </button>
